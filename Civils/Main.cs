@@ -8,37 +8,37 @@ using System.Threading.Tasks;
 
 namespace JPP.Civils
 {
-    class Main : IExtensionApplication
+    public class Main : IExtensionApplication
     {
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need
         /// </summary>
         public void Initialize()
-        {            
+        {
             /*//Add the menu options
             RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
-            RibbonTab JPPTab = new RibbonTab();
-            JPPTab.Name = "JPP";
+            RibbonTab JPPTab = rc.FindTab("JPPCORE_JPP_TAB");
+            /*JPPTab.Name = "JPP";
             JPPTab.Title = "JPP";
-            JPPTab.Id = "JPPCORE_JPP_TAB";
+            JPPTab.Id = "JPPCORE_JPP_TAB";*/
 
-            RibbonPanel Panel = new RibbonPanel();
+            /*RibbonPanel Panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
-            source.Title = "Common";
+            source.Title = "Civils";
 
             //Add button to re load all JPP libraries
             RibbonButton runLoad = new RibbonButton();
             runLoad.ShowText = true;
             runLoad.Text = "Update";
             runLoad.Name = "Check for updates";
-            runLoad.CommandHandler = new RibbonCommandHandler();
-            runLoad.CommandParameter = "._Update ";
+            runLoad.CommandHandler = new JPP.Core.RibbonCommandHandler();
+            runLoad.CommandParameter = "._LayPipe ";
             source.Items.Add(runLoad);
 
+            //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
-            JPPTab.Panels.Add(Panel);
-            rc.Tabs.Add(JPPTab);*/
+            JPPTab.Panels.Add(Panel);*/
         }
 
         /// <summary>

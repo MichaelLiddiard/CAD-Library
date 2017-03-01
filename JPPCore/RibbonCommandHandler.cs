@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace JPP.Core
 {
-    class RibbonCommandHandler : System.Windows.Input.ICommand
+    public class RibbonCommandHandler : System.Windows.Input.ICommand
     {
         public bool CanExecute(object parameter)
         {

@@ -12,6 +12,9 @@ using System.IO;
 using System.Reflection;
 using Autodesk.AutoCAD.DatabaseServices;
 
+[assembly: ExtensionApplication(typeof(JPP.Core.Loader))]
+[assembly: CommandClass(typeof(JPP.Core.Loader))]
+
 namespace JPP.Core
 {
     public class Loader : IExtensionApplication
@@ -21,7 +24,10 @@ namespace JPP.Core
         /// </summary>
         public void Initialize()
         {
-            InitJPP();
+#if DEBUG
+            //Application.ShowAlertDialog("Init called");
+#endif
+            //InitJPP(); //Removed as menu causes a crash for some reason
         }
 
         /// <summary>
@@ -42,12 +48,13 @@ namespace JPP.Core
             {
                 string dllPath = dll.Replace('\\', '/');
                 //Application.DocumentManager.MdiActiveDocument.SendStringToExecute("command \"NETLOAD\" \"" + dllPath + "\"", true, false, false);
-                ResultBuffer args = new ResultBuffer(
+                /*ResultBuffer args = new ResultBuffer(
                 new TypedValue((int)LispDataType.Text, "command"),
                 new TypedValue((int)LispDataType.Text, "NETLOAD"),
                 new TypedValue((int)LispDataType.Text, dllPath));
                 Application.Invoke(args);
-                //Assembly loaded = Assembly.LoadFrom(dll);
+                //Assembly loaded = Assembly.LoadFrom(dll);*/
+                ExtensionLoader.Load(dll);
             }            
         }
 
@@ -108,10 +115,13 @@ namespace JPP.Core
             runLoad.CommandParameter = "._Update ";
             source.Items.Add(runLoad);
 
+            //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
             rc.Tabs.Add(JPPTab);
+
+            Load();
         }
 
     }
