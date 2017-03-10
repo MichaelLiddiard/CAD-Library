@@ -51,43 +51,60 @@ namespace JPP.Civils
             PromptResult pStrRes;
             bool run = true;
 
-            while(run)
-            { 
-            if (promptGradient)
+            while (run)
             {
-                //Prompt for the gradient
-                pStrOpts = new PromptStringOptions("\nEnter gradient: ");                
+                if (promptGradient)
+                {
+                    //Prompt for the gradient
+                    pStrOpts = new PromptStringOptions("\nEnter gradient: ");
+                    pStrRes = acDoc.Editor.GetString(pStrOpts);
+                    gradient = Int32.Parse(pStrRes.StringResult);
+                }
+
+                PromptPointResult pPtRes;
+                PromptPointOptions pPtOpts = new PromptPointOptions("");
+
+                // Prompt for the start point
+                pPtOpts.Message = "\nEnter the start point of the line: ";
+                pPtRes = acDoc.Editor.GetPoint(pPtOpts);
+                if (pPtRes.Status == PromptStatus.Cancel)
+                {
+                    run = false;
+                    break;
+                }
+                Point3d ptStart = pPtRes.Value;
+
+                //Prompt for the starting IL
+                pStrOpts = new PromptStringOptions("\nEnter starting IL: ");
+                pStrOpts.AllowSpaces = true;
+                pStrOpts.DefaultValue = ptStart.Z.ToString();
                 pStrRes = acDoc.Editor.GetString(pStrOpts);
-                gradient = Int32.Parse(pStrRes.StringResult);
-            }
+                if (pStrRes.Status == PromptStatus.Cancel)
+                {
+                    run = false;
+                    break;
+                }
+                double invert = double.Parse(pStrRes.StringResult);
 
-            PromptPointResult pPtRes;
-            PromptPointOptions pPtOpts = new PromptPointOptions("");
+                // Prompt for the end point
+                pPtOpts.Message = "\nEnter the end point of the line: ";
+                pPtRes = acDoc.Editor.GetPoint(pPtOpts);
+                if (pPtRes.Status == PromptStatus.Cancel)
+                {
+                    run = false;
+                    break;
+                }
+                Point3d ptEnd = pPtRes.Value;
+                
+                //Adjust start coordinate IL
+                ptStart = new Point3d(ptStart.X, ptStart.Y, invert); //Set to plane for accurate distance measure
 
-            // Prompt for the start point
-            pPtOpts.Message = "\nEnter the start point of the line: ";
-            pPtRes = acDoc.Editor.GetPoint(pPtOpts);
-            Point3d ptStart = pPtRes.Value;
-
-            // Prompt for the end point
-            pPtOpts.Message = "\nEnter the end point of the line: ";
-            pPtRes = acDoc.Editor.GetPoint(pPtOpts);
-            Point3d ptEnd = pPtRes.Value;
-
-            //Prompt for the starting IL
-            pStrOpts = new PromptStringOptions("\nEnter starting IL: ");
-            pStrOpts.AllowSpaces = true;
-            pStrRes = acDoc.Editor.GetString(pStrOpts);
-            double invert = double.Parse(pStrRes.StringResult);
-
-            //Adjust start coordinate IL
-            ptStart = new Point3d(ptStart.X, ptStart.Y, invert); //Set to plane for accurate distance measure
-
-            //Adjust end coordinate to gradient            
-            Point3d temp = new Point3d(ptEnd.X, ptEnd.Y, ptStart.Z); //Set to plane for accurate distance measure
-            double distance = Math.Abs(temp.DistanceTo(ptStart)); 
-            double fall = distance / gradient;
-            ptEnd = new Point3d(temp.X, temp.Y, temp.Z - fall);
+                //Adjust end coordinate to gradient            
+                Point3d temp = new Point3d(ptEnd.X, ptEnd.Y, ptStart.Z); //Set to plane for accurate distance measure
+                double distance = Math.Abs(temp.DistanceTo(ptStart));
+                double fall = distance / gradient;
+                fall = Math.Round(fall, 3);
+                ptEnd = new Point3d(temp.X, temp.Y, temp.Z - fall);
 
                 using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
                 {
@@ -95,11 +112,11 @@ namespace JPP.Civils
                     BlockTable acBlkTbl;
                     acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
 
-                    // Open the Block table record Model space for write
+                    // Open the Block table record M odel space for write
                     BlockTableRecord acBlkTblRec;
                     acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
-                    // Create a 3D polyline with two segments (3 points)
+                    // Create a 3D polyline
                     using (Polyline3d acPoly3d = new Polyline3d())
                     {
                         // Add the new object to the block table record and the transaction
@@ -119,8 +136,9 @@ namespace JPP.Civils
                                 acTrans.AddNewlyCreatedDBObject(acPolVer3d, true);
                             }
                         }
-                    }
 
+                        Annotate(acPoly3d);
+                    }                  
 
                     // Save the new object to the database
                     acTrans.Commit();
@@ -129,9 +147,15 @@ namespace JPP.Civils
         }
 
         [CommandMethod("AnnotatePipe")]
-        public static void Annotate()
+        public static void AnnotatePipe()
         {
 
+        }
+
+        public static void Annotate(Polyline3d acPoly3d)
+        {
+            Point3d labelPoint3d = acPoly3d.GetPointAtDist(acPoly3d.Length / 2);
+            Point2d labelPoint = new Point2d(labelPoint3d.X, labelPoint3d.Y);
         }       
     }
 }

@@ -15,14 +15,14 @@ namespace JPP.Civils
         /// </summary>
         public void Initialize()
         {
-            /*//Add the menu options
+            //Add the menu options
             RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
             RibbonTab JPPTab = rc.FindTab("JPPCORE_JPP_TAB");
             /*JPPTab.Name = "JPP";
             JPPTab.Title = "JPP";
             JPPTab.Id = "JPPCORE_JPP_TAB";*/
 
-            /*RibbonPanel Panel = new RibbonPanel();
+            RibbonPanel Panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
             source.Title = "Civils";
 
@@ -38,7 +38,7 @@ namespace JPP.Civils
             //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
-            JPPTab.Panels.Add(Panel);*/
+            JPPTab.Panels.Add(Panel);
         }
 
         /// <summary>

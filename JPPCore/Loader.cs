@@ -27,7 +27,33 @@ namespace JPP.Core
 #if DEBUG
             //Application.ShowAlertDialog("Init called");
 #endif
-            //InitJPP(); //Removed as menu causes a crash for some reason
+            if (ComponentManager.Ribbon == null)
+            {
+                Application.ShowAlertDialog("Ribbon dont exist");
+                Application.Idle += Application_Idle;
+                //ComponentManager.ItemInitialized += ComponentManager_ItemInitialized;
+            }
+            else
+            {
+                InitJPP(); //Removed as menu causes a crash for some reason
+            }
+        }
+
+        private void Application_Idle(object sender, EventArgs e)
+        {
+            Application.Idle -= Application_Idle;
+            InitJPP();
+        }
+
+        private void ComponentManager_ItemInitialized(object sender, RibbonItemEventArgs e)
+        {
+            Application.ShowAlertDialog("triggered");
+            if (ComponentManager.Ribbon != null)
+            {
+                Application.ShowAlertDialog("Ribbon active");
+                InitJPP();
+                ComponentManager.ItemInitialized -= ComponentManager_ItemInitialized;
+            }            
         }
 
         /// <summary>

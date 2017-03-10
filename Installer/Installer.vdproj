@@ -33,20 +33,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_26C610A52CD250BB6453107E1330EBAD"
-        "OwnerKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_3FBCCA8C20E7A7962A19F41F3858450E"
         "OwnerKey" = "8:_EA77A89758D3CD5FDF91EE43972C35DA"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3FBCCA8C20E7A7962A19F41F3858450E"
-        "OwnerKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -65,12 +53,6 @@
         {
         "MsmKey" = "8:_64872FD0E266D5992A7EEFF176023716"
         "OwnerKey" = "8:_74E7761EE2B8FF9A06712EF8E3C6BC79"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_64872FD0E266D5992A7EEFF176023716"
-        "OwnerKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -106,12 +88,6 @@
         "Entry"
         {
         "MsmKey" = "8:_74E7761EE2B8FF9A06712EF8E3C6BC79"
-        "OwnerKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_74E7761EE2B8FF9A06712EF8E3C6BC79"
         "OwnerKey" = "8:_EA77A89758D3CD5FDF91EE43972C35DA"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -119,12 +95,6 @@
         {
         "MsmKey" = "8:_8ADCE6138DCBC8C7C12D98B806A4D938"
         "OwnerKey" = "8:_EA77A89758D3CD5FDF91EE43972C35DA"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_8ADCE6138DCBC8C7C12D98B806A4D938"
-        "OwnerKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -148,43 +118,19 @@
         "Entry"
         {
         "MsmKey" = "8:_A3219631F79307C0AFD820343B08AFCA"
-        "OwnerKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_A3219631F79307C0AFD820343B08AFCA"
         "OwnerKey" = "8:_EA77A89758D3CD5FDF91EE43972C35DA"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_EA77A89758D3CD5FDF91EE43972C35DA"
         "OwnerKey" = "8:_9FC932318AEF46B5B6FF9E66A3F6ADAE"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_EA77A89758D3CD5FDF91EE43972C35DA"
-        "OwnerKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_9FC932318AEF46B5B6FF9E66A3F6ADAE"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_C7920ECCB462497AB05503B09FCFF35D"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -683,7 +629,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:JPP AutoCad Library"
         "ProductCode" = "8:{7B71B5D6-6F51-4B19-9583-9CCBD72EDDBE}"
-        "PackageCode" = "8:{81039744-16E2-44A2-AA0A-9921433DA202}"
+        "PackageCode" = "8:{71B9E1FB-939C-4694-8E09-36A7F67393B4}"
         "UpgradeCode" = "8:{C36FAA48-834C-4B00-B61B-A61397167662}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -1355,34 +1301,6 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{265173E9-D3F3-4C37-9B29-071D4A7453B0}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C7920ECCB462497AB05503B09FCFF35D"
-            {
-            "SourcePath" = "8:..\\Civils\\obj\\Debug\\Civils.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_DC5DDED4DFCE4A49BD5620BD28ACC56A"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{7E40BA37-DD5D-4114-B660-588438827952}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
