@@ -29,7 +29,6 @@ namespace JPP.Core
 #endif
             if (ComponentManager.Ribbon == null)
             {
-                Application.ShowAlertDialog("Ribbon dont exist");
                 Application.Idle += Application_Idle;
                 //ComponentManager.ItemInitialized += ComponentManager_ItemInitialized;
             }
@@ -121,12 +120,7 @@ namespace JPP.Core
         [CommandMethod("InitJPP")]
         public static void InitJPP()
         {
-            //Add the menu options
-            RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
-            RibbonTab JPPTab = new RibbonTab();
-            JPPTab.Name = "JPP";
-            JPPTab.Title = "JPP";
-            JPPTab.Id = "JPPCORE_JPP_TAB";
+            RibbonTab JPPTab = CreateTab();
 
             RibbonPanel Panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
@@ -144,11 +138,21 @@ namespace JPP.Core
             //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
-            JPPTab.Panels.Add(Panel);
-            rc.Tabs.Add(JPPTab);
+            JPPTab.Panels.Add(Panel);           
 
             Load();
         }
 
+        public static RibbonTab CreateTab()
+        {
+            //Add the menu options
+            RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
+            RibbonTab JPPTab = new RibbonTab();
+            JPPTab.Name = "JPP";
+            JPPTab.Title = "JPP";
+            JPPTab.Id = "JPPCORE_JPP_TAB";
+            rc.Tabs.Add(JPPTab);
+            return JPPTab;
+        }
     }
 }
