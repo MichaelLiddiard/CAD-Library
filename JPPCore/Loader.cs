@@ -79,7 +79,7 @@ namespace JPP.Core
                 new TypedValue((int)LispDataType.Text, dllPath));
                 Application.Invoke(args);
                 //Assembly loaded = Assembly.LoadFrom(dll);*/
-                ExtensionLoader.Load(dll);
+                ExtensionLoader.Load(dll);                
             }            
         }
 
@@ -138,8 +138,9 @@ namespace JPP.Core
             //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
-            JPPTab.Panels.Add(Panel);           
+            JPPTab.Panels.Add(Panel);
 
+            Update();
             Load();
         }
 

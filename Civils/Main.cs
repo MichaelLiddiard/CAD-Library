@@ -1,9 +1,11 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
@@ -28,7 +30,7 @@ namespace JPP.Civils
             }
 
             RibbonPanel Panel = new RibbonPanel();
-            RibbonPanelSource source = new RibbonPanelSource();
+            RibbonPanelSource source = new RibbonPanelSource();            
             source.Title = "Civils";            
 
             //Add button to re load all JPP libraries
@@ -41,11 +43,65 @@ namespace JPP.Civils
             //runLoad.Image = (ImageSource)ic.ConvertFrom(JPP.Civils.Properties.Resources.pipeIcon);
             source.Items.Add(layPipeButton);
 
+            //Add button to re load all JPP libraries
+            RibbonButton annotatePipeButton = new RibbonButton();
+            annotatePipeButton.ShowText = true;
+            annotatePipeButton.Text = "Annotate Pipe";
+            annotatePipeButton.Name = "Annotate Pipe";
+            annotatePipeButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
+            annotatePipeButton.CommandParameter = "._AnnotatePipe ";
+            //runLoad.Image = (ImageSource)ic.ConvertFrom(JPP.Civils.Properties.Resources.pipeIcon);
+            source.Items.Add(annotatePipeButton);
+
             //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
 
+        }
+
+        public static void LoadBlocks()
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            using (Database OpenDb = new Database(false, true))
+            {               
+                string path = Assembly.GetExecutingAssembly().Location;
+                path = path.Replace("Civils.dll", "");
+                doc.Editor.WriteMessage(path);
+                OpenDb.ReadDwgFile(path + "Templates.dwg", System.IO.FileShare.ReadWrite, true, "");
+
+                ObjectIdCollection ids = new ObjectIdCollection();
+                using (Transaction tr = OpenDb.TransactionManager.StartTransaction())
+                {
+                    //For example, Get the block by name "TEST"
+                    BlockTable bt;
+                    bt = (BlockTable)tr.GetObject(OpenDb.BlockTableId, OpenMode.ForRead);
+
+                    if (bt.Has("PipeLabel"))
+                    {
+                        ids.Add(bt["PipeLabel"]);
+                    }
+                    if (bt.Has("FoulAdoptableManhole"))
+                    {
+                        ids.Add(bt["FoulAdoptableManhole"]);
+                    }
+                    if (bt.Has("StormAdoptableManhole"))
+                    {
+                        ids.Add(bt["StormAdoptableManhole"]);
+                    }
+                    tr.Commit();
+                }
+
+                //if found, add the block
+                if (ids.Count != 0)
+                {
+                    //get the current drawing database
+                    Database destdb = doc.Database;
+
+                    IdMapping iMap = new IdMapping();
+                    destdb.WblockCloneObjects(ids, destdb.BlockTableId, iMap, DuplicateRecordCloning.Ignore, false);
+                }
+            }
         }
 
         /// <summary>

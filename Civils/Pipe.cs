@@ -95,7 +95,7 @@ namespace JPP.Civils
                     break;
                 }
                 Point3d ptEnd = pPtRes.Value;
-                
+
                 //Adjust start coordinate IL
                 ptStart = new Point3d(ptStart.X, ptStart.Y, invert); //Set to plane for accurate distance measure
 
@@ -138,7 +138,7 @@ namespace JPP.Civils
                         }
 
                         Annotate(acPoly3d);
-                    }                  
+                    }
 
                     // Save the new object to the database
                     acTrans.Commit();
@@ -149,13 +149,80 @@ namespace JPP.Civils
         [CommandMethod("AnnotatePipe")]
         public static void AnnotatePipe()
         {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
 
+            PromptSelectionOptions pso = new PromptSelectionOptions();
+            pso.SingleOnly = true;
+            PromptSelectionResult psr = acDoc.Editor.GetSelection(pso);
+            if (psr.Status == PromptStatus.OK)
+            {
+                using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                {
+                    foreach (SelectedObject so in psr.Value)
+                    {
+                        DBObject obj = acTrans.GetObject(so.ObjectId, OpenMode.ForRead);
+
+                        if (obj is Polyline3d)
+                        {
+                            Annotate(obj as Polyline3d);
+                        } else
+                        {
+                            acDoc.Editor.WriteMessage("Object is not a polyline\n");
+                        }
+                    }
+
+                    acTrans.Commit();
+                }
+            }
         }
 
         public static void Annotate(Polyline3d acPoly3d)
         {
+            //Get lable point
             Point3d labelPoint3d = acPoly3d.GetPointAtDist(acPoly3d.Length / 2);
-            Point2d labelPoint = new Point2d(labelPoint3d.X, labelPoint3d.Y);
-        }       
+            Point3d labelPoint = new Point3d(labelPoint3d.X, labelPoint3d.Y, 0);            
+
+            Database acCurDb;
+            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+
+            using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+            {
+                // Open the Block table for read
+                BlockTable acBlkTbl;
+                acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                ObjectId blkRecId = ObjectId.Null;
+
+                if (!acBlkTbl.Has("PipeLabel"))
+                {
+                    Main.LoadBlocks();
+                }
+
+                Matrix3d curUCSMatrix = Application.DocumentManager.MdiActiveDocument.Editor.CurrentUserCoordinateSystem;
+                CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
+
+
+                //calculate angle of line
+                Point3d start = acPoly3d.GetPointAtDist(0);
+                Point3d end = acPoly3d.GetPointAtDist(acPoly3d.Length);
+
+                double angle = Math.Atan((end.Y - start.Y) / (end.X - start.X));
+
+                // Insert the block into the current space
+                using (BlockReference acBlkRef = new BlockReference(labelPoint, acBlkTbl["PipeLabel"]))
+                {
+                    acBlkRef.TransformBy(Matrix3d.Rotation(angle, curUCS.Zaxis, labelPoint));
+
+                    BlockTableRecord acCurSpaceBlkTblRec;
+                    acCurSpaceBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+
+                    acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                    acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
+                }
+
+                acTrans.Commit();
+            }
+        }
     }
 }
