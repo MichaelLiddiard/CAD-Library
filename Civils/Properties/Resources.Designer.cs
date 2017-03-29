@@ -63,9 +63,29 @@ namespace JPP.Civils.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap pipeAnnotate_small {
+            get {
+                object obj = ResourceManager.GetObject("pipeAnnotate_small", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap pipeIcon {
             get {
                 object obj = ResourceManager.GetObject("pipeIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pipeIcon_small {
+            get {
+                object obj = ResourceManager.GetObject("pipeIcon_small", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

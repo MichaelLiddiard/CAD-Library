@@ -30,18 +30,24 @@ namespace JPP.Civils
             }
 
             RibbonPanel Panel = new RibbonPanel();
-            RibbonPanelSource source = new RibbonPanelSource();            
-            source.Title = "Civils";            
+            RibbonPanelSource source = new RibbonPanelSource();
+            RibbonRowPanel drainagePipeStack = new RibbonRowPanel();
+
+            source.Title = "Civil Drainage";            
 
             //Add button to re load all JPP libraries
             RibbonButton layPipeButton = new RibbonButton();
             layPipeButton.ShowText = true;
+            layPipeButton.ShowImage = true;
             layPipeButton.Text = "Lay Pipe";
             layPipeButton.Name = "Lay Pipe";
             layPipeButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
             layPipeButton.CommandParameter = "._LayPipe ";        
-            //runLoad.Image = (ImageSource)ic.ConvertFrom(JPP.Civils.Properties.Resources.pipeIcon);
-            source.Items.Add(layPipeButton);
+            layPipeButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon);
+            layPipeButton.Image = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon_small);
+            layPipeButton.Size = RibbonItemSize.Standard;
+            drainagePipeStack.Items.Add(layPipeButton);
+            drainagePipeStack.Items.Add(new RibbonRowBreak());
 
             //Add button to re load all JPP libraries
             RibbonButton annotatePipeButton = new RibbonButton();
@@ -49,12 +55,14 @@ namespace JPP.Civils
             annotatePipeButton.Text = "Annotate Pipe";
             annotatePipeButton.Name = "Annotate Pipe";
             annotatePipeButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
-            annotatePipeButton.CommandParameter = "._AnnotatePipe ";
-            //runLoad.Image = (ImageSource)ic.ConvertFrom(JPP.Civils.Properties.Resources.pipeIcon);
-            source.Items.Add(annotatePipeButton);
+            annotatePipeButton.CommandParameter = "._AnnotatePipe ";            
+            annotatePipeButton.Image = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeAnnotate_small);
+            annotatePipeButton.Size = RibbonItemSize.Standard;
+            drainagePipeStack.Items.Add(annotatePipeButton);
 
             //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
+            source.Items.Add(drainagePipeStack);
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
 
