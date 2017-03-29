@@ -16,67 +16,86 @@ namespace JPP.Civils
 {    
     class Xref
     {
-        [CommandMethod("ImportAsXref")]
+        [CommandMethod("ImportAsXref", CommandFlags.Session)]
         public static void ImportAsXref()
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
 
             //Make all the drawing changes
 
-            using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
+            using (DocumentLock dl = acDoc.LockDocument())
             {
-
-                //Get all model space drawing objects
-                TypedValue[] tv = new TypedValue[1];
-                tv.SetValue(new TypedValue(67, 0), 0);
-                SelectionFilter sf = new SelectionFilter(tv);
-                PromptSelectionResult psr = acDoc.Editor.SelectAll(sf);
-
-                foreach (SelectedObject so in psr.Value)
+                using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
                 {
-                    //For each object set its color, transparency, lineweight and linetype to ByLayer
-                    Entity obj = tr.GetObject(so.ObjectId, OpenMode.ForWrite) as Entity;
-                    obj.ColorIndex = 256;
-                    obj.LinetypeId = acDoc.Database.Celtype;
-                    obj.LineWeight = acDoc.Database.Celweight;
 
-                    //Adjust Z values
+                    //Get all model space drawing objects
+                    TypedValue[] tv = new TypedValue[1];
+                    tv.SetValue(new TypedValue(67, 0), 0);
+                    SelectionFilter sf = new SelectionFilter(tv);
+                    PromptSelectionResult psr = acDoc.Editor.SelectAll(sf);
 
+                    //Lengthy operations so show progress bar
+                    ProgressMeter pm = new ProgressMeter();
+                    pm.Start("Updating objects...");
+                    pm.SetLimit(psr.Value.Count);
+
+                    foreach (SelectedObject so in psr.Value)
+                    {
+                        //For each object set its color, transparency, lineweight and linetype to ByLayer
+                        Entity obj = tr.GetObject(so.ObjectId, OpenMode.ForWrite) as Entity;
+                        obj.ColorIndex = 256;
+                        obj.LinetypeId = acDoc.Database.Celtype;
+                        obj.LineWeight = acDoc.Database.Celweight;
+
+                        pm.MeterProgress();
+                        System.Windows.Forms.Application.DoEvents();
+
+                        //Adjust Z values
+
+                    }
+
+                    pm.Stop();
+
+                    Byte alpha = (Byte)(255 * (1));
+                    Transparency trans = new Transparency(alpha);
+
+                    //Iterate over all layer and set them to color 8, 0 transparency and continuous linetype
+                    // Open the Layer table for read
+                    LayerTable acLyrTbl = tr.GetObject(acDoc.Database.LayerTableId, OpenMode.ForRead) as LayerTable;
+                    int layerCount = 0;
+                    foreach (ObjectId id in acLyrTbl)
+                    {
+                        layerCount++;
+                    }
+                    pm.SetLimit(layerCount);
+                    pm.Start("Updating layers...");
+                    foreach (ObjectId id in acLyrTbl)
+                    {
+                        LayerTableRecord ltr = tr.GetObject(id, OpenMode.ForWrite) as LayerTableRecord;
+                        ltr.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByColor, 8);
+                        ltr.LinetypeObjectId = acDoc.Database.ContinuousLinetype;
+                        ltr.Transparency = trans;
+
+                        pm.MeterProgress();
+                    }
+                    pm.Stop();
+                    //Change all text to Romans
+
+                    tr.Commit();
                 }
 
-                // Open the Layer table for read
-                LinetypeTable acLinTbl;
-                acLinTbl = tr.GetObject(acDoc.Database.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
-                Byte alpha = (Byte)(255 * (1));
-                Transparency trans = new Transparency(alpha);
-
-                //Iterate over all layer and set them to color 8, 0 transparency and continuous linetype
-                // Open the Layer table for read
-                LayerTable acLyrTbl = tr.GetObject(acDoc.Database.LayerTableId, OpenMode.ForRead) as LayerTable;
-                foreach (ObjectId id in acLyrTbl)
+                //Prompt for the save location
+                SaveFileDialog sfd = new SaveFileDialog();
+                sfd.Filter = "Drawing File|*.dwg";
+                sfd.Title = "Save drawing as";
+                sfd.ShowDialog();
+                if (sfd.FileName != "")
                 {
-                    LayerTableRecord ltr = tr.GetObject(id, OpenMode.ForWrite) as LayerTableRecord;
-                    ltr.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByColor, 8);
-                    ltr.LinetypeObjectId = acLinTbl["Continuous"];
-                    ltr.Transparency = trans;
-
-                }
-
-                //Change all text to Romans
-
-                tr.Commit();
+                    acDoc.Database.SaveAs(sfd.FileName, Autodesk.AutoCAD.DatabaseServices.DwgVersion.Current);
+                }                
             }
-            
-            //Prompt for the save location
-            sfd.Filter = "Drawing File|*.dwg";
-            sfd.Title = "Save drawing as";
-            sfd.ShowDialog();
-            if(sfd.FileName != "")
-            {
-                acDoc.Database.SaveAs(sfd.FileName, Autodesk.AutoCAD.DatabaseServices.DwgVersion.Current);
-            }
-
             //Close the original file as its no longer needed
-        }
+            acDoc.CloseAndDiscard();
+        }        
     }
 }

@@ -63,6 +63,16 @@ namespace JPP.Civils.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap importXref {
+            get {
+                object obj = ResourceManager.GetObject("importXref", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap pipeAnnotate_small {
             get {
                 object obj = ResourceManager.GetObject("pipeAnnotate_small", resourceCulture);

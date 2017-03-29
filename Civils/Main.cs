@@ -33,6 +33,10 @@ namespace JPP.Civils
             RibbonPanelSource source = new RibbonPanelSource();
             RibbonRowPanel drainagePipeStack = new RibbonRowPanel();
 
+            RibbonPanel utilitiesPanel = new RibbonPanel();
+            RibbonPanelSource utilitiesSource = new RibbonPanelSource();
+            RibbonRowPanel utilitiesStack = new RibbonRowPanel();
+
             source.Title = "Civil Drainage";            
 
             //Add button to re load all JPP libraries
@@ -60,12 +64,32 @@ namespace JPP.Civils
             annotatePipeButton.Size = RibbonItemSize.Standard;
             drainagePipeStack.Items.Add(annotatePipeButton);
 
+            utilitiesSource.Title = "Civil Utilities";
+
+            //Add button to re load all JPP libraries
+            RibbonButton importXrefButton = new RibbonButton();
+            importXrefButton.ShowText = true;
+            importXrefButton.ShowImage = true;
+            importXrefButton.Text = "Import As Xref";
+            importXrefButton.Name = "Import As Xref";
+            importXrefButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
+            importXrefButton.CommandParameter = "._ImportAsXref ";
+            importXrefButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
+            importXrefButton.Size = RibbonItemSize.Large;
+            importXrefButton.Orientation = System.Windows.Controls.Orientation.Vertical;
+            utilitiesStack.Items.Add(importXrefButton);
+            utilitiesStack.Items.Add(new RibbonRowBreak());
+
             //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             source.Items.Add(drainagePipeStack);
             Panel.Source = source;
-            JPPTab.Panels.Add(Panel);
 
+            utilitiesSource.Items.Add(utilitiesStack);
+            utilitiesPanel.Source = utilitiesSource;
+
+            JPPTab.Panels.Add(Panel);
+            JPPTab.Panels.Add(utilitiesPanel);
         }
 
         public static void LoadBlocks()
