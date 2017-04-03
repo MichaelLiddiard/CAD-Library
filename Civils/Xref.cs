@@ -53,8 +53,39 @@ namespace JPP.Civils
                         //Adjust Z values
 
                     }
-
                     pm.Stop();
+                                        
+                    //Operate over all blocks
+                    BlockTable blkTable = (BlockTable)tr.GetObject(acDoc.Database.BlockTableId, OpenMode.ForRead);
+                    int blockCount = 0;
+                    foreach (ObjectId id in blkTable)
+                    {
+                        blockCount++;
+                    }
+
+                    pm.Start("Updating blocks...");
+                    pm.SetLimit(blockCount);
+                    foreach (ObjectId id in blkTable)
+                    {
+                        BlockTableRecord btRecord = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
+                        if (!btRecord.IsLayout)
+                        {
+                            foreach(ObjectId childId in btRecord)
+                            {
+                                //For each object set its color, transparency, lineweight and linetype to ByLayer
+                                Entity obj = tr.GetObject(childId, OpenMode.ForWrite) as Entity;
+                                obj.ColorIndex = 256;
+                                obj.LinetypeId = acDoc.Database.Celtype;
+                                obj.LineWeight = acDoc.Database.Celweight;
+
+                                System.Windows.Forms.Application.DoEvents();
+
+                                //Adjust Z values
+                            }
+                        }
+                        pm.MeterProgress();
+                    }
+
 
                     Byte alpha = (Byte)(255 * (1));
                     Transparency trans = new Transparency(alpha);
@@ -94,6 +125,12 @@ namespace JPP.Civils
                     acDoc.Database.SaveAs(sfd.FileName, Autodesk.AutoCAD.DatabaseServices.DwgVersion.Current);
                 }                
             }
+
+            //Run the cleanup commands
+            //Core.Utilities.Purge();
+
+            acDoc.Database.Audit(true, false);
+
             //Close the original file as its no longer needed
             acDoc.CloseAndDiscard();
         }        

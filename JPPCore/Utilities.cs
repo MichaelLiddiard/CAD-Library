@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -22,6 +25,49 @@ namespace JPP.Core
             bi.StreamSource = ms;
             bi.EndInit();            
             return bi;
+        }
+
+        public static void Purge()
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            Database db = doc.Database;
+            Editor ed = doc.Editor;
+                        
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                // Create the list of objects to "purge"
+                ObjectIdCollection collection = new ObjectIdCollection();
+
+                LayerTable lt = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+                foreach (ObjectId layer in lt)
+                {
+                    collection.Add(layer);
+                }
+
+                LinetypeTable ltt = tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
+                foreach (ObjectId linetype in ltt)
+                {
+                    collection.Add(linetype);
+                }
+
+                TextStyleTable tst = tr.GetObject(db.TextStyleTableId, OpenMode.ForRead) as TextStyleTable;
+                foreach (ObjectId text in tst)
+                {
+                    collection.Add(text);
+                }
+
+                // Call the Purge function to filter the list
+                db.Purge(collection);
+
+                // Erase each of the objects we've been allowed to
+                foreach (ObjectId id in collection)
+                {
+                    DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+                    obj.Erase();
+                }
+
+                tr.Commit();
+            }
         }
     }
 }
