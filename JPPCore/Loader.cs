@@ -27,9 +27,6 @@ namespace JPP.Core
         /// </summary>
         public void Initialize()
         {
-#if DEBUG
-            Application.ShowAlertDialog("Running in debug mode.");
-#endif
             //Detect if ribbon is currently loaded, and if not wait until the application is Idle.
             if (ComponentManager.Ribbon == null)
             {
@@ -99,7 +96,7 @@ namespace JPP.Core
             {
                 ZipArchive archive = ZipFile.OpenRead(archivePath);
                 
-                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
+                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\update";
                 if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
@@ -122,13 +119,14 @@ namespace JPP.Core
         {
             //Check current folder for zip file waiting to be applied
 
+            //Create the UI
             RibbonTab JPPTab = CreateTab();
 
             RibbonPanel Panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
-            source.Title = "Common";
+            source.Title = "Main";
 
-            //Add button to re load all JPP libraries
+            //Add button to update all JPP libraries
             RibbonButton runLoad = new RibbonButton();
             runLoad.ShowText = true;
             runLoad.Text = "Update";
@@ -137,12 +135,10 @@ namespace JPP.Core
             runLoad.CommandParameter = "._Update ";
             source.Items.Add(runLoad);
 
-            //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
 
-            Update();
             Load();
         }
 
