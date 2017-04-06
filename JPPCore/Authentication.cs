@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,10 @@ namespace JPP.Core
     {
         public bool Authenticated()
         {
+#if DEBUG
+            Application.ShowAlertDialog("Running in debug mode, no authentication required.");
+            return true;
+#else
             string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "license.key";
             if (!File.Exists(path))
             {
@@ -28,8 +33,9 @@ namespace JPP.Core
                 RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
                 RSAParameters param = new RSAParameters();                               
             }
-            
+
             return false;
+#endif
         }
     }
 }
