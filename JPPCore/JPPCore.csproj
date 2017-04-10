@@ -51,19 +51,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AcCoreMgd">
-      <HintPath>..\..\..\..\..\..\ObjectARX 2016\inc\AcCoreMgd.dll</HintPath>
+      <HintPath>C:\ObjectARX 2016\inc\AcCoreMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AcDbMgd">
-      <HintPath>..\..\..\..\..\..\ObjectARX 2016\inc\AcDbMgd.dll</HintPath>
+      <HintPath>C:\ObjectARX 2016\inc\AcDbMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AcMgd">
-      <HintPath>..\..\..\..\..\..\ObjectARX 2016\inc\AcMgd.dll</HintPath>
+      <HintPath>C:\ObjectARX 2016\inc\AcMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AdWindows">
-      <HintPath>..\..\..\..\..\..\ObjectARX 2016\inc\AdWindows.dll</HintPath>
+      <HintPath>C:\ObjectARX 2016\inc\AdWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PresentationCore" />
@@ -93,6 +93,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="RibbonCommandHandler.cs" />
+    <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
