@@ -35,35 +35,58 @@ namespace JPP.Core
                         
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-                // Create the list of objects to "purge"
-                ObjectIdCollection collection = new ObjectIdCollection();
+                bool toBePurged = true;
 
-                LayerTable lt = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
-                foreach (ObjectId layer in lt)
+                while (toBePurged)
                 {
-                    collection.Add(layer);
-                }
+                    // Create the list of objects to "purge"
+                    ObjectIdCollection collection = new ObjectIdCollection();
 
-                LinetypeTable ltt = tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
-                foreach (ObjectId linetype in ltt)
-                {
-                    collection.Add(linetype);
-                }
+                    LayerTable lt = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+                    foreach (ObjectId layer in lt)
+                    {
+                        collection.Add(layer);
+                    }
 
-                TextStyleTable tst = tr.GetObject(db.TextStyleTableId, OpenMode.ForRead) as TextStyleTable;
-                foreach (ObjectId text in tst)
-                {
-                    collection.Add(text);
-                }
+                    LinetypeTable ltt = tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
+                    foreach (ObjectId linetype in ltt)
+                    {
+                        collection.Add(linetype);
+                    }
 
-                // Call the Purge function to filter the list
-                db.Purge(collection);
+                    TextStyleTable tst = tr.GetObject(db.TextStyleTableId, OpenMode.ForRead) as TextStyleTable;
+                    foreach (ObjectId text in tst)
+                    {
+                        collection.Add(text);
+                    }
 
-                // Erase each of the objects we've been allowed to
-                foreach (ObjectId id in collection)
-                {
-                    DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
-                    obj.Erase();
+                    BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+                    foreach (ObjectId block in bt)
+                    {
+                        collection.Add(block);
+                    }
+
+                    DBDictionary tsd = tr.GetObject(db.TableStyleDictionaryId, OpenMode.ForRead) as DBDictionary;
+                    foreach (DBDictionaryEntry ts in tsd)
+                    {                        
+                        collection.Add(ts.Value);
+                    }
+
+                    // Call the Purge function to filter the list
+                    db.Purge(collection);
+
+                    if (collection.Count > 0)
+                    {
+                        // Erase each of the objects we've been allowed to
+                        foreach (ObjectId id in collection)
+                        {
+                            DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+                            obj.Erase();
+                        }
+                    } else
+                    {
+                        toBePurged = false;
+                    }
                 }
 
                 tr.Commit();

@@ -63,6 +63,7 @@ namespace JPP.Civils
                         blockCount++;
                     }
 
+                    pm = new ProgressMeter();
                     pm.Start("Updating blocks...");
                     pm.SetLimit(blockCount);
                     foreach (ObjectId id in blkTable)
@@ -77,15 +78,16 @@ namespace JPP.Civils
                                 obj.ColorIndex = 256;
                                 obj.LinetypeId = acDoc.Database.Celtype;
                                 obj.LineWeight = acDoc.Database.Celweight;
-
-                                System.Windows.Forms.Application.DoEvents();
+                                                               
 
                                 //Adjust Z values
                             }
                         }
                         pm.MeterProgress();
+                        System.Windows.Forms.Application.DoEvents();
                     }
 
+                    pm.Stop();
 
                     Byte alpha = (Byte)(255 * (1));
                     Transparency trans = new Transparency(alpha);
@@ -98,22 +100,33 @@ namespace JPP.Civils
                     {
                         layerCount++;
                     }
-                    pm.SetLimit(layerCount);
+
+                    pm = new ProgressMeter();
                     pm.Start("Updating layers...");
+                    pm.SetLimit(layerCount);
                     foreach (ObjectId id in acLyrTbl)
                     {
                         LayerTableRecord ltr = tr.GetObject(id, OpenMode.ForWrite) as LayerTableRecord;
                         ltr.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByColor, 8);
                         ltr.LinetypeObjectId = acDoc.Database.ContinuousLinetype;
+                        ltr.LineWeight = acDoc.Database.Celweight;
                         ltr.Transparency = trans;
 
                         pm.MeterProgress();
+                        System.Windows.Forms.Application.DoEvents();
                     }
                     pm.Stop();
-                    //Change all text to Romans
 
+
+                    //Change all text to Romans
                     tr.Commit();
                 }
+
+
+                //Run the cleanup commands
+                Core.Utilities.Purge();
+
+                acDoc.Database.Audit(true, false);
 
                 //Prompt for the save location
                 SaveFileDialog sfd = new SaveFileDialog();
@@ -123,13 +136,8 @@ namespace JPP.Civils
                 if (sfd.FileName != "")
                 {
                     acDoc.Database.SaveAs(sfd.FileName, Autodesk.AutoCAD.DatabaseServices.DwgVersion.Current);
-                }                
-            }
-
-            //Run the cleanup commands
-            //Core.Utilities.Purge();
-
-            acDoc.Database.Audit(true, false);
+                }
+            }           
 
             //Close the original file as its no longer needed
             acDoc.CloseAndDiscard();
