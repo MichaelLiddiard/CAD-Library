@@ -71,13 +71,16 @@ namespace JPP.Core
             List<string> allAssemblies = new List<string>();
             string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
 
-            //Iterate over every dll found in bin folder
-            foreach (string dll in Directory.GetFiles(path, "*.dll"))
+            if (Authentication.Current.Authenticated())
             {
-                string dllPath = dll.Replace('\\', '/');
-                //Load the additional libraries found
-                ExtensionLoader.Load(dll);                
-            }            
+                //Iterate over every dll found in bin folder
+                foreach (string dll in Directory.GetFiles(path, "*.dll"))
+                {
+                    string dllPath = dll.Replace('\\', '/');
+                    //Load the additional libraries found
+                    ExtensionLoader.Load(dll);
+                }
+            }           
         }
 
         [CommandMethod("Update")]
@@ -126,6 +129,20 @@ namespace JPP.Core
             RibbonPanelSource source = new RibbonPanelSource();
             source.Title = "Main";
 
+            RibbonRowPanel stack = new RibbonRowPanel();
+
+            RibbonButton authenticateButton = new RibbonButton();
+            authenticateButton.ShowText = true;
+            authenticateButton.ShowImage = true;
+            authenticateButton.Text = "Authenticate";
+            authenticateButton.Name = "Authenticate";
+            /*authenticateButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
+            authenticateButton.CommandParameter = "._LayPipe ";                    */
+            authenticateButton.Image = Core.Utilities.LoadImage(JPP.Core.Properties.Resources.Locked);
+            authenticateButton.Size = RibbonItemSize.Standard;
+            stack.Items.Add(authenticateButton);
+            stack.Items.Add(new RibbonRowBreak());
+
             //Add button to update all JPP libraries
             RibbonButton runLoad = new RibbonButton();
             runLoad.ShowText = true;
@@ -133,7 +150,8 @@ namespace JPP.Core
             runLoad.Name = "Check for updates";
             runLoad.CommandHandler = new RibbonCommandHandler();
             runLoad.CommandParameter = "._Update ";
-            source.Items.Add(runLoad);
+            stack.Items.Add(runLoad);
+            source.Items.Add(stack);
 
             //Build the UI hierarchy
             Panel.Source = source;
