@@ -20,9 +20,10 @@ namespace JPP.Civils
         public static void ImportAsXref()
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            bool Aborted = false;
+            SaveFileDialog sfd;
 
             //Make all the drawing changes
-
             using (DocumentLock dl = acDoc.LockDocument())
             {
                 using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
@@ -54,7 +55,7 @@ namespace JPP.Civils
 
                     }
                     pm.Stop();
-                                        
+
                     //Operate over all blocks
                     BlockTable blkTable = (BlockTable)tr.GetObject(acDoc.Database.BlockTableId, OpenMode.ForRead);
                     int blockCount = 0;
@@ -71,14 +72,14 @@ namespace JPP.Civils
                         BlockTableRecord btRecord = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
                         if (!btRecord.IsLayout)
                         {
-                            foreach(ObjectId childId in btRecord)
+                            foreach (ObjectId childId in btRecord)
                             {
                                 //For each object set its color, transparency, lineweight and linetype to ByLayer
                                 Entity obj = tr.GetObject(childId, OpenMode.ForWrite) as Entity;
                                 obj.ColorIndex = 256;
                                 obj.LinetypeId = acDoc.Database.Celtype;
                                 obj.LineWeight = acDoc.Database.Celweight;
-                                                               
+
 
                                 //Adjust Z values
                             }
@@ -119,28 +120,38 @@ namespace JPP.Civils
 
 
                     //Change all text to Romans
-                    tr.Commit();
+
+                    //Run the cleanup commands
+                    Core.Utilities.Purge();
+
+                    acDoc.Database.Audit(true, false);
+
+                    //Prompt for the save location
+                    sfd = new SaveFileDialog();
+                    sfd.Filter = "Drawing File|*.dwg";
+                    sfd.Title = "Save drawing as";
+                    sfd.ShowDialog();
+                    if (sfd.FileName != "")
+                    {
+                        tr.Commit();
+                        Aborted = false; 
+                    }
+                    else
+                    {
+                        tr.Abort();
+                        Aborted = true;
+                    }                    
                 }
-
-
-                //Run the cleanup commands
-                Core.Utilities.Purge();
-
-                acDoc.Database.Audit(true, false);
-
-                //Prompt for the save location
-                SaveFileDialog sfd = new SaveFileDialog();
-                sfd.Filter = "Drawing File|*.dwg";
-                sfd.Title = "Save drawing as";
-                sfd.ShowDialog();
-                if (sfd.FileName != "")
-                {
-                    acDoc.Database.SaveAs(sfd.FileName, Autodesk.AutoCAD.DatabaseServices.DwgVersion.Current);
-                }
+                
             }           
 
-            //Close the original file as its no longer needed
-            acDoc.CloseAndDiscard();
+            if(!Aborted)
+            {
+                acDoc.Database.SaveAs(sfd.FileName, Autodesk.AutoCAD.DatabaseServices.DwgVersion.Current);
+
+                //Close the original file as its no longer needed
+                acDoc.CloseAndDiscard();
+            }            
         }        
     }
 }
