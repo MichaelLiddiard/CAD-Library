@@ -37,6 +37,36 @@ namespace JPP.Civils
 
                     //Lengthy operations so show progress bar
                     ProgressMeter pm = new ProgressMeter();
+
+                    Byte alpha = (Byte)(255 * (1));
+                    Transparency trans = new Transparency(alpha);
+
+                    //Iterate over all layer and set them to color 8, 0 transparency and continuous linetype
+                    // Open the Layer table for read
+                    LayerTable acLyrTbl = tr.GetObject(acDoc.Database.LayerTableId, OpenMode.ForRead) as LayerTable;
+                    int layerCount = 0;
+                    foreach (ObjectId id in acLyrTbl)
+                    {
+                        layerCount++;
+                    }
+
+                    pm = new ProgressMeter();
+                    pm.Start("Updating layers...");
+                    pm.SetLimit(layerCount);
+                    foreach (ObjectId id in acLyrTbl)
+                    {
+                        LayerTableRecord ltr = tr.GetObject(id, OpenMode.ForWrite) as LayerTableRecord;
+                        ltr.IsLocked = false;
+                        ltr.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByColor, 8);
+                        ltr.LinetypeObjectId = acDoc.Database.ContinuousLinetype;
+                        ltr.LineWeight = acDoc.Database.Celweight;
+                        ltr.Transparency = trans;
+
+                        pm.MeterProgress();
+                        System.Windows.Forms.Application.DoEvents();
+                    }
+                    pm.Stop();
+
                     pm.Start("Updating objects...");
                     pm.SetLimit(psr.Value.Count);
 
@@ -51,7 +81,21 @@ namespace JPP.Civils
                         pm.MeterProgress();
                         System.Windows.Forms.Application.DoEvents();
 
-                        //Adjust Z values
+                        if(obj is Polyline)
+                        {
+                            Polyline pl = obj as Polyline;
+                            pl.Elevation = 0;                            
+                        }
+                        if (obj is Polyline2d)
+                        {
+                            Polyline2d pl = obj as Polyline2d;
+                            pl.Elevation = 0;
+                        }
+                        /*if (obj is Polyline3d)
+                        {
+                            Polyline3d pl = obj as Polyline3d;
+                            pl.
+                        }*/
 
                     }
                     pm.Stop();
@@ -88,36 +132,7 @@ namespace JPP.Civils
                         System.Windows.Forms.Application.DoEvents();
                     }
 
-                    pm.Stop();
-
-                    Byte alpha = (Byte)(255 * (1));
-                    Transparency trans = new Transparency(alpha);
-
-                    //Iterate over all layer and set them to color 8, 0 transparency and continuous linetype
-                    // Open the Layer table for read
-                    LayerTable acLyrTbl = tr.GetObject(acDoc.Database.LayerTableId, OpenMode.ForRead) as LayerTable;
-                    int layerCount = 0;
-                    foreach (ObjectId id in acLyrTbl)
-                    {
-                        layerCount++;
-                    }
-
-                    pm = new ProgressMeter();
-                    pm.Start("Updating layers...");
-                    pm.SetLimit(layerCount);
-                    foreach (ObjectId id in acLyrTbl)
-                    {
-                        LayerTableRecord ltr = tr.GetObject(id, OpenMode.ForWrite) as LayerTableRecord;
-                        ltr.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByColor, 8);
-                        ltr.LinetypeObjectId = acDoc.Database.ContinuousLinetype;
-                        ltr.LineWeight = acDoc.Database.Celweight;
-                        ltr.Transparency = trans;
-
-                        pm.MeterProgress();
-                        System.Windows.Forms.Application.DoEvents();
-                    }
-                    pm.Stop();
-
+                    pm.Stop();                 
 
                     //Change all text to Romans
 

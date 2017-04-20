@@ -36,6 +36,7 @@ namespace JPP.Civils
             RibbonPanel utilitiesPanel = new RibbonPanel();
             RibbonPanelSource utilitiesSource = new RibbonPanelSource();
             RibbonRowPanel utilitiesStack = new RibbonRowPanel();
+            RibbonRowPanel utilitiesStack2 = new RibbonRowPanel();
 
             source.Title = "Civil Drainage";            
 
@@ -66,7 +67,7 @@ namespace JPP.Civils
 
             utilitiesSource.Title = "Civil Utilities";
 
-            //Add button to re load all JPP libraries
+            //Add button to import xref
             RibbonButton importXrefButton = new RibbonButton();
             importXrefButton.ShowText = true;
             importXrefButton.ShowImage = true;
@@ -80,12 +81,27 @@ namespace JPP.Civils
             utilitiesStack.Items.Add(importXrefButton);
             utilitiesStack.Items.Add(new RibbonRowBreak());
 
+            //Add button to level polyline
+            RibbonButton levelPLineButtone = new RibbonButton();
+            levelPLineButtone.ShowText = true;
+            levelPLineButtone.ShowImage = true;
+            levelPLineButtone.Text = "Level Polyline";
+            levelPLineButtone.Name = "Level Polyline";
+            levelPLineButtone.CommandHandler = new JPP.Core.RibbonCommandHandler();
+            levelPLineButtone.CommandParameter = "._LevelPolyline ";
+            levelPLineButtone.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
+            levelPLineButtone.Size = RibbonItemSize.Standard;
+            levelPLineButtone.Orientation = System.Windows.Controls.Orientation.Vertical;
+            utilitiesStack2.Items.Add(levelPLineButtone);
+            utilitiesStack2.Items.Add(new RibbonRowBreak());
+
             //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             source.Items.Add(drainagePipeStack);
             Panel.Source = source;
 
             utilitiesSource.Items.Add(utilitiesStack);
+            utilitiesSource.Items.Add(utilitiesStack2);
             utilitiesPanel.Source = utilitiesSource;
 
             JPPTab.Panels.Add(Panel);

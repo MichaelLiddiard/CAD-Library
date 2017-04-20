@@ -150,6 +150,9 @@ namespace JPP.Core
             runLoad.Name = "Check for updates";
             runLoad.CommandHandler = new RibbonCommandHandler();
             runLoad.CommandParameter = "._Update ";
+#if DEBUG
+            runLoad.IsEnabled = false;
+#endif
             stack.Items.Add(runLoad);
             source.Items.Add(stack);
 
