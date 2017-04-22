@@ -2,6 +2,7 @@
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using System;
 using System.Collections.Generic;
@@ -22,12 +23,39 @@ namespace JPP.Civils
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             bool Aborted = false;
             SaveFileDialog sfd;
+            ObjectId SurveyTextStyle;
 
             //Make all the drawing changes
             using (DocumentLock dl = acDoc.LockDocument())
             {
                 using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
                 {
+                    //Remove all sheets
+                    ObjectId newLayout = LayoutManager.Current.CreateLayout("Paper");
+                    LayoutManager.Current.SetCurrentLayoutId(newLayout);
+                    DBDictionary lays = tr.GetObject(acDoc.Database.LayoutDictionaryId, OpenMode.ForWrite) as DBDictionary;                    
+                    foreach (DBDictionaryEntry item in lays)
+                    {
+                        string layoutName = item.Key;
+                        if (layoutName != "Model" && layoutName != "Paper")
+                        {
+                            LayoutManager.Current.DeleteLayout(layoutName); // Delete layout.
+                        }
+                    }
+
+                    //Get or create the survey text style
+                    TextStyleTable tst = tr.GetObject(acDoc.Database.TextStyleTableId, OpenMode.ForRead) as TextStyleTable;
+                    if(!tst.Has("JPP_Survey"))
+                    {
+                        tst.UpgradeOpen();
+                        TextStyleTableRecord tstr = new TextStyleTableRecord();
+                        tstr.FileName = "romans.shx";
+                        tstr.Name = "JPP_Survey";
+                        tst.Add(tstr);
+                        tr.AddNewlyCreatedDBObject(tstr, true);
+                    }
+
+                    SurveyTextStyle = tst["JPP_Survey"];
 
                     //Get all model space drawing objects
                     TypedValue[] tv = new TypedValue[1];
@@ -97,6 +125,22 @@ namespace JPP.Civils
                             pl.
                         }*/
 
+                        //Change all text to Romans
+                        if (obj is DBText)
+                        {
+                            DBText text = obj as DBText;
+                            text.Position = new Point3d(text.Position.X, text.Position.Y, 0);
+                            text.Height = 0.4;
+                            text.TextStyleId = SurveyTextStyle;
+                        }
+                        if (obj is MText)
+                        {
+                            MText text = obj as MText;
+                            text.Location = new Point3d(text.Location.X, text.Location.Y, 0);
+                            text.Height = 0.4;
+                            text.TextStyleId = SurveyTextStyle;
+                        }
+
                     }
                     pm.Stop();
 
@@ -133,8 +177,6 @@ namespace JPP.Civils
                     }
 
                     pm.Stop();                 
-
-                    //Change all text to Romans
 
                     //Run the cleanup commands
                     Core.Utilities.Purge();
