@@ -119,11 +119,16 @@ namespace JPP.Civils
                             Polyline2d pl = obj as Polyline2d;
                             pl.Elevation = 0;
                         }
-                        /*if (obj is Polyline3d)
+                        if (obj is Polyline3d)
                         {
-                            Polyline3d pl = obj as Polyline3d;
-                            pl.
-                        }*/
+                            Polyline3d pl3d = obj as Polyline3d;
+                            foreach (ObjectId id in pl3d)
+                            {
+                                PolylineVertex3d plv3d = tr.GetObject(id, OpenMode.ForWrite) as PolylineVertex3d;
+                                Point3d p3d = plv3d.Position;
+                                plv3d.Position = new Point3d(p3d.X, p3d.Y, 0);
+                            }
+                        }
 
                         //Change all text to Romans
                         if (obj is DBText)

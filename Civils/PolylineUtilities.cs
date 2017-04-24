@@ -28,6 +28,15 @@ namespace JPP.Civils
             {
                 using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
                 {
+                    //Set max or min?
+                    PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
+                    pKeyOpts.Message = "\nSet to minimum or maximum level of line?";
+                    pKeyOpts.Keywords.Add("Highest");
+                    pKeyOpts.Keywords.Add("Lowest");
+                    //pKeyOpts.Keywords.Default = "Minimum";
+                    pKeyOpts.AllowNone = true;
+                    PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
+
                     foreach (SelectedObject so in psr.Value)
                     {
                         DBObject obj = tr.GetObject(so.ObjectId, OpenMode.ForRead);
@@ -60,16 +69,7 @@ namespace JPP.Civils
                                 {
                                     max = p3d.Z;
                                 }
-                            }
-
-                            //Set max or min?
-                            PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
-                            pKeyOpts.Message = "\nSet to minimum or maximum level of line?";
-                            pKeyOpts.Keywords.Add("Highest");
-                            pKeyOpts.Keywords.Add("Lowest");                            
-                            //pKeyOpts.Keywords.Default = "Minimum";
-                            pKeyOpts.AllowNone = true;
-                            PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
+                            }                            
                             switch (pKeyRes.StringResult)
                             {
                                 case "Lowest":
