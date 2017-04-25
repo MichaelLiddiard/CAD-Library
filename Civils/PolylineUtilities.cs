@@ -135,18 +135,17 @@ namespace JPP.Civils
                                 if (obj is Polyline3d)
                                 {
                                     Polyline3d pline3d = obj as Polyline3d;
-                                    foreach (ObjectId id in pline3d)
+                                    Point3d p3d = pline3d.GetPointAtDist(0);
+                                    if (targetReference.Position.X == p3d.X && targetReference.Position.Y == p3d.Y)
                                     {
-                                        Point3d p3d = pline3d.GetPointAtDist(0);
-                                        if (targetReference.Position.X == p3d.X && targetReference.Position.Y == p3d.Y)
-                                        {
-                                            EditFFL.EditFFLValue(target.ObjectId, p3d.Z);
-                                        }
-                                }
+                                        EditFFL.EditFFLValue(target.ObjectId, p3d.Z);
+                                    }
                                 }
                             }
                         }
                     }
+
+                    tr.Commit();
                 }
             }
         }
