@@ -51,6 +51,7 @@ namespace JPP.Civils
             layPipeButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon);
             layPipeButton.Image = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon_small);
             layPipeButton.Size = RibbonItemSize.Standard;
+            layPipeButton.IsEnabled = false;
             drainagePipeStack.Items.Add(layPipeButton);
             drainagePipeStack.Items.Add(new RibbonRowBreak());
 
@@ -63,6 +64,7 @@ namespace JPP.Civils
             annotatePipeButton.CommandParameter = "._AnnotatePipe ";            
             annotatePipeButton.Image = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeAnnotate_small);
             annotatePipeButton.Size = RibbonItemSize.Standard;
+            annotatePipeButton.IsEnabled = false;
             drainagePipeStack.Items.Add(annotatePipeButton);
 
             utilitiesSource.Title = "Civil Utilities";
