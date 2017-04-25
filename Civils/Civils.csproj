@@ -91,6 +91,10 @@
     <Compile Include="Xref.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\JPPCommands\JPPCommands.csproj">
+      <Project>{529333e4-59db-4d8d-bff5-b0f929b7b64f}</Project>
+      <Name>JPPCommands</Name>
+    </ProjectReference>
     <ProjectReference Include="..\JPPCore\JPPCore.csproj">
       <Project>{265173e9-d3f3-4c37-9b29-071d4a7453b0}</Project>
       <Name>JPPCore</Name>

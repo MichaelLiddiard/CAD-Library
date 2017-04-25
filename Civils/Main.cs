@@ -51,7 +51,7 @@ namespace JPP.Civils
             layPipeButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon);
             layPipeButton.Image = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon_small);
             layPipeButton.Size = RibbonItemSize.Standard;
-            layPipeButton.IsEnabled = false;
+            //layPipeButton.IsEnabled = false;
             drainagePipeStack.Items.Add(layPipeButton);
             drainagePipeStack.Items.Add(new RibbonRowBreak());
 

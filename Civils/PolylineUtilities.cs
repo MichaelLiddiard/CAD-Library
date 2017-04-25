@@ -3,6 +3,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using JPPCommands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -99,6 +100,53 @@ namespace JPP.Civils
                     }
 
                     tr.Commit();
+                }
+            }
+        }
+
+        [CommandMethod("PlineToFFL")]
+        public void PlineToFFL()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            PromptSelectionOptions pso = new PromptSelectionOptions();
+            pso.SingleOnly = true;
+            PromptSelectionResult psr = acDoc.Editor.GetSelection(pso);
+            if (psr.Status == PromptStatus.OK)
+            {
+                using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+                {
+                    //Get all model space drawing objects
+                    TypedValue[] tv = new TypedValue[1];
+                    tv.SetValue(new TypedValue(67, 0), 0);
+                    SelectionFilter sf = new SelectionFilter(tv);
+                    PromptSelectionResult allObjects = acDoc.Editor.SelectAll(sf);
+
+                    foreach (SelectedObject target in psr.Value)
+                    {
+                        DBObject targetobj = tr.GetObject(target.ObjectId, OpenMode.ForRead);                        
+                        if (targetobj is BlockReference)
+                        {
+                            BlockReference targetReference = targetobj as BlockReference;
+                            foreach (SelectedObject candidate in allObjects.Value)
+                            {
+                                DBObject obj = tr.GetObject(candidate.ObjectId, OpenMode.ForRead);
+                                if (obj is Polyline3d)
+                                {
+                                    Polyline3d pline3d = obj as Polyline3d;
+                                    foreach (ObjectId id in pline3d)
+                                    {
+                                        Point3d p3d = pline3d.GetPointAtDist(0);
+                                        if (targetReference.Position.X == p3d.X && targetReference.Position.Y == p3d.Y)
+                                        {
+                                            EditFFL.EditFFLValue(target.ObjectId, p3d.Z);
+                                        }
+                                }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

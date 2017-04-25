@@ -117,6 +117,28 @@ namespace JPPCommands
         public static bool EditFFLValue(ObjectId fflToEditId)
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
+            Editor acEditor = acDoc.Editor;
+
+            PromptDoubleResult promptFFLDouble = acEditor.GetDouble("\nEnter the new FFL: ");
+            if (promptFFLDouble.Status == PromptStatus.OK)
+            {
+                return EditFFLValue(fflToEditId, promptFFLDouble.Value);
+            }
+            else if (promptFFLDouble.Status == PromptStatus.Cancel)
+            {
+                acEditor.WriteMessage("\nEdit FFL cancelled.");
+                return false;
+            }
+            else
+            {
+                acEditor.WriteMessage("\nError entering new FFL.");
+                return false;
+            }
+        }
+
+        public static bool EditFFLValue(ObjectId fflToEditId, double targetFFL)
+        {
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
             Database acCurrDb = acDoc.Database;
             Editor acEditor = acDoc.Editor;
 
@@ -126,12 +148,11 @@ namespace JPPCommands
                 {
                     // Prompt user for new FFL
                     double? newFFL = 0.0;   // Declare here to ensure in scope for later
-                    PromptDoubleResult promptFFLDouble = acEditor.GetDouble("\nEnter the new FFL: ");
-                    if (promptFFLDouble.Status == PromptStatus.OK)
-                    {
+                    
+                    
                         BlockTable acBlkTbl = acTrans.GetObject(acCurrDb.BlockTableId, OpenMode.ForRead) as BlockTable;
                         BlockReference fflBlock = acTrans.GetObject(fflToEditId, OpenMode.ForRead) as BlockReference;
-                        BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[fflBlock.Name], 
+                        BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[fflBlock.Name],
                                                                             OpenMode.ForWrite) as BlockTableRecord;
                         if (acBlkTblRec == null)
                         {
@@ -146,7 +167,7 @@ namespace JPPCommands
                         }
 
                         // Iterate around the object collection to find the polyline to retrieve the current FFL value
-                        newFFL = promptFFLDouble.Value;
+                        newFFL = targetFFL;
                         double? fflDiff = 0.0;
                         foreach (ObjectId objId in acBlkTblRec)
                         {
@@ -158,7 +179,7 @@ namespace JPPCommands
                                 Polyline acPline = fflObj as Polyline;
 
                                 // Check the outline has an extension dictionary
-                                DBDictionary acExtDict = (DBDictionary)acTrans.GetObject(acPline.ExtensionDictionary, 
+                                DBDictionary acExtDict = (DBDictionary)acTrans.GetObject(acPline.ExtensionDictionary,
                                                                                                 OpenMode.ForRead);
                                 if (acExtDict == null)
                                 {
@@ -234,18 +255,7 @@ namespace JPPCommands
                         fflBlock.RecordGraphicsModified(true);
                         acTrans.Commit();
                         return true;
-                    }
-                    else if (promptFFLDouble.Status == PromptStatus.Cancel)
-                    {
-                        acEditor.WriteMessage("\nEdit FFL cancelled.");
-                        return false;
-                    }
-                    else
-                    {
-                        acEditor.WriteMessage("\nError entering new FFL.");
-                        return false;
 
-                    }
                 }
                 catch (Autodesk.AutoCAD.Runtime.Exception acException)
                 {
@@ -257,6 +267,7 @@ namespace JPPCommands
             }
             // return true;
         }
+
         public static ObjectIdCollection explodeFFL(BlockReference blockToExplode)
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
