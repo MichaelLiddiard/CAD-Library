@@ -107,6 +107,8 @@ namespace JPP.Civils
         [CommandMethod("PlineToFFL")]
         public void PlineToFFL()
         {
+            JPPCommandsInitialisation.JPPCommandsInitialise();
+
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
@@ -138,7 +140,7 @@ namespace JPP.Civils
                                     Point3d p3d = pline3d.GetPointAtDist(0);
                                     if (targetReference.Position.X == p3d.X && targetReference.Position.Y == p3d.Y)
                                     {
-                                        EditFFL.EditFFLValue(target.ObjectId, p3d.Z);
+                                        EditFFL.EditFFLValue(target.ObjectId, Math.Ceiling(p3d.Z*20)/20);
                                     }
                                 }
                             }

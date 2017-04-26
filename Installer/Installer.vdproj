@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_03544A1821EA1DD53BFB4C9DDB9179D4"
+        "OwnerKey" = "8:_A88D1F795FF5489D8096F55456048157"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_1624865D5919E2F90F80D297E870B1B7"
         "OwnerKey" = "8:_9FC932318AEF46B5B6FF9E66A3F6ADAE"
         "MsmSig" = "8:_UNDEFINED"
@@ -22,7 +28,7 @@
         "Entry"
         {
         "MsmKey" = "8:_1624865D5919E2F90F80D297E870B1B7"
-        "OwnerKey" = "8:_A98EF73FD3043A5B950CDD1152E3AA19"
+        "OwnerKey" = "8:_30EFE96A963717FCBA2F5B12CCCC54E2"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -52,6 +58,12 @@
         "Entry"
         {
         "MsmKey" = "8:_26C610A52CD250BB6453107E1330EBAD"
+        "OwnerKey" = "8:_A88D1F795FF5489D8096F55456048157"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_30EFE96A963717FCBA2F5B12CCCC54E2"
         "OwnerKey" = "8:_A88D1F795FF5489D8096F55456048157"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -88,7 +100,7 @@
         "Entry"
         {
         "MsmKey" = "8:_630AB1DC7D971916DE3FFC61707F90A0"
-        "OwnerKey" = "8:_A98EF73FD3043A5B950CDD1152E3AA19"
+        "OwnerKey" = "8:_30EFE96A963717FCBA2F5B12CCCC54E2"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -112,7 +124,13 @@
         "Entry"
         {
         "MsmKey" = "8:_64872FD0E266D5992A7EEFF176023716"
-        "OwnerKey" = "8:_A98EF73FD3043A5B950CDD1152E3AA19"
+        "OwnerKey" = "8:_30EFE96A963717FCBA2F5B12CCCC54E2"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_64872FD0E266D5992A7EEFF176023716"
+        "OwnerKey" = "8:_03544A1821EA1DD53BFB4C9DDB9179D4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -160,7 +178,13 @@
         "Entry"
         {
         "MsmKey" = "8:_74E7761EE2B8FF9A06712EF8E3C6BC79"
-        "OwnerKey" = "8:_A98EF73FD3043A5B950CDD1152E3AA19"
+        "OwnerKey" = "8:_30EFE96A963717FCBA2F5B12CCCC54E2"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_74E7761EE2B8FF9A06712EF8E3C6BC79"
+        "OwnerKey" = "8:_03544A1821EA1DD53BFB4C9DDB9179D4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -190,7 +214,7 @@
         "Entry"
         {
         "MsmKey" = "8:_8ADCE6138DCBC8C7C12D98B806A4D938"
-        "OwnerKey" = "8:_A98EF73FD3043A5B950CDD1152E3AA19"
+        "OwnerKey" = "8:_30EFE96A963717FCBA2F5B12CCCC54E2"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -243,12 +267,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_A98EF73FD3043A5B950CDD1152E3AA19"
-        "OwnerKey" = "8:_A88D1F795FF5489D8096F55456048157"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_EA77A89758D3CD5FDF91EE43972C35DA"
         "OwnerKey" = "8:_9FC932318AEF46B5B6FF9E66A3F6ADAE"
         "MsmSig" = "8:_UNDEFINED"
@@ -286,13 +304,19 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A88D1F795FF5489D8096F55456048157"
+        "OwnerKey" = "8:_30EFE96A963717FCBA2F5B12CCCC54E2"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A98EF73FD3043A5B950CDD1152E3AA19"
+        "OwnerKey" = "8:_03544A1821EA1DD53BFB4C9DDB9179D4"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_A88D1F795FF5489D8096F55456048157"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -444,6 +468,37 @@
         }
         "File"
         {
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_03544A1821EA1DD53BFB4C9DDB9179D4"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:JPPCommands, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_03544A1821EA1DD53BFB4C9DDB9179D4"
+                    {
+                    "Name" = "8:JPPCommands.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:JPPCommands.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_DC5DDED4DFCE4A49BD5620BD28ACC56A"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_1624865D5919E2F90F80D297E870B1B7"
             {
             "AssemblyRegister" = "3:1"
@@ -489,6 +544,37 @@
                     }
                 }
             "SourcePath" = "8:System.Net.Http.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_F8A01DBD25F149ADA5276639625FC2AB"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_30EFE96A963717FCBA2F5B12CCCC54E2"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:JPPCore, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_30EFE96A963717FCBA2F5B12CCCC54E2"
+                    {
+                    "Name" = "8:JPPCore.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:JPPCore.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_F8A01DBD25F149ADA5276639625FC2AB"
@@ -692,37 +778,6 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_A98EF73FD3043A5B950CDD1152E3AA19"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:JPPCore, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_A98EF73FD3043A5B950CDD1152E3AA19"
-                    {
-                    "Name" = "8:JPPCore.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:JPPCore.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_F8A01DBD25F149ADA5276639625FC2AB"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_EA77A89758D3CD5FDF91EE43972C35DA"
             {
             "AssemblyRegister" = "3:1"
@@ -854,48 +909,6 @@
             {
                 "Keys"
                 {
-                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_AB10D24AC01F4F9295F169D7DC3681A9"
-                    {
-                    "Name" = "8:Software"
-                    "Condition" = "8:"
-                    "AlwaysCreate" = "11:FALSE"
-                    "DeleteAtUninstall" = "11:FALSE"
-                    "Transitive" = "11:FALSE"
-                        "Keys"
-                        {
-                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_A59E5B6E688B4790A504B30E9B1C226D"
-                            {
-                            "Name" = "8:[Manufacturer]"
-                            "Condition" = "8:"
-                            "AlwaysCreate" = "11:FALSE"
-                            "DeleteAtUninstall" = "11:FALSE"
-                            "Transitive" = "11:FALSE"
-                                "Keys"
-                                {
-                                }
-                                "Values"
-                                {
-                                }
-                            }
-                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_EEBAC990DCAE4638883ACE46752A1E4A"
-                            {
-                            "Name" = "8:Autodesk"
-                            "Condition" = "8:"
-                            "AlwaysCreate" = "11:FALSE"
-                            "DeleteAtUninstall" = "11:FALSE"
-                            "Transitive" = "11:FALSE"
-                                "Keys"
-                                {
-                                }
-                                "Values"
-                                {
-                                }
-                            }
-                        }
-                        "Values"
-                        {
-                        }
-                    }
                 }
             }
             "HKCU"
@@ -1473,7 +1486,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9FC932318AEF46B5B6FF9E66A3F6ADAE"
             {
-            "SourcePath" = "8:..\\JPPCore\\obj\\Debug\\JPPCore.dll"
+            "SourcePath" = "8:\\\\WIN-ESSENTIALS\\Folder Redirection\\Michael\\Desktop\\GitHub\\CAD-Library\\JPPCore\\obj\\Debug\\JPPCore.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_F8A01DBD25F149ADA5276639625FC2AB"
@@ -1501,7 +1514,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_A88D1F795FF5489D8096F55456048157"
             {
-            "SourcePath" = "8:..\\Civils\\obj\\Debug\\Civils.dll"
+            "SourcePath" = "8:\\\\WIN-ESSENTIALS\\Folder Redirection\\Michael\\Desktop\\GitHub\\CAD-Library\\Civils\\obj\\Debug\\Civils.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_DC5DDED4DFCE4A49BD5620BD28ACC56A"
@@ -1529,7 +1542,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_FB203D7C771F4E0E9EF7B62D43EBC463"
             {
-            "SourcePath" = "8:..\\JPPCommands\\obj\\Debug\\JPPCommands.dll"
+            "SourcePath" = "8:\\\\WIN-ESSENTIALS\\Folder Redirection\\Michael\\Desktop\\GitHub\\CAD-Library\\JPPCommands\\obj\\Debug\\JPPCommands.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_DC5DDED4DFCE4A49BD5620BD28ACC56A"

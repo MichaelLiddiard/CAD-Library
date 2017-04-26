@@ -136,8 +136,8 @@ namespace JPP.Civils
             RibbonButton plineToFFLButton = new RibbonButton();
             plineToFFLButton.ShowText = true;
             plineToFFLButton.ShowImage = true;
-            plineToFFLButton.Text = "Level From PLine";
-            plineToFFLButton.Name = "Level From PLine";
+            plineToFFLButton.Text = "FFL From PLine";
+            plineToFFLButton.Name = "FFL From PLine";
             plineToFFLButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
             plineToFFLButton.CommandParameter = "._PlineToFFL ";
             //plineToFFLButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
@@ -216,12 +216,14 @@ namespace JPP.Civils
         [CommandMethod("NewFFL")]
         public static void NewFFL()
         {
+            JPPCommandsInitialisation.JPPCommandsInitialise();
             AddFFL.NewFFL();
         }
 
         [CommandMethod("EditFFL")]
         public static void EditFFL()
         {
+            JPPCommandsInitialisation.JPPCommandsInitialise();
             JPPCommands.EditFFL.EditFFLOrLevels();
         }
     }
