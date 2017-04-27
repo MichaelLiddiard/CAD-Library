@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace JPP.Civils.Properties {
+namespace JPP.Core.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace JPP.Civils.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("JPP.Civils.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("JPP.Core.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -63,9 +63,9 @@ namespace JPP.Civils.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap importXref {
+        internal static System.Drawing.Bitmap Locked {
             get {
-                object obj = ResourceManager.GetObject("importXref", resourceCulture);
+                object obj = ResourceManager.GetObject("Locked", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -73,29 +73,9 @@ namespace JPP.Civils.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pipeAnnotate_small {
+        internal static System.Drawing.Bitmap UnLocked {
             get {
-                object obj = ResourceManager.GetObject("pipeAnnotate_small", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap pipeIcon {
-            get {
-                object obj = ResourceManager.GetObject("pipeIcon", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap pipeIcon_small {
-            get {
-                object obj = ResourceManager.GetObject("pipeIcon_small", resourceCulture);
+                object obj = ResourceManager.GetObject("UnLocked", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

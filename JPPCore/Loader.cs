@@ -17,6 +17,9 @@ using Autodesk.AutoCAD.DatabaseServices;
 
 namespace JPP.Core
 {
+    /// <summary>
+    /// Loader class, the main entry point for the full application suite. Implements IExtensionApplication is it automatically initialised and terminated by AutoCad.
+    /// </summary>
     public class Loader : IExtensionApplication
     {
         /// <summary>
@@ -24,23 +27,23 @@ namespace JPP.Core
         /// </summary>
         public void Initialize()
         {
-#if DEBUG
-            //Application.ShowAlertDialog("Init called");
-#endif
+            //Detect if ribbon is currently loaded, and if not wait until the application is Idle.
             if (ComponentManager.Ribbon == null)
             {
                 Application.Idle += Application_Idle;
-                //ComponentManager.ItemInitialized += ComponentManager_ItemInitialized;
             }
             else
             {
-                InitJPP(); //Removed as menu causes a crash for some reason
+                //Ribbon existis, call the initialize methods
+                InitJPP(); 
             }
         }
 
         private void Application_Idle(object sender, EventArgs e)
         {
+            //Unhook the event handler
             Application.Idle -= Application_Idle;
+            //Call the initialize method
             InitJPP();
         }
 
@@ -60,46 +63,43 @@ namespace JPP.Core
         /// </summary>
         public void Terminate()
         {
-            throw new NotImplementedException();
+            //No specific termination code required as of yet
         }
-
-        [CommandMethod("LoadJPP")]
-        public static void Load()
+                
+        private static void Load()
         {
             List<string> allAssemblies = new List<string>();
             string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
 
-            foreach (string dll in Directory.GetFiles(path, "*.dll"))
+            if (Authentication.Current.Authenticated())
             {
-                string dllPath = dll.Replace('\\', '/');
-                //Application.DocumentManager.MdiActiveDocument.SendStringToExecute("command \"NETLOAD\" \"" + dllPath + "\"", true, false, false);
-                /*ResultBuffer args = new ResultBuffer(
-                new TypedValue((int)LispDataType.Text, "command"),
-                new TypedValue((int)LispDataType.Text, "NETLOAD"),
-                new TypedValue((int)LispDataType.Text, dllPath));
-                Application.Invoke(args);
-                //Assembly loaded = Assembly.LoadFrom(dll);*/
-                ExtensionLoader.Load(dll);                
-            }            
+                //Iterate over every dll found in bin folder
+                foreach (string dll in Directory.GetFiles(path, "*.dll"))
+                {
+                    string dllPath = dll.Replace('\\', '/');
+                    //Load the additional libraries found
+                    ExtensionLoader.Load(dll);
+                }
+            }           
         }
 
         [CommandMethod("Update")]
         public static void Update()
-        {
-            string archivePath = "M:\\ML\\CAD-Library\\Libraries-v";
-
-            //Get manifest
+        {          
+            string archivePath;
+            //Get manifest fiel from known location
             using (TextReader tr = File.OpenText("M:\\ML\\CAD-Library\\manifest.txt"))
             {
-                archivePath = archivePath + tr.ReadToEnd() + ".zip";
+                //Currently manifest file contians version of zip file to pull data from
+                archivePath = Constants.ArchivePath + tr.ReadToEnd() + ".zip";
             }
 
-            //Download the latest DLL update
+            //Download the latest resources update
             try
             {
                 ZipArchive archive = ZipFile.OpenRead(archivePath);
                 
-                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
+                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\update";
                 if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
@@ -120,27 +120,46 @@ namespace JPP.Core
         [CommandMethod("InitJPP")]
         public static void InitJPP()
         {
+            //Check current folder for zip file waiting to be applied
+
+            //Create the UI
             RibbonTab JPPTab = CreateTab();
 
             RibbonPanel Panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
-            source.Title = "Common";
+            source.Title = "Main";
 
-            //Add button to re load all JPP libraries
+            RibbonRowPanel stack = new RibbonRowPanel();
+
+            RibbonButton authenticateButton = new RibbonButton();
+            authenticateButton.ShowText = true;
+            authenticateButton.ShowImage = true;
+            authenticateButton.Text = "Authenticate";
+            authenticateButton.Name = "Authenticate";
+            /*authenticateButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
+            authenticateButton.CommandParameter = "._LayPipe ";                    */
+            authenticateButton.Image = Core.Utilities.LoadImage(JPP.Core.Properties.Resources.Locked);
+            authenticateButton.Size = RibbonItemSize.Standard;
+            stack.Items.Add(authenticateButton);
+            stack.Items.Add(new RibbonRowBreak());
+
+            //Add button to update all JPP libraries
             RibbonButton runLoad = new RibbonButton();
             runLoad.ShowText = true;
             runLoad.Text = "Update";
             runLoad.Name = "Check for updates";
             runLoad.CommandHandler = new RibbonCommandHandler();
             runLoad.CommandParameter = "._Update ";
-            source.Items.Add(runLoad);
+#if DEBUG
+            runLoad.IsEnabled = false;
+#endif
+            stack.Items.Add(runLoad);
+            source.Items.Add(stack);
 
-            //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
 
-            Update();
             Load();
         }
 
