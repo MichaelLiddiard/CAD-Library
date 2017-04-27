@@ -11,6 +11,8 @@ Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Installer", "Installer\Inst
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JPPCommands", "JPPCommands\JPPCommands.csproj", "{529333E4-59DB-4D8D-BFF5-B0F929B7B64F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Structures", "Structures\Structures.csproj", "{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,14 @@ Global
 		{529333E4-59DB-4D8D-BFF5-B0F929B7B64F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{529333E4-59DB-4D8D-BFF5-B0F929B7B64F}.Release|x64.ActiveCfg = Release|Any CPU
 		{529333E4-59DB-4D8D-BFF5-B0F929B7B64F}.Release|x64.Build.0 = Release|Any CPU
+		{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}.Debug|x64.Build.0 = Debug|Any CPU
+		{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}.Release|x64.ActiveCfg = Release|Any CPU
+		{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
