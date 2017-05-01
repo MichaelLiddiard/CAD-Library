@@ -28,38 +28,61 @@ namespace JPP.Structures
             {
                 using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
                 {
-                    // Open the Block table for read
-                    BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-
-                    // Open the Block table record Model space for write
-                    BlockTableRecord acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-
+                    List<Curve> centreLines = new List<Curve>();
                     foreach (SelectedObject so in psr.Value)
                     {
                         DBObject obj = tr.GetObject(so.ObjectId, OpenMode.ForRead);
 
-                        if(obj is Curve)
+                        if (obj is Curve)
                         {
                             Curve c = obj as Curve;
-                            DBObjectCollection offsets = c.GetOffsetCurves(0.225);
-                            DBObjectCollection offsets2 = c.GetOffsetCurves(-0.225);
-                            foreach (Entity e in offsets)
-                            {
-                                acBlkTblRec.AppendEntity(e);
-                                tr.AddNewlyCreatedDBObject(e, true);
-                            }
-                            foreach (Entity e in offsets2)
-                            {
-                                acBlkTblRec.AppendEntity(e);
-                                tr.AddNewlyCreatedDBObject(e, true);
-                            }
+                            centreLines.Add(c);
                         }
                     }
+                    GenerateFoundation(centreLines);
 
                     tr.Commit();
                 }
             }
         }
+
+        public static List<Curve> GenerateFoundation(List<Curve> centreLines)
+        {
+            List<Curve> edgeLines = new List<Curve>();
+
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                // Open the Block table for read
+                BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                // Open the Block table record Model space for write
+                BlockTableRecord acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                foreach (Curve c in centreLines)
+                {
+                    DBObjectCollection offsets = c.GetOffsetCurves(0.225);
+                    DBObjectCollection offsets2 = c.GetOffsetCurves(-0.225);
+                    foreach (Entity e in offsets)
+                    {
+                        acBlkTblRec.AppendEntity(e);
+                        tr.AddNewlyCreatedDBObject(e, true);                        
+                        edgeLines.Add(e as Curve);
+                    }
+                    foreach (Entity e in offsets2)
+                    {
+                        acBlkTblRec.AppendEntity(e);
+                        tr.AddNewlyCreatedDBObject(e, true);
+                        edgeLines.Add(e as Curve);
+                    }
+                }
+                tr.Commit();
+            }
+            return edgeLines;
+        }
+    
 
         [CommandMethod("SplitFound")]
         public static void SplitFoundation()
@@ -94,16 +117,17 @@ namespace JPP.Structures
                     }
 
                     DBObjectCollection remove = new DBObjectCollection();
+                    List<Curve> centreLines = new List<Curve>();
 
-                    foreach(Curve c in allLines)
+                    foreach (Curve c in allLines)
                     {
                         Point3dCollection points = new Point3dCollection();
 
                         foreach (Curve target in allLines)
                         {
                             Point3dCollection pointsAppend = new Point3dCollection();
-                            c.IntersectWith(target, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);      
-                            foreach(Point3d p3d in pointsAppend)
+                            c.IntersectWith(target, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
+                            foreach (Point3d p3d in pointsAppend)
                             {
                                 points.Add(p3d);
                             }
@@ -112,26 +136,29 @@ namespace JPP.Structures
                         if (points.Count > 0)
                         {
                             List<double> splitPoints = new List<double>();
-                            foreach(Point3d p3d in points)
+                            foreach (Point3d p3d in points)
                             {
                                 splitPoints.Add(c.GetParameterAtPoint(p3d));
                             }
                             splitPoints.Sort();
-                            DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());                            
+                            DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());
                             DBObjectCollection split = c.GetSplitCurves(acadSplitPoints);
                             foreach (Entity e in split)
                             {
                                 acBlkTblRec.AppendEntity(e);
-                                tr.AddNewlyCreatedDBObject(e, true);                                
+                                tr.AddNewlyCreatedDBObject(e, true);
+                                centreLines.Add(e as Curve);
                             }
                             remove.Add(c);
                         }
                     }
-                    
-                    foreach(DBObject obj in remove)
+
+                    foreach (DBObject obj in remove)
                     {
                         obj.Erase();
-                    }                     
+                    }
+
+                    TrimFoundation(GenerateFoundation(centreLines));
 
                     tr.Commit();
                 }
@@ -140,7 +167,7 @@ namespace JPP.Structures
 
         [CommandMethod("TrimFound")]
         public static void TrimFoundation()
-        {
+        {           
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
@@ -169,154 +196,178 @@ namespace JPP.Structures
                             allLines.Add(c);
                         }
                     }
-
-                    DBObjectCollection remove = new DBObjectCollection();
-                    List<Curve> perimeters = new List<Curve>();
-
-                    foreach (Curve c in allLines)
-                    {
-                        Point3dCollection points = new Point3dCollection();
-
-                        foreach (Curve target in allLines)
-                        {
-                            Point3dCollection pointsAppend = new Point3dCollection();
-                            c.IntersectWith(target, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
-                            foreach (Point3d p3d in pointsAppend)
-                            {
-                                points.Add(p3d);
-                            }
-                        }
-
-                        if (points.Count == 2)
-                        {
-                            List<double> splitPoints = new List<double>();
-                            foreach (Point3d p3d in points)
-                            {
-                                //splitPoints.Add(c.GetParameterAtPoint(p3d));
-                                splitPoints.Add(c.GetParameterAtPoint(p3d));
-                            }
-                            splitPoints.Sort();
-                            DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());
-                            DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
-                            acBlkTblRec.AppendEntity(remnant[1] as Entity);
-                            tr.AddNewlyCreatedDBObject(remnant[1] as Entity, true);
-                            remove.Add(c);
-                        }
-
-                        if (points.Count == 1)
-                        {
-                            List<double> splitPoints = new List<double>();
-                            foreach (Point3d p3d in points)
-                            {
-                                //splitPoints.Add(c.GetParameterAtPoint(p3d));
-                                splitPoints.Add(c.GetParameterAtPoint(p3d));
-                            }
-                            splitPoints.Sort();
-                            DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());
-
-                            foreach (double d in acadSplitPoints)
-                            {
-                                double percent = c.GetDistanceAtParameter(d) / c.GetDistanceAtParameter(c.EndParam);
-                                if (percent < 0.5 && percent > 0)
-                                {
-                                    DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
-                                    acBlkTblRec.AppendEntity(remnant[1] as Entity);
-                                    tr.AddNewlyCreatedDBObject(remnant[1] as Entity, true);
-                                    remove.Add(c);
-                                }
-                                if (percent < 1 && percent >= 0.5)
-                                {
-                                    DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
-                                    acBlkTblRec.AppendEntity(remnant[0] as Entity);
-                                    tr.AddNewlyCreatedDBObject(remnant[0] as Entity, true);
-                                    remove.Add(c);
-                                }
-                            }
-                        }
-                        if (points.Count == 0)
-                        {
-                            perimeters.Add(c);
-                        }
-                    }
-
-                    //Iterate over the perimeter lines
-                    foreach (Curve c in perimeters)
-                    {
-                        Point3dCollection points = new Point3dCollection();
-
-                        foreach (Curve target in perimeters)
-                        {
-                            Point3dCollection pointsAppend = new Point3dCollection();
-                            c.IntersectWith(target, Intersect.ExtendBoth, points, IntPtr.Zero, IntPtr.Zero);
-                            foreach (Point3d p3d in pointsAppend)
-                            {
-                                points.Add(p3d);
-                            }
-                        }
-
-                        Vector3d newEnd = new Vector3d();
-                        Vector3d newStart = new Vector3d();
-                        double endDelta = Double.PositiveInfinity;
-                        double startDelta = Double.PositiveInfinity;
-
-
-                        foreach (Point3d p3d in points)
-                        {
-                            Line start = new Line(c.StartPoint, p3d);
-                            Line end = new Line(c.EndPoint, p3d);
-
-                            //Can only affect either end or start based on closest
-                            if (start.Delta.LengthSqrd < end.Delta.LengthSqrd)
-                            {
-                                if (start.Delta.LengthSqrd < startDelta)
-                                {
-                                    startDelta = start.Delta.LengthSqrd;
-                                    newStart = start.Delta;
-                                }
-                            }
-                            else
-                            {
-                                if (end.Delta.LengthSqrd < endDelta)
-                                {
-                                    endDelta = end.Delta.LengthSqrd;
-                                    newEnd = end.Delta;
-                                }
-                            }
-                        }
-
-                        //Check to see if lines meet at same point
-                        foreach (Curve target in perimeters)
-                        {
-                            //Avoid self
-                            if (target.ObjectId != c.ObjectId)
-                            {
-
-                                if (target.EndPoint == c.EndPoint || target.StartPoint == c.EndPoint)
-                                {
-                                    newEnd = new Vector3d();
-                                }
-                                if (target.EndPoint == c.StartPoint || target.StartPoint == c.StartPoint)
-                                {
-                                    newStart = new Vector3d();
-                                }
-                            } else
-                            {
-                                int i = 0;
-                            }
-                        }
-                        
-                        c.StartPoint = c.StartPoint + newStart;
-                        c.EndPoint = c.EndPoint + newEnd;
-                    }
-
-                    foreach (DBObject obj in remove)
-                    {
-                        obj.Erase();
-                    }
+                    TrimFoundation(allLines);
 
                     tr.Commit();
                 }
             }
+        }
+
+        public static List<Curve> TrimFoundation(List<Curve> allLines)
+        {
+            List<Curve> output = new List<Curve>();
+
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            DBObjectCollection remove = new DBObjectCollection();
+            List<Curve> perimeters = new List<Curve>();
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                // Open the Block table for read
+                BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                // Open the Block table record Model space for write
+                BlockTableRecord acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                foreach (Curve c in allLines)
+                {
+                    Point3dCollection points = new Point3dCollection();
+
+                    foreach (Curve target in allLines)
+                    {
+                        Point3dCollection pointsAppend = new Point3dCollection();
+                        c.IntersectWith(target, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
+                        foreach (Point3d p3d in pointsAppend)
+                        {
+                            points.Add(p3d);
+                        }
+                    }
+
+                    if (points.Count == 2)
+                    {
+                        List<double> splitPoints = new List<double>();
+                        foreach (Point3d p3d in points)
+                        {
+                            //splitPoints.Add(c.GetParameterAtPoint(p3d));
+                            splitPoints.Add(c.GetParameterAtPoint(p3d));
+                        }
+                        splitPoints.Sort();
+                        DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());
+                        DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
+                        acBlkTblRec.AppendEntity(remnant[1] as Entity);
+                        tr.AddNewlyCreatedDBObject(remnant[1] as Entity, true);
+                        remove.Add(c);
+                    }
+
+                    if (points.Count == 1)
+                    {
+                        List<double> splitPoints = new List<double>();
+                        foreach (Point3d p3d in points)
+                        {
+                            //splitPoints.Add(c.GetParameterAtPoint(p3d));
+                            splitPoints.Add(c.GetParameterAtPoint(p3d));
+                        }
+                        splitPoints.Sort();
+                        DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());
+
+                        foreach (double d in acadSplitPoints)
+                        {
+                            double percent = c.GetDistanceAtParameter(d) / c.GetDistanceAtParameter(c.EndParam);
+                            if (percent < 0.5 && percent > 0)
+                            {
+                                DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
+                                acBlkTblRec.AppendEntity(remnant[1] as Entity);
+                                tr.AddNewlyCreatedDBObject(remnant[1] as Entity, true);
+                                remove.Add(c);
+                            }
+                            if (percent < 1 && percent >= 0.5)
+                            {
+                                DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
+                                acBlkTblRec.AppendEntity(remnant[0] as Entity);
+                                tr.AddNewlyCreatedDBObject(remnant[0] as Entity, true);
+                                remove.Add(c);
+                            }
+                        }
+                    }
+                    if (points.Count == 0)
+                    {
+                        perimeters.Add(c);
+                    }
+                }
+
+                //Iterate over the perimeter lines
+                foreach (Curve c in perimeters)
+                {
+                    Point3dCollection points = new Point3dCollection();
+
+                    foreach (Curve target in perimeters)
+                    {
+                        Point3dCollection pointsAppend = new Point3dCollection();
+                        c.IntersectWith(target, Intersect.ExtendBoth, points, IntPtr.Zero, IntPtr.Zero);
+                        foreach (Point3d p3d in pointsAppend)
+                        {
+                            points.Add(p3d);
+                        }
+                    }
+
+                    Vector3d newEnd = new Vector3d();
+                    Vector3d newStart = new Vector3d();
+                    double endDelta = Double.PositiveInfinity;
+                    double startDelta = Double.PositiveInfinity;
+
+
+                    foreach (Point3d p3d in points)
+                    {
+                        Line start = new Line(c.StartPoint, p3d);
+                        Line end = new Line(c.EndPoint, p3d);
+
+                        //Can only affect either end or start based on closest
+                        if (start.Delta.LengthSqrd < end.Delta.LengthSqrd)
+                        {
+                            if (start.Delta.LengthSqrd < startDelta)
+                            {
+                                startDelta = start.Delta.LengthSqrd;
+                                newStart = start.Delta;
+                            }
+                        }
+                        else
+                        {
+                            if (end.Delta.LengthSqrd < endDelta)
+                            {
+                                endDelta = end.Delta.LengthSqrd;
+                                newEnd = end.Delta;
+                            }
+                        }
+                    }
+
+                    //Check to see if lines meet at same point
+                    foreach (Curve target in perimeters)
+                    {
+                        //Avoid self
+                        if (target.ObjectId != c.ObjectId)
+                        {
+
+                            if (target.EndPoint == c.EndPoint || target.StartPoint == c.EndPoint)
+                            {
+                                newEnd = new Vector3d();
+                            }
+                            if (target.EndPoint == c.StartPoint || target.StartPoint == c.StartPoint)
+                            {
+                                newStart = new Vector3d();
+                            }
+                        } else
+                        {
+                            int i = 0;
+                        }
+                    }
+
+                    c.StartPoint = c.StartPoint + newStart;
+                    c.EndPoint = c.EndPoint + newEnd;
+
+                    output.Add(c);
+                }
+
+                foreach (DBObject obj in remove)
+                {
+                    obj.Erase();
+                }
+
+                tr.Commit();
+            }
+
+            return output;
         }
     }
 }
