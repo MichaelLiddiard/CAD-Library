@@ -68,7 +68,7 @@ namespace JPP.Structures
                     foreach (Entity e in offsets)
                     {
                         acBlkTblRec.AppendEntity(e);
-                        tr.AddNewlyCreatedDBObject(e, true);                        
+                        tr.AddNewlyCreatedDBObject(e, true);
                         edgeLines.Add(e as Curve);
                     }
                     foreach (Entity e in offsets2)
@@ -82,7 +82,7 @@ namespace JPP.Structures
             }
             return edgeLines;
         }
-    
+
 
         [CommandMethod("SplitFound")]
         public static void SplitFoundation()
@@ -159,6 +159,7 @@ namespace JPP.Structures
                     }
 
                     TrimFoundation(GenerateFoundation(centreLines));
+                    TagFoundations(centreLines);
 
                     tr.Commit();
                 }
@@ -167,7 +168,7 @@ namespace JPP.Structures
 
         [CommandMethod("TrimFound")]
         public static void TrimFoundation()
-        {           
+        {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
@@ -368,6 +369,50 @@ namespace JPP.Structures
             }
 
             return output;
+        }
+
+        public static void TagFoundations(List<Curve> lines)
+        {
+            Database acCurDb;
+            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+
+            using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+            {
+                // Open the Block table for read
+                BlockTable acBlkTbl;
+                acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                ObjectId blkRecId = ObjectId.Null;
+
+                if (!acBlkTbl.Has("FormationTag"))
+                {
+                    Main.LoadBlocks();
+                }
+
+                foreach (Curve c in lines)
+                {
+                    Matrix3d curUCSMatrix = Application.DocumentManager.MdiActiveDocument.Editor.CurrentUserCoordinateSystem;
+                    CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
+
+                    //Get lable point
+                    Point3d labelPoint3d = c.GetPointAtDist(c.GetDistanceAtParameter(c.EndParam) / 2);
+                    Point3d labelPoint = new Point3d(labelPoint3d.X, labelPoint3d.Y, 0);
+
+                    // Insert the block into the current space
+                    using (BlockReference acBlkRef = new BlockReference(labelPoint, acBlkTbl["FormationTag"]))
+                    {
+                        acBlkRef.TransformBy(Matrix3d.Rotation(0, curUCS.Zaxis, labelPoint));
+
+                        BlockTableRecord acCurSpaceBlkTblRec;
+                        acCurSpaceBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+
+                        acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                        acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
+                    }
+                }
+
+                acTrans.Commit();
+            }
         }
     }
 }
