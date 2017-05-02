@@ -3,6 +3,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using JPP.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,58 @@ namespace JPP.Structures
 {
     public class Foundation
     {
+        [CommandMethod("CreateFoundation")]
+        public static void CreateFoundation()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            PromptSelectionOptions pso = new PromptSelectionOptions();
+            pso.SingleOnly = true;
+            PromptSelectionResult psr = acDoc.Editor.GetSelection(pso);
+
+
+            Plot newPlot = new Plot();
+            List<Curve> allLines = new List<Curve>();
+
+            if (psr.Status == PromptStatus.OK)
+            {
+                using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+                {
+                    foreach (SelectedObject so in psr.Value)
+                    {
+                        DBObject obj = tr.GetObject(so.ObjectId, OpenMode.ForRead);
+
+                        if (obj is Curve)
+                        {
+                            Curve c = obj as Curve;
+                            c.UpgradeOpen();
+                            allLines.Add(c);
+                        }
+                    }
+
+                    var centreLines = SplitFoundation(allLines);
+                    TrimFoundation(GenerateFoundation(centreLines));
+                    TagFoundations(centreLines);
+
+                    foreach (Entity e in centreLines)
+                    {
+                        newPlot.WallSegments.Add(newPlot.WallSegments.Count.ToString(), e.ObjectId);
+                    }
+
+                    tr.Commit();
+                }
+            }
+
+            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot name: ");
+            pStrOpts.AllowSpaces = true;
+            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
+
+            newPlot.PlotName = pStrRes.StringResult;
+
+            DocumentStore.Current.Plots.Add(pStrRes.StringResult, newPlot);
+        }
+
         [CommandMethod("GenFound")]
         public static void GenerateFoundation()
         {
@@ -93,17 +146,13 @@ namespace JPP.Structures
             PromptSelectionOptions pso = new PromptSelectionOptions();
             pso.SingleOnly = true;
             PromptSelectionResult psr = acDoc.Editor.GetSelection(pso);
+
+            List<Curve> allLines = new List<Curve>();
+
             if (psr.Status == PromptStatus.OK)
             {
                 using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
                 {
-                    // Open the Block table for read
-                    BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-
-                    // Open the Block table record Model space for write
-                    BlockTableRecord acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                    List<Curve> allLines = new List<Curve>();
-
                     foreach (SelectedObject so in psr.Value)
                     {
                         DBObject obj = tr.GetObject(so.ObjectId, OpenMode.ForRead);
@@ -115,55 +164,72 @@ namespace JPP.Structures
                             allLines.Add(c);
                         }
                     }
-
-                    DBObjectCollection remove = new DBObjectCollection();
-                    List<Curve> centreLines = new List<Curve>();
-
-                    foreach (Curve c in allLines)
-                    {
-                        Point3dCollection points = new Point3dCollection();
-
-                        foreach (Curve target in allLines)
-                        {
-                            Point3dCollection pointsAppend = new Point3dCollection();
-                            c.IntersectWith(target, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
-                            foreach (Point3d p3d in pointsAppend)
-                            {
-                                points.Add(p3d);
-                            }
-                        }
-
-                        if (points.Count > 0)
-                        {
-                            List<double> splitPoints = new List<double>();
-                            foreach (Point3d p3d in points)
-                            {
-                                splitPoints.Add(c.GetParameterAtPoint(p3d));
-                            }
-                            splitPoints.Sort();
-                            DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());
-                            DBObjectCollection split = c.GetSplitCurves(acadSplitPoints);
-                            foreach (Entity e in split)
-                            {
-                                acBlkTblRec.AppendEntity(e);
-                                tr.AddNewlyCreatedDBObject(e, true);
-                                centreLines.Add(e as Curve);
-                            }
-                            remove.Add(c);
-                        }
-                    }
-
-                    foreach (DBObject obj in remove)
-                    {
-                        obj.Erase();
-                    }
-
-                    TrimFoundation(GenerateFoundation(centreLines));
-                    TagFoundations(centreLines);
-
                     tr.Commit();
                 }
             }
+        }
+
+        public static List<Curve> SplitFoundation(List<Curve> allLines)
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+            List<Curve> centreLines = new List<Curve>();
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                // Open the Block table for read
+                BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                // Open the Block table record Model space for write
+                BlockTableRecord acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                DBObjectCollection remove = new DBObjectCollection();
+                
+
+                foreach (Curve c in allLines)
+                {
+                    Point3dCollection points = new Point3dCollection();
+
+                    foreach (Curve target in allLines)
+                    {
+                        Point3dCollection pointsAppend = new Point3dCollection();
+                        c.IntersectWith(target, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
+                        foreach (Point3d p3d in pointsAppend)
+                        {
+                            points.Add(p3d);
+                        }
+                    }
+
+                    if (points.Count > 0)
+                    {
+                        List<double> splitPoints = new List<double>();
+                        foreach (Point3d p3d in points)
+                        {
+                            splitPoints.Add(c.GetParameterAtPoint(p3d));
+                        }
+                        splitPoints.Sort();
+                        DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());
+                        DBObjectCollection split = c.GetSplitCurves(acadSplitPoints);
+                        foreach (Entity e in split)
+                        {
+                            acBlkTblRec.AppendEntity(e);
+                            tr.AddNewlyCreatedDBObject(e, true);
+                            centreLines.Add(e as Curve);
+                        }
+                        remove.Add(c);
+                    }
+                }
+
+                foreach (DBObject obj in remove)
+                {
+                    obj.Erase();
+                }
+
+                tr.Commit();
+
+            }
+
+            return centreLines;
         }
 
         [CommandMethod("TrimFound")]
