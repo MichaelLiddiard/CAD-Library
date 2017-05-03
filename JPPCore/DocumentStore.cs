@@ -34,6 +34,7 @@ namespace JPP.Core
 
             //Attach to current doc
             acDoc.BeginDocumentClose += AcDoc_BeginDocumentClose;
+            acDoc.Database.BeginSave += Database_BeginSave;
 
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
@@ -58,6 +59,11 @@ namespace JPP.Core
 
                 tr.Commit();
             }
+        }
+
+        private void Database_BeginSave(object sender, DatabaseIOEventArgs e)
+        {
+            Save();
         }
 
         private void AcDoc_BeginDocumentClose(object sender, DocumentBeginCloseEventArgs e)

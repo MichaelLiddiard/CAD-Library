@@ -64,14 +64,14 @@ namespace JPP.Structures
                     TrimFoundation(GenerateFoundation(centreLines));
                     //TagFoundations(centreLines, newPlot);
 
-                    acDoc.SendStringToExecute("ATTSYNC N FormationTag\n", false, false, false);
-
                     foreach (Entity e in centreLines)
                     {
                         newPlot.WallSegments.Add(newPlot.WallSegments.Count.ToString(), new WallSegment(newPlot.WallSegments.Count.ToString(), newPlot, e.ObjectId));
                     }
 
                     newPlot.Generate();
+
+                    acDoc.SendStringToExecute("ATTSYNC N FormationTag\n", false, false, false);
 
                     tr.Commit();
                 }

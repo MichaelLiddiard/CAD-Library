@@ -110,7 +110,7 @@ namespace JPP.Core
                 AttributeCollection attCol = acBlkRef.AttributeCollection;
                 foreach (ObjectId attId in attCol)
                 {
-                    AttributeReference att = tr.GetObject(attId, OpenMode.ForRead, false) as AttributeReference;
+                    AttributeReference att = tr.GetObject(attId, OpenMode.ForRead) as AttributeReference;
                     if (att.Tag == "LEVEL")
                     {
                         att.UpgradeOpen();
@@ -145,6 +145,8 @@ namespace JPP.Core
             Point3d labelPoint3d = c.GetPointAtDist(c.GetDistanceAtParameter(c.EndParam) / 2);
             Point3d labelPoint = new Point3d(labelPoint3d.X, labelPoint3d.Y, 0);
 
+            BlockTableRecord blockDef = acBlkTbl["FormationTag"].GetObject(OpenMode.ForRead) as BlockTableRecord;
+
             // Insert the block into the current space
             using (BlockReference acBlkRef = new BlockReference(labelPoint, acBlkTbl["FormationTag"]))
             {
@@ -168,9 +170,28 @@ namespace JPP.Core
                 acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
                 acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
 
+                // AttributeDefinitions
+                foreach (ObjectId id in blockDef)
+                {
+                    DBObject obj = id.GetObject(OpenMode.ForRead);
+                    AttributeDefinition attDef = obj as AttributeDefinition;
+                    if ((attDef != null) && (!attDef.Constant))
+                    {
+                        //This is a non-constant AttributeDefinition
+                        //Create a new AttributeReference
+                        using (AttributeReference attRef = new AttributeReference())
+                        {
+                            attRef.SetAttributeFromBlock(attDef, acBlkRef.BlockTransform);
+                            attRef.TextString = Parent.FormationLevel.ToString();
+                            //Add the AttributeReference to the BlockReference
+                            acBlkRef.AttributeCollection.AppendAttribute(attRef);
+                            acTrans.AddNewlyCreatedDBObject(attRef, true);
+                        }
+                    }
+                }
+
                 FormationTagId = acBlkRef.ObjectId;
             }
-
 
             acCurDb.Clayer = current;
         }
