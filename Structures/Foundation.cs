@@ -52,7 +52,7 @@ namespace JPP.Structures
 
                     foreach (Entity e in centreLines)
                     {
-                        newPlot.WallSegments.Add(newPlot.WallSegments.Count.ToString(), e.ObjectId);
+                        newPlot.AddWall(newPlot.WallSegments.Count.ToString(), e.ObjectId);
                     }
 
                     tr.Commit();
@@ -278,7 +278,7 @@ namespace JPP.Structures
             Database acCurDb = acDoc.Database;
 
             DBObjectCollection remove = new DBObjectCollection();
-            List<Curve> perimeters = new List<Curve>();
+            List<Curve> perimeters = new List<Curve>();            
 
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
@@ -315,6 +315,7 @@ namespace JPP.Structures
                         DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
                         acBlkTblRec.AppendEntity(remnant[1] as Entity);
                         tr.AddNewlyCreatedDBObject(remnant[1] as Entity, true);
+                        output.Add(remnant[1] as Curve);
                         remove.Add(c);
                     }
 
@@ -337,6 +338,8 @@ namespace JPP.Structures
                                 DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
                                 acBlkTblRec.AppendEntity(remnant[1] as Entity);
                                 tr.AddNewlyCreatedDBObject(remnant[1] as Entity, true);
+                                perimeters.Add(remnant[1] as Curve);
+                                output.Add(remnant[1] as Curve);
                                 remove.Add(c);
                             }
                             if (percent < 1 && percent >= 0.5)
@@ -344,6 +347,8 @@ namespace JPP.Structures
                                 DBObjectCollection remnant = c.GetSplitCurves(acadSplitPoints);
                                 acBlkTblRec.AppendEntity(remnant[0] as Entity);
                                 tr.AddNewlyCreatedDBObject(remnant[0] as Entity, true);
+                                perimeters.Add(remnant[0] as Curve);
+                                output.Add(remnant[0] as Curve);
                                 remove.Add(c);
                             }
                         }
@@ -353,6 +358,14 @@ namespace JPP.Structures
                         perimeters.Add(c);
                     }
                 }
+
+                foreach (DBObject obj in remove)
+                {
+                    obj.Erase();
+                }
+
+                List<Curve> complete = output;
+                complete.AddRange(perimeters);
 
                 //Iterate over the perimeter lines
                 foreach (Curve c in perimeters)
@@ -400,7 +413,7 @@ namespace JPP.Structures
                     }
 
                     //Check to see if lines meet at same point
-                    foreach (Curve target in perimeters)
+                    foreach (Curve target in complete)
                     {
                         //Avoid self
                         if (target.ObjectId != c.ObjectId)
@@ -424,12 +437,7 @@ namespace JPP.Structures
                     c.EndPoint = c.EndPoint + newEnd;
 
                     output.Add(c);
-                }
-
-                foreach (DBObject obj in remove)
-                {
-                    obj.Erase();
-                }
+                }               
 
                 tr.Commit();
             }
@@ -441,6 +449,7 @@ namespace JPP.Structures
         {
             Database acCurDb;
             acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+            ObjectContextCollection occ = acCurDb.ObjectContextManager.GetContextCollection("ACDB_ANNOTATIONSCALES");
 
             using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
             {
@@ -468,6 +477,7 @@ namespace JPP.Structures
                     using (BlockReference acBlkRef = new BlockReference(labelPoint, acBlkTbl["FormationTag"]))
                     {
                         acBlkRef.TransformBy(Matrix3d.Rotation(0, curUCS.Zaxis, labelPoint));
+                        acBlkRef.AddContext(occ.GetContext("10:1"));
 
                         BlockTableRecord acCurSpaceBlkTblRec;
                         acCurSpaceBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;

@@ -10,8 +10,23 @@ namespace JPP.Core
     [Serializable]
     public class Plot
     {
-        public Dictionary<string, ObjectId> WallSegments;
+        public Dictionary<string, IntPtr> WallSegments;
 
-        public string PlotName { get; set; }        
+        public string PlotName { get; set; } 
+        
+        public Plot()
+        {
+            WallSegments = new Dictionary<string, IntPtr>();
+        }       
+
+        public void AddWall(string ID, ObjectId obj)
+        {
+            WallSegments.Add(ID, obj.OldIdPtr);
+        }
+
+        public ObjectId GetWall(string ID)
+        {
+            return new ObjectId(WallSegments[ID]);
+        }
     }
 }
