@@ -60,11 +60,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="StructuralBlocks.dwg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\JPPCore\JPPCore.csproj">
       <Project>{265173E9-D3F3-4C37-9B29-071D4A7453B0}</Project>
       <Name>JPPCore</Name>

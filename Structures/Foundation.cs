@@ -62,7 +62,7 @@ namespace JPP.Structures
 
                     var centreLines = SplitFoundation(allLines);
                     TrimFoundation(GenerateFoundation(centreLines));
-                    TagFoundations(centreLines, newPlot);
+                    //TagFoundations(centreLines, newPlot);
 
                     acDoc.SendStringToExecute("ATTSYNC N FormationTag\n", false, false, false);
 
@@ -70,6 +70,8 @@ namespace JPP.Structures
                     {
                         newPlot.WallSegments.Add(newPlot.WallSegments.Count.ToString(), new WallSegment(newPlot.WallSegments.Count.ToString(), newPlot, e.ObjectId));
                     }
+
+                    newPlot.Generate();
 
                     tr.Commit();
                 }

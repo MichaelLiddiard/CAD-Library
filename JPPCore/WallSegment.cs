@@ -1,5 +1,6 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,20 +102,77 @@ namespace JPP.Core
 
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
 
-            BlockReference acBlkRef = tr.GetObject(FormationTagId, OpenMode.ForRead) as BlockReference;
-
+            if (FormationTagId != null)
+            {
+                BlockReference acBlkRef = tr.GetObject(FormationTagId, OpenMode.ForRead) as BlockReference;
 
                 //Set value
                 AttributeCollection attCol = acBlkRef.AttributeCollection;
-            foreach (ObjectId attId in attCol)
-            {
-                AttributeReference att = tr.GetObject(attId, OpenMode.ForRead, false) as AttributeReference;
-                if (att.Tag == "LEVEL")
+                foreach (ObjectId attId in attCol)
                 {
-                    att.UpgradeOpen();
-                    att.TextString = Parent.FormationLevel.ToString();
+                    AttributeReference att = tr.GetObject(attId, OpenMode.ForRead, false) as AttributeReference;
+                    if (att.Tag == "LEVEL")
+                    {
+                        att.UpgradeOpen();
+                        att.TextString = Parent.FormationLevel.ToString();
+                    }
                 }
             }
+        }
+
+        public void Generate()
+        {
+            Database acCurDb;
+            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+            ObjectContextCollection occ = acCurDb.ObjectContextManager.GetContextCollection("ACDB_ANNOTATIONSCALES");
+
+            Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
+
+            LayerTable acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForRead) as LayerTable;
+            ObjectId current = acCurDb.Clayer;
+            acCurDb.Clayer = acLyrTbl[Utilities.FoundationTextLayer];
+
+            BlockTable acBlkTbl;
+            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+            //Add foundation tag
+            Matrix3d curUCSMatrix = Application.DocumentManager.MdiActiveDocument.Editor.CurrentUserCoordinateSystem;
+            CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
+
+            Curve c = acTrans.GetObject(ObjectId, OpenMode.ForRead) as Curve;
+
+            //Get lable point
+            Point3d labelPoint3d = c.GetPointAtDist(c.GetDistanceAtParameter(c.EndParam) / 2);
+            Point3d labelPoint = new Point3d(labelPoint3d.X, labelPoint3d.Y, 0);
+
+            // Insert the block into the current space
+            using (BlockReference acBlkRef = new BlockReference(labelPoint, acBlkTbl["FormationTag"]))
+            {
+                //Calculate Line Angle
+                double y = c.EndPoint.Y - c.StartPoint.Y;
+                double x = c.EndPoint.X - c.StartPoint.X;
+                double angle = Math.Atan(Math.Abs(y) / Math.Abs(x));
+                if (angle >= Math.PI / 2)
+                {
+                    acBlkRef.TransformBy(Matrix3d.Rotation(0, curUCS.Zaxis, labelPoint));
+                }
+                else
+                {
+                    acBlkRef.TransformBy(Matrix3d.Rotation(Math.PI / 2, curUCS.Zaxis, labelPoint));
+                }
+                acBlkRef.AddContext(occ.GetContext("10:1"));
+
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
+
+                FormationTagId = acBlkRef.ObjectId;
+            }
+
+
+            acCurDb.Clayer = current;
         }
     }
 }
