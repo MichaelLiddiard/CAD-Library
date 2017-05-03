@@ -38,7 +38,7 @@ namespace JPP.Structures
 
             newPlot.PlotName = pStrRes.StringResult;
 
-            pStrOpts = new PromptStringOptions("\nEnter plot name: ");
+            pStrOpts = new PromptStringOptions("\nEnter FFL level: ");
             pStrOpts.AllowSpaces = true;
             pStrRes = acDoc.Editor.GetString(pStrOpts);
 
@@ -64,9 +64,11 @@ namespace JPP.Structures
                     TrimFoundation(GenerateFoundation(centreLines));
                     TagFoundations(centreLines, newPlot);
 
+                    acDoc.SendStringToExecute("ATTSYNC N FormationTag\n", false, false, false);
+
                     foreach (Entity e in centreLines)
                     {
-                        newPlot.AddWall(newPlot.WallSegments.Count.ToString(), e.ObjectId);
+                        newPlot.WallSegments.Add(newPlot.WallSegments.Count.ToString(), new WallSegment(newPlot.WallSegments.Count.ToString(), newPlot, e.ObjectId));
                     }
 
                     tr.Commit();
@@ -74,6 +76,44 @@ namespace JPP.Structures
             }           
 
             DocumentStore.Current.Plots.Add(newPlot.PlotName, newPlot);
+        }
+
+        [CommandMethod("UpdateFoundation")]
+        public static void UpdateFoundation()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            PromptSelectionOptions pso = new PromptSelectionOptions();
+            pso.SingleOnly = true;
+            PromptSelectionResult psr = acDoc.Editor.GetSelection(pso);
+            if (psr.Status == PromptStatus.OK)
+            {
+                using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+                {
+                    foreach (SelectedObject so in psr.Value)
+                    {
+                        DBObject obj = tr.GetObject(so.ObjectId, OpenMode.ForRead);
+
+                        ObjectId extId = obj.ExtensionDictionary;
+
+                        if (extId != ObjectId.Null)
+                        {
+                            //now we will have extId...
+                            DBDictionary dbExt = (DBDictionary)tr.GetObject(extId, OpenMode.ForWrite);
+
+                            if(dbExt.Contains("JPP_Plot"))
+                            {
+                                Xrecord xRec = tr.GetObject(dbExt.GetAt("JPP_Plot"), OpenMode.ForRead) as Xrecord;
+                                string plot = xRec.Data.AsArray()[0].Value.ToString();
+                                DocumentStore.Current.Plots[plot].Update();
+                            }                            
+                        }
+                    }
+
+                    tr.Commit();
+                }
+            }
         }
 
         [CommandMethod("GenFound")]
@@ -522,7 +562,7 @@ namespace JPP.Structures
                             }
                         }
 
-                            BlockTableRecord acCurSpaceBlkTblRec;
+                        BlockTableRecord acCurSpaceBlkTblRec;
                         acCurSpaceBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
 
                         acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
@@ -534,6 +574,11 @@ namespace JPP.Structures
 
                 acTrans.Commit();
             }
+        }
+
+        public static void UpdateTags()
+        {
+
         }
     }
 }

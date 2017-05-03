@@ -10,25 +10,23 @@ namespace JPP.Core
     [Serializable]
     public class Plot
     {
-        public Dictionary<string, IntPtr> WallSegments;
+        public Dictionary<string, WallSegment> WallSegments;
 
         public string PlotName { get; set; } 
         
         public Plot()
         {
-            WallSegments = new Dictionary<string, IntPtr>();
+            WallSegments = new Dictionary<string, WallSegment>();
         }       
 
-        public void AddWall(string ID, ObjectId obj)
-        {
-            WallSegments.Add(ID, obj.OldIdPtr);
-        }
-
-        public ObjectId GetWall(string ID)
-        {
-            return new ObjectId(WallSegments[ID]);
-        }
-
         public double FormationLevel { get; set; }
+
+        public void Update()
+        {
+            foreach(WallSegment ws in WallSegments.Values)
+            {
+                ws.Update();
+            }
+        }
     }
 }

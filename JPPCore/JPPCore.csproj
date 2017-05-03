@@ -96,6 +96,7 @@
     </Compile>
     <Compile Include="RibbonCommandHandler.cs" />
     <Compile Include="Utilities.cs" />
+    <Compile Include="WallSegment.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
