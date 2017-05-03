@@ -28,5 +28,7 @@ namespace JPP.Core
         {
             return new ObjectId(WallSegments[ID]);
         }
+
+        public double FormationLevel { get; set; }
     }
 }

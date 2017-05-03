@@ -19,6 +19,8 @@ namespace JPP.Structures
         [CommandMethod("CreateFoundation")]
         public static void CreateFoundation()
         {
+            Main.CreateStructuralLayers();
+
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
@@ -29,6 +31,18 @@ namespace JPP.Structures
 
             Plot newPlot = new Plot();
             List<Curve> allLines = new List<Curve>();
+
+            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot name: ");
+            pStrOpts.AllowSpaces = true;
+            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
+
+            newPlot.PlotName = pStrRes.StringResult;
+
+            pStrOpts = new PromptStringOptions("\nEnter plot name: ");
+            pStrOpts.AllowSpaces = true;
+            pStrRes = acDoc.Editor.GetString(pStrOpts);
+
+            newPlot.FormationLevel = double.Parse(pStrRes.StringResult);
 
             if (psr.Status == PromptStatus.OK)
             {
@@ -48,7 +62,7 @@ namespace JPP.Structures
 
                     var centreLines = SplitFoundation(allLines);
                     TrimFoundation(GenerateFoundation(centreLines));
-                    TagFoundations(centreLines);
+                    TagFoundations(centreLines, newPlot);
 
                     foreach (Entity e in centreLines)
                     {
@@ -57,15 +71,9 @@ namespace JPP.Structures
 
                     tr.Commit();
                 }
-            }
+            }           
 
-            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot name: ");
-            pStrOpts.AllowSpaces = true;
-            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
-
-            newPlot.PlotName = pStrRes.StringResult;
-
-            DocumentStore.Current.Plots.Add(pStrRes.StringResult, newPlot);
+            DocumentStore.Current.Plots.Add(newPlot.PlotName, newPlot);
         }
 
         [CommandMethod("GenFound")]
@@ -108,6 +116,10 @@ namespace JPP.Structures
 
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
+                LayerTable acLyrTbl = tr.GetObject(acCurDb.LayerTableId, OpenMode.ForRead) as LayerTable;
+                ObjectId current = acCurDb.Clayer;
+                acCurDb.Clayer = acLyrTbl[Main.FoundationLayer];
+
                 // Open the Block table for read
                 BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
 
@@ -123,14 +135,19 @@ namespace JPP.Structures
                         acBlkTblRec.AppendEntity(e);
                         tr.AddNewlyCreatedDBObject(e, true);
                         edgeLines.Add(e as Curve);
+                        e.LayerId = acCurDb.Clayer;
                     }
                     foreach (Entity e in offsets2)
                     {
                         acBlkTblRec.AppendEntity(e);
                         tr.AddNewlyCreatedDBObject(e, true);
                         edgeLines.Add(e as Curve);
+                        e.LayerId = acCurDb.Clayer;
                     }
                 }
+
+                acCurDb.Clayer = current;
+
                 tr.Commit();
             }
             return edgeLines;
@@ -445,7 +462,7 @@ namespace JPP.Structures
             return output;
         }
 
-        public static void TagFoundations(List<Curve> lines)
+        public static void TagFoundations(List<Curve> lines, Plot p)
         {
             Database acCurDb;
             acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
@@ -453,6 +470,10 @@ namespace JPP.Structures
 
             using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
             {
+                LayerTable acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForRead) as LayerTable;
+                ObjectId current = acCurDb.Clayer;
+                acCurDb.Clayer = acLyrTbl[Main.FoundationTextLayer];
+
                 // Open the Block table for read
                 BlockTable acBlkTbl;
                 acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -476,16 +497,40 @@ namespace JPP.Structures
                     // Insert the block into the current space
                     using (BlockReference acBlkRef = new BlockReference(labelPoint, acBlkTbl["FormationTag"]))
                     {
-                        acBlkRef.TransformBy(Matrix3d.Rotation(0, curUCS.Zaxis, labelPoint));
+                        //Calculate Line Angle
+                        double y = c.EndPoint.Y - c.StartPoint.Y;
+                        double x = c.EndPoint.X - c.StartPoint.X;
+                        double angle = Math.Atan(Math.Abs(y) / Math.Abs(x));
+                        if (angle >= Math.PI / 2)
+                        {
+                            acBlkRef.TransformBy(Matrix3d.Rotation(0, curUCS.Zaxis, labelPoint));
+                        } else
+                        {
+                            acBlkRef.TransformBy(Matrix3d.Rotation(Math.PI/2, curUCS.Zaxis, labelPoint));
+                        }
                         acBlkRef.AddContext(occ.GetContext("10:1"));
 
-                        BlockTableRecord acCurSpaceBlkTblRec;
+                        //Set value
+                        AttributeCollection attCol = acBlkRef.AttributeCollection;
+                        foreach (ObjectId attId in attCol)
+                        {
+                            AttributeReference att = acTrans.GetObject(attId, OpenMode.ForRead, false) as AttributeReference;
+                            if (att.Tag == "LEVEL")
+                            {
+                                att.UpgradeOpen();
+                                att.TextString = p.FormationLevel.ToString();
+                            }
+                        }
+
+                            BlockTableRecord acCurSpaceBlkTblRec;
                         acCurSpaceBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
 
                         acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
                         acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
                     }
                 }
+
+                acCurDb.Clayer = current;
 
                 acTrans.Commit();
             }
