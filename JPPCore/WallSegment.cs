@@ -6,27 +6,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace JPP.Core
 {
-    [Serializable]
     public class WallSegment
     {
+        [XmlIgnore]
         public Plot Parent;
 
         public string Name;
 
-        public IntPtr ObjectIdPtr;
+        public long ObjectIdPtr;
 
+        [XmlIgnore]
         public ObjectId ObjectId
         {
             get
             {
-                return new ObjectId(ObjectIdPtr);
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(ObjectIdPtr), 0);               
             }
             set
             {
-                ObjectIdPtr = value.OldIdPtr;
+                ObjectIdPtr = value.Handle.Value;
             }
         }
 
@@ -40,18 +44,25 @@ namespace JPP.Core
         /// </summary>
         public double WallWidth;
 
-        public IntPtr FormationTagPtr;
+        public long FormationTagPtr;
 
         public ObjectId FormationTagId
         {
             get
             {
-                return new ObjectId(FormationTagPtr);
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(FormationTagPtr), 0);
             }
             set
             {
-                FormationTagPtr = value.OldIdPtr;
+                FormationTagPtr = value.Handle.Value;
             }
+        }
+
+        public WallSegment()
+        {
+
         }
 
         public WallSegment(string Name, Plot parent, ObjectId centreline)

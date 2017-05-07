@@ -11,20 +11,20 @@ namespace JPP.Core
     [Serializable]
     public class Plot
     {        
-        public Dictionary<string, WallSegment> WallSegments;
+        public List<WallSegment> WallSegments;
 
         public string PlotName { get; set; } 
         
         public Plot()
         {
-            WallSegments = new Dictionary<string, WallSegment>();
+            WallSegments = new List<WallSegment>();
         }       
 
         public double FormationLevel { get; set; }
 
         public void Update()
         {
-            foreach(WallSegment ws in WallSegments.Values)
+            foreach(WallSegment ws in WallSegments)
             {
                 ws.Update();
             }
@@ -48,7 +48,7 @@ namespace JPP.Core
                 Utilities.LoadBlocks();
             }
 
-            foreach (WallSegment ws in WallSegments.Values)
+            foreach (WallSegment ws in WallSegments)
             {
                 ws.Generate();
             }

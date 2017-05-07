@@ -66,7 +66,7 @@ namespace JPP.Structures
 
                     foreach (Entity e in centreLines)
                     {
-                        newPlot.WallSegments.Add(newPlot.WallSegments.Count.ToString(), new WallSegment(newPlot.WallSegments.Count.ToString(), newPlot, e.ObjectId));
+                        newPlot.WallSegments.Add(new WallSegment(newPlot.WallSegments.Count.ToString(), newPlot, e.ObjectId));
                     }
 
                     newPlot.Generate();
