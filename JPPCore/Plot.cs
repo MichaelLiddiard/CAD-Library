@@ -10,7 +10,7 @@ namespace JPP.Core
 {
     [Serializable]
     public class Plot
-    {
+    {        
         public Dictionary<string, WallSegment> WallSegments;
 
         public string PlotName { get; set; } 

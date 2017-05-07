@@ -45,13 +45,21 @@ namespace JPP.Core
                 {
                     ObjectId plotId = nod.GetAt("JPP_Plot");
                     Xrecord plotXRecord = (Xrecord)tr.GetObject(plotId, OpenMode.ForRead);
+                    MemoryStream ms = new MemoryStream();
                     foreach (TypedValue value in plotXRecord.Data)
                     {
-                        //System.Diagnostics.Debug.Print("===== OUR DATA: " + value.TypeCode.ToString() + ". " + value.Value.ToString());
-                        BinaryFormatter bf = new BinaryFormatter();
-                        MemoryStream ms = new MemoryStream((byte[])value.Value);
-                        Plots = bf.Deserialize(ms) as Dictionary<string, Plot>;
+                        byte[] data = new byte[127];
+
+                        string message = (string)value.Value;
+                        message = message.Replace('\a', '\0');
+                        data = Encoding.ASCII.GetBytes(message);
+                        ms.Write(data, 0, data.Length);
                     }
+                    ms.Position = 0;
+                    //System.Diagnostics.Debug.Print("===== OUR DATA: " + value.TypeCode.ToString() + ". " + value.Value.ToString());
+                    BinaryFormatter bf = new BinaryFormatter();
+                    
+                    Plots = bf.Deserialize(ms) as Dictionary<string, Plot>;
                 } else
                 {
                     Plots = new Dictionary<string, Plot>();
@@ -87,9 +95,28 @@ namespace JPP.Core
                     // We use Xrecord class to store data in Dictionaries
                     Xrecord plotXRecord = new Xrecord();
                     BinaryFormatter bf = new BinaryFormatter();
-                    MemoryStream ms = new MemoryStream();
+                    MemoryStream ms = new MemoryStream();                    
                     bf.Serialize(ms, Plots);
-                    plotXRecord.Data = new ResultBuffer(new TypedValue((int)DxfCode.BinaryChunk, ms.GetBuffer()));
+
+                    string dataS = Encoding.ASCII.GetString(ms.ToArray());
+                    //dataS = dataS.Replace('\0', '\a');
+
+                    var obj = bf.Deserialize(new MemoryStream(Encoding.ASCII.GetBytes(dataS)));
+
+                    byte[] data = new byte[512];
+                    int moreData = 1;
+                    ResultBuffer rb = new ResultBuffer();
+                    ms.Position = 0;
+                    while (moreData > 0)
+                    {
+                        moreData = ms.Read(data, 0, data.Length);
+                        string dataString = Encoding.ASCII.GetString(data);
+                        dataString = dataString.Replace('\0', '\a');
+                        TypedValue tv2 = new TypedValue((int)DxfCode.Text, dataString);
+                        rb.Add(tv2);
+                    }
+
+                    plotXRecord.Data = rb;
 
                     // Create the entry in the Named Object Dictionary
                     nod.SetAt("JPP_Plot", plotXRecord);
