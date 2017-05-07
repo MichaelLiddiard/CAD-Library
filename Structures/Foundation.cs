@@ -77,7 +77,7 @@ namespace JPP.Structures
                 }
             }           
 
-            DocumentStore.Current.Plots.Add(newPlot.PlotName, newPlot);
+            DocumentStore.Current.Plots.Add(newPlot);
         }
 
         [CommandMethod("UpdateFoundation")]
@@ -108,7 +108,11 @@ namespace JPP.Structures
                             {
                                 Xrecord xRec = tr.GetObject(dbExt.GetAt("JPP_Plot"), OpenMode.ForRead) as Xrecord;
                                 string plot = xRec.Data.AsArray()[0].Value.ToString();
-                                DocumentStore.Current.Plots[plot].Update();
+                                var target = from p in DocumentStore.Current.Plots where p.PlotName == plot select p; //DocumentStore.Current.Plots[plot];
+                                foreach (Plot p in target)
+                                {
+                                    p.Update();
+                                }
                             }                            
                         }
                     }

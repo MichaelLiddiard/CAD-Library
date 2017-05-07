@@ -2,6 +2,7 @@
 using Autodesk.AutoCAD.DatabaseServices;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -42,7 +43,7 @@ namespace JPP.Core
                 // Find the NOD in the database
                 DBDictionary nod = (DBDictionary)tr.GetObject(acCurDb.NamedObjectsDictionaryId, OpenMode.ForWrite);
 
-                Plots = new Dictionary<string, Plot>();
+                Plots = new ObservableCollection<Plot>();
                 if (nod.Contains("JPP_Plot"))
                 {
                     ObjectId plotId = nod.GetAt("JPP_Plot");
@@ -59,16 +60,17 @@ namespace JPP.Core
                     }
                     ms.Position = 0;
                     //System.Diagnostics.Debug.Print("===== OUR DATA: " + value.TypeCode.ToString() + ". " + value.Value.ToString());
-                    XmlSerializer xml = new XmlSerializer(typeof(Plot[]));
+                    XmlSerializer xml = new XmlSerializer(typeof(ObservableCollection<Plot>));
 
                     try
                     {
                         string s = Encoding.ASCII.GetString(ms.ToArray());
-                        var returnedPlots = xml.Deserialize(ms) as Plot[];
+                        Plots = xml.Deserialize(ms) as ObservableCollection<Plot>;
                         
-                        foreach(Plot p in returnedPlots)
+                        foreach(Plot p in Plots)
                         {
-                            Plots.Add(p.PlotName, p);
+                            p.Rebuild();
+                            //Plots.Add(p);
                         }
                     }
                     catch (Exception e)
@@ -107,11 +109,11 @@ namespace JPP.Core
                     // We use Xrecord class to store data in Dictionaries
                     Xrecord plotXRecord = new Xrecord();
 
-                    XmlSerializer xml = new XmlSerializer(Plots.Values.ToArray().GetType());                   
+                    XmlSerializer xml = new XmlSerializer(typeof(ObservableCollection<Plot>));                   
 
                     //BinaryFormatter bf = new BinaryFormatter();
                     MemoryStream ms = new MemoryStream();
-                    xml.Serialize(ms, Plots.Values.ToArray());
+                    xml.Serialize(ms, Plots);
                     string s = Encoding.ASCII.GetString(ms.ToArray());
 
                     byte[] data = new byte[512];
@@ -139,6 +141,6 @@ namespace JPP.Core
             }
         }
 
-        public Dictionary<string, Plot> Plots { get; set; }
+        public ObservableCollection<Plot> Plots { get; set; }
     }
 }

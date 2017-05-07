@@ -53,5 +53,13 @@ namespace JPP.Core
                 ws.Generate();
             }
         }
+
+        public void Rebuild()
+        {
+            foreach(WallSegment ws in WallSegments)
+            {
+                ws.Parent = this;
+            }
+        }
     }
 }

@@ -46,6 +46,7 @@ namespace JPP.Core
 
         public long FormationTagPtr;
 
+        [XmlIgnore]
         public ObjectId FormationTagId
         {
             get
@@ -165,7 +166,7 @@ namespace JPP.Core
                 double y = c.EndPoint.Y - c.StartPoint.Y;
                 double x = c.EndPoint.X - c.StartPoint.X;
                 double angle = Math.Atan(Math.Abs(y) / Math.Abs(x));
-                if (angle >= Math.PI / 2)
+                if (angle >= Math.PI / 4)
                 {
                     acBlkRef.TransformBy(Matrix3d.Rotation(0, curUCS.Zaxis, labelPoint));
                 }
