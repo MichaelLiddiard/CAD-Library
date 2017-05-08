@@ -89,6 +89,9 @@
     <Compile Include="AuthToken.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DocumentStore.cs" />
+    <Compile Include="FoundationControl.xaml.cs">
+      <DependentUpon>FoundationControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Loader.cs" />
     <Compile Include="Plot.cs" />
     <Compile Include="PlotUserControl.xaml.cs">
@@ -120,6 +123,10 @@
     <None Include="Resources\UnLocked.png" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="FoundationControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="PlotUserControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

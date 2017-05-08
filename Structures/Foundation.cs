@@ -3,12 +3,17 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.Windows;
 using JPP.Core;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Windows.Forms.Integration;
+using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: CommandClass(typeof(JPP.Structures.Foundation))]
 
@@ -16,6 +21,8 @@ namespace JPP.Structures
 {
     public class Foundation
     {
+        static FoundationControl uc2;
+
         [CommandMethod("CreateFoundation")]
         public static void CreateFoundation()
         {
@@ -61,7 +68,7 @@ namespace JPP.Structures
                     }
 
                     var centreLines = SplitFoundation(allLines);
-                    TrimFoundation(GenerateFoundation(centreLines));
+                    //TrimFoundation(GenerateFoundation(centreLines));
                     //TagFoundations(centreLines, newPlot);
 
                     foreach (Entity e in centreLines)
@@ -70,6 +77,19 @@ namespace JPP.Structures
                     }
 
                     newPlot.Generate();
+
+                    List<Curve> foundations = new List<Curve>();
+                    using (Transaction tr2 = acCurDb.TransactionManager.StartOpenCloseTransaction())
+                    {
+                        foreach (WallSegment ws in newPlot.WallSegments)
+                        {
+                            foundations.Add(tr2.GetObject(ws.NegativeFoundationId, OpenMode.ForWrite) as Curve);
+                            foundations.Add(tr2.GetObject(ws.PositiveFoundationId, OpenMode.ForWrite) as Curve);
+                        }
+
+                        TrimFoundation(foundations);
+                        tr2.Commit();
+                    }
 
                     acDoc.SendStringToExecute("ATTSYNC N FormationTag\n", false, false, false);
 
@@ -120,6 +140,70 @@ namespace JPP.Structures
                     tr.Commit();
                 }
             }
+        }
+
+        [CommandMethod("EditFoundation")]
+        public static void EditFoundation()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            PromptSelectionOptions pso = new PromptSelectionOptions();
+            pso.SingleOnly = true;
+            PromptSelectionResult psr = acDoc.Editor.GetSelection(pso);
+            if (psr.Status == PromptStatus.OK)
+            {
+                using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+                {
+                    foreach (SelectedObject so in psr.Value)
+                    {
+                        DBObject obj = tr.GetObject(so.ObjectId, OpenMode.ForRead);
+
+                        ObjectId extId = obj.ExtensionDictionary;
+
+                        if (extId != ObjectId.Null)
+                        {
+                            //now we will have extId...
+                            DBDictionary dbExt = (DBDictionary)tr.GetObject(extId, OpenMode.ForWrite);
+
+                            if (dbExt.Contains("JPP_Plot"))
+                            {
+                                Xrecord xRec = tr.GetObject(dbExt.GetAt("JPP_Plot"), OpenMode.ForRead) as Xrecord;
+                                string plot = xRec.Data.AsArray()[0].Value.ToString();
+                                var target = from p in DocumentStore.Current.Plots where p.PlotName == plot select p; //DocumentStore.Current.Plots[plot];
+                                foreach (Plot p in target)
+                                {
+                                    PaletteSet _ps = new PaletteSet("WPF Palette");
+                                    _ps.Size = new Size(400, 600);
+                                    _ps.DockEnabled =
+                                      (DockSides)((int)DockSides.Left + (int)DockSides.Right);
+
+                                    uc2 = new FoundationControl();
+                                    uc2.DataContext = p;
+                                    ElementHost host = new ElementHost();
+                                    host.AutoSize = true;
+                                    host.Dock = DockStyle.Fill;
+                                    host.Child = uc2;
+                                    _ps.Add("Add ElementHost", host);
+
+                                    // Display our palette set
+
+                                    _ps.KeepFocus = true;
+                                    _ps.Visible = true;
+                                    _ps.StateChanged += _ps_StateChanged;
+                                }
+                            }
+                        }
+                    }
+
+                    tr.Commit();
+                }
+            }
+        }
+
+        private static void _ps_StateChanged(object sender, PaletteSetStateEventArgs e)
+        {
+            uc2.Hide();
         }
 
         [CommandMethod("GenFound")]
@@ -271,7 +355,14 @@ namespace JPP.Structures
                         List<double> splitPoints = new List<double>();
                         foreach (Point3d p3d in points)
                         {
-                            splitPoints.Add(c.GetParameterAtPoint(p3d));
+                            try
+                            {
+                                splitPoints.Add(c.GetParameterAtPoint(p3d));
+                            }
+                            catch (Autodesk.AutoCAD.Runtime.Exception e)
+                            {
+                                Application.ShowAlertDialog("Something may have gone wron with foundation processing - " + e.Message);
+                            }
                         }
                         splitPoints.Sort();
                         DoubleCollection acadSplitPoints = new DoubleCollection(splitPoints.ToArray());
@@ -346,7 +437,7 @@ namespace JPP.Structures
             DBObjectCollection remove = new DBObjectCollection();
             List<Curve> perimeters = new List<Curve>();            
 
-            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            using (Transaction tr = acCurDb.TransactionManager.TopTransaction)//acCurDb.TransactionManager.StartTransaction())
             {
                 // Open the Block table for read
                 BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -382,6 +473,8 @@ namespace JPP.Structures
                         acBlkTblRec.AppendEntity(remnant[1] as Entity);
                         tr.AddNewlyCreatedDBObject(remnant[1] as Entity, true);
                         output.Add(remnant[1] as Curve);
+                        //c.HandOverTo(remnant[1] as Entity, true, true);
+                        c.SwapIdWith(remnant[1].ObjectId, true, true);
                         remove.Add(c);
                     }
 
@@ -406,7 +499,9 @@ namespace JPP.Structures
                                 tr.AddNewlyCreatedDBObject(remnant[1] as Entity, true);
                                 perimeters.Add(remnant[1] as Curve);
                                 output.Add(remnant[1] as Curve);
-                                remove.Add(c);
+                                //c.HandOverTo(remnant[1] as Entity, true, true);
+                                c.SwapIdWith(remnant[1].ObjectId, true, true);
+                                remove.Add(c);                                
                             }
                             if (percent < 1 && percent >= 0.5)
                             {
@@ -415,6 +510,8 @@ namespace JPP.Structures
                                 tr.AddNewlyCreatedDBObject(remnant[0] as Entity, true);
                                 perimeters.Add(remnant[0] as Curve);
                                 output.Add(remnant[0] as Curve);
+                                //c.HandOverTo(remnant[0] as Entity, true, true);
+                                c.SwapIdWith(remnant[0].ObjectId, true, true);
                                 remove.Add(c);
                             }
                         }
@@ -428,6 +525,7 @@ namespace JPP.Structures
                 foreach (DBObject obj in remove)
                 {
                     obj.Erase();
+                    //obj.Dispose();
                 }
 
                 List<Curve> complete = output;
@@ -505,7 +603,7 @@ namespace JPP.Structures
                     output.Add(c);
                 }               
 
-                tr.Commit();
+                //tr.Commit();
             }
 
             return output;

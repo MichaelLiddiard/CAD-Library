@@ -37,12 +37,14 @@ namespace JPP.Core
         /// <summary>
         /// Load in kN/m
         /// </summary>
-        public double Load;
+        public double Load { get; set; }
 
         /// <summary>
         /// Width of wall atop foundation
         /// </summary>
-        public double WallWidth;
+        public double WallWidth { get; set; }
+
+        public double FoundationWidth { get; set; }
 
         public long FormationTagPtr;
 
@@ -61,6 +63,40 @@ namespace JPP.Core
             }
         }
 
+        public long PositiveFoundationPtr;
+
+        [XmlIgnore]
+        public ObjectId PositiveFoundationId
+        {
+            get
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(PositiveFoundationPtr), 0);
+            }
+            set
+            {
+                PositiveFoundationPtr = value.Handle.Value;
+            }
+        }
+
+        public long NegativeFoundationPtr;
+
+        [XmlIgnore]
+        public ObjectId NegativeFoundationId
+        {
+            get
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(NegativeFoundationPtr), 0);
+            }
+            set
+            {
+                NegativeFoundationPtr = value.Handle.Value;
+            }
+        }
+
         public WallSegment()
         {
 
@@ -71,6 +107,7 @@ namespace JPP.Core
             this.Parent = parent;
             this.Name = Name;
             ObjectId = centreline;
+            FoundationWidth = DocumentStore.Current.DefaultWidth;
 
             //Establish links
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
@@ -114,6 +151,45 @@ namespace JPP.Core
 
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
 
+            //Centre line
+            Curve c = tr.GetObject(ObjectId, OpenMode.ForRead) as Curve;
+
+            //Delete existing
+            NegativeFoundationId.GetObject(OpenMode.ForWrite, true).Erase();
+            PositiveFoundationId.GetObject(OpenMode.ForWrite, true).Erase();
+
+            //Offset it
+            LayerTable acLyrTbl = tr.GetObject(acCurDb.LayerTableId, OpenMode.ForRead) as LayerTable;
+            ObjectId current = acCurDb.Clayer;
+            acCurDb.Clayer = acLyrTbl[Utilities.FoundationLayer];
+
+            // Open the Block table for read
+            BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+            // Open the Block table record Model space for write
+            BlockTableRecord acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+            DBObjectCollection offsets = c.GetOffsetCurves(FoundationWidth / 2);
+            DBObjectCollection offsets2 = c.GetOffsetCurves(-(FoundationWidth / 2));
+            foreach (Entity e in offsets)
+            {
+                acBlkTblRec.AppendEntity(e);
+                tr.AddNewlyCreatedDBObject(e, true);
+                e.LayerId = acCurDb.Clayer;
+                PositiveFoundationId = e.ObjectId;
+            }
+            foreach (Entity e in offsets2)
+            {
+                acBlkTblRec.AppendEntity(e);
+                tr.AddNewlyCreatedDBObject(e, true);
+                e.LayerId = acCurDb.Clayer;
+                NegativeFoundationId = e.ObjectId;
+            }
+
+
+            acCurDb.Clayer = current;
+
+            //Update formation tag
             if (FormationTagId != null)
             {
                 BlockReference acBlkRef = tr.GetObject(FormationTagId, OpenMode.ForRead) as BlockReference;
@@ -140,18 +216,46 @@ namespace JPP.Core
 
             Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
 
+            //Centre line
+            Curve c = acTrans.GetObject(ObjectId, OpenMode.ForRead) as Curve;
+
+            //Offset it
             LayerTable acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForRead) as LayerTable;
             ObjectId current = acCurDb.Clayer;
-            acCurDb.Clayer = acLyrTbl[Utilities.FoundationTextLayer];
+            acCurDb.Clayer = acLyrTbl[Utilities.FoundationLayer];
 
-            BlockTable acBlkTbl;
-            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+            // Open the Block table for read
+            BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+            // Open the Block table record Model space for write
+            BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                DBObjectCollection offsets = c.GetOffsetCurves(FoundationWidth / 2);
+                DBObjectCollection offsets2 = c.GetOffsetCurves(-(FoundationWidth / 2));
+                foreach (Entity e in offsets)
+                {
+                    acBlkTblRec.AppendEntity(e);
+                acTrans.AddNewlyCreatedDBObject(e, true);
+                    e.LayerId = acCurDb.Clayer;
+                PositiveFoundationId = e.ObjectId;
+                }
+                foreach (Entity e in offsets2)
+                {
+                    acBlkTblRec.AppendEntity(e);
+                acTrans.AddNewlyCreatedDBObject(e, true);
+                    e.LayerId = acCurDb.Clayer;
+                NegativeFoundationId = e.ObjectId;
+                }
+            
+
+            acCurDb.Clayer = current;
+
+            //Tag it
+            acCurDb.Clayer = acLyrTbl[Utilities.FoundationTextLayer];
 
             //Add foundation tag
             Matrix3d curUCSMatrix = Application.DocumentManager.MdiActiveDocument.Editor.CurrentUserCoordinateSystem;
-            CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
-
-            Curve c = acTrans.GetObject(ObjectId, OpenMode.ForRead) as Curve;
+            CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;            
 
             //Get lable point
             Point3d labelPoint3d = c.GetPointAtDist(c.GetDistanceAtParameter(c.EndParam) / 2);
@@ -176,10 +280,9 @@ namespace JPP.Core
                 }
                 acBlkRef.AddContext(occ.GetContext("10:1"));
 
-                BlockTableRecord acCurSpaceBlkTblRec;
-                acCurSpaceBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
 
-                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                acBlkTblRec.AppendEntity(acBlkRef);
                 acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
 
                 // AttributeDefinitions
