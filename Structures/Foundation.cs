@@ -174,8 +174,8 @@ namespace JPP.Structures
 
                 foreach (Curve c in centreLines)
                 {
-                    DBObjectCollection offsets = c.GetOffsetCurves(0.225);
-                    DBObjectCollection offsets2 = c.GetOffsetCurves(-0.225);
+                    DBObjectCollection offsets = c.GetOffsetCurves(0.3);
+                    DBObjectCollection offsets2 = c.GetOffsetCurves(-0.3);
                     foreach (Entity e in offsets)
                     {
                         acBlkTblRec.AppendEntity(e);
@@ -227,6 +227,9 @@ namespace JPP.Structures
                             allLines.Add(c);
                         }
                     }
+
+                    SplitFoundation(allLines);
+
                     tr.Commit();
                 }
             }
