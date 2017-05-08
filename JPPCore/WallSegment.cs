@@ -202,7 +202,7 @@ namespace JPP.Core
                     if (att.Tag == "LEVEL")
                     {
                         att.UpgradeOpen();
-                        att.TextString = Parent.FormationLevel.ToString();
+                        att.TextString = Parent.FormationLevel.ToString("F3");
                     }
                 }
             }
@@ -297,7 +297,7 @@ namespace JPP.Core
                         using (AttributeReference attRef = new AttributeReference())
                         {
                             attRef.SetAttributeFromBlock(attDef, acBlkRef.BlockTransform);
-                            attRef.TextString = Parent.FormationLevel.ToString();
+                            attRef.TextString = Parent.FormationLevel.ToString("F3");
                             //Add the AttributeReference to the BlockReference
                             acBlkRef.AttributeCollection.AppendAttribute(attRef);
                             acTrans.AddNewlyCreatedDBObject(attRef, true);
