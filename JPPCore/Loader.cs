@@ -11,6 +11,11 @@ using System.IO.Compression;
 using System.IO;
 using System.Reflection;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Windows;
+using System.Drawing;
+using System.Windows.Forms;
+using System.Windows.Forms.Integration;
+using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: ExtensionApplication(typeof(JPP.Core.Loader))]
 [assembly: CommandClass(typeof(JPP.Core.Loader))]
@@ -150,12 +155,43 @@ namespace JPP.Core
             runLoad.Name = "Check for updates";
             runLoad.CommandHandler = new RibbonCommandHandler();
             runLoad.CommandParameter = "._Update ";
+#if DEBUG
+            runLoad.IsEnabled = false;
+#endif
             stack.Items.Add(runLoad);
             source.Items.Add(stack);
 
             //Build the UI hierarchy
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
+
+            PaletteSet _ps = new PaletteSet("WPF Palette");
+            _ps.Size = new Size(400, 600);
+            _ps.DockEnabled =
+              (DockSides)((int)DockSides.Left + (int)DockSides.Right);
+
+            // Create our first user control instance and
+            // host it on a palette using AddVisual()
+
+            /*PlotUserControl uc = new PlotUserControl();
+            _ps.AddVisual("AddVisual", uc);*/
+
+            // Create our second user control instance and
+            // host it in an ElementHost, which allows
+            // interop between WinForms and WPF
+
+            PlotUserControl uc2 = new PlotUserControl();
+            uc2.DataContext = DocumentStore.Current.Plots;
+            ElementHost host = new ElementHost();
+            host.AutoSize = true;
+            host.Dock = DockStyle.Fill;
+            host.Child = uc2;
+            _ps.Add("Add ElementHost", host);
+
+            // Display our palette set
+
+            _ps.KeepFocus = true;
+            _ps.Visible = true;
 
             Load();
         }
