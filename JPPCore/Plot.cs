@@ -24,6 +24,10 @@ namespace JPP.Core
 
         public double FormationLevel { get; set; }
 
+        public double FinishedFloorLevel { get; set; }
+
+        public bool Locked { get; set; }
+
         public void Update()
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;

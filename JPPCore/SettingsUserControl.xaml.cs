@@ -1,5 +1,4 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,19 +16,13 @@ using System.Windows.Shapes;
 namespace JPP.Core
 {
     /// <summary>
-    /// Interaction logic for PlotUserControl.xaml
+    /// Interaction logic for SettingsUserControl.xaml
     /// </summary>
-    public partial class PlotUserControl : UserControl
+    public partial class SettingsUserControl : UserControl
     {
-        public PlotUserControl()
+        public SettingsUserControl()
         {
             InitializeComponent();
-        }
-
-        private void button_Click(object sender, RoutedEventArgs e)
-        {
-            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            acDoc.SendStringToExecute("NewFFL ", false, false, false);
         }
     }
 }

@@ -13,8 +13,9 @@ using System.Reflection;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Windows;
 using System.Drawing;
-using System.Windows.Forms;
 using System.Windows.Forms.Integration;
+using System.Windows.Forms;
+
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: ExtensionApplication(typeof(JPP.Core.Loader))]
@@ -22,9 +23,6 @@ using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace JPP.Core
 {
-    /// <summary>
-    /// Loader class, the main entry point for the full application suite. Implements IExtensionApplication is it automatically initialised and terminated by AutoCad.
-    /// </summary>
     public class Loader : IExtensionApplication
     {
         /// <summary>
@@ -32,23 +30,23 @@ namespace JPP.Core
         /// </summary>
         public void Initialize()
         {
-            //Detect if ribbon is currently loaded, and if not wait until the application is Idle.
+#if DEBUG
+            //Application.ShowAlertDialog("Init called");
+#endif
             if (ComponentManager.Ribbon == null)
             {
                 Application.Idle += Application_Idle;
+                //ComponentManager.ItemInitialized += ComponentManager_ItemInitialized;
             }
             else
             {
-                //Ribbon existis, call the initialize methods
-                InitJPP(); 
+                InitJPP(); //Removed as menu causes a crash for some reason
             }
         }
 
         private void Application_Idle(object sender, EventArgs e)
         {
-            //Unhook the event handler
             Application.Idle -= Application_Idle;
-            //Call the initialize method
             InitJPP();
         }
 
@@ -68,43 +66,46 @@ namespace JPP.Core
         /// </summary>
         public void Terminate()
         {
-            //No specific termination code required as of yet
+            throw new NotImplementedException();
         }
-                
-        private static void Load()
+
+        [CommandMethod("LoadJPP")]
+        public static void Load()
         {
             List<string> allAssemblies = new List<string>();
             string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
 
-            if (Authentication.Current.Authenticated())
+            foreach (string dll in Directory.GetFiles(path, "*.dll"))
             {
-                //Iterate over every dll found in bin folder
-                foreach (string dll in Directory.GetFiles(path, "*.dll"))
-                {
-                    string dllPath = dll.Replace('\\', '/');
-                    //Load the additional libraries found
-                    ExtensionLoader.Load(dll);
-                }
-            }           
+                string dllPath = dll.Replace('\\', '/');
+                //Application.DocumentManager.MdiActiveDocument.SendStringToExecute("command \"NETLOAD\" \"" + dllPath + "\"", true, false, false);
+                /*ResultBuffer args = new ResultBuffer(
+                new TypedValue((int)LispDataType.Text, "command"),
+                new TypedValue((int)LispDataType.Text, "NETLOAD"),
+                new TypedValue((int)LispDataType.Text, dllPath));
+                Application.Invoke(args);
+                //Assembly loaded = Assembly.LoadFrom(dll);*/
+                ExtensionLoader.Load(dll);                
+            }            
         }
 
         [CommandMethod("Update")]
         public static void Update()
-        {          
-            string archivePath;
-            //Get manifest fiel from known location
+        {
+            string archivePath = "M:\\ML\\CAD-Library\\Libraries-v";
+
+            //Get manifest
             using (TextReader tr = File.OpenText("M:\\ML\\CAD-Library\\manifest.txt"))
             {
-                //Currently manifest file contians version of zip file to pull data from
-                archivePath = Constants.ArchivePath + tr.ReadToEnd() + ".zip";
+                archivePath = archivePath + tr.ReadToEnd() + ".zip";
             }
 
-            //Download the latest resources update
+            //Download the latest DLL update
             try
             {
                 ZipArchive archive = ZipFile.OpenRead(archivePath);
                 
-                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\update";
+                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
                 if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
@@ -125,68 +126,46 @@ namespace JPP.Core
         [CommandMethod("InitJPP")]
         public static void InitJPP()
         {
-            //Check current folder for zip file waiting to be applied
-
-            //Create the UI
             RibbonTab JPPTab = CreateTab();
 
             RibbonPanel Panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
-            source.Title = "Main";
+            source.Title = "Common";
 
-            RibbonRowPanel stack = new RibbonRowPanel();
-
-            RibbonButton authenticateButton = new RibbonButton();
-            authenticateButton.ShowText = true;
-            authenticateButton.ShowImage = true;
-            authenticateButton.Text = "Authenticate";
-            authenticateButton.Name = "Authenticate";
-            /*authenticateButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
-            authenticateButton.CommandParameter = "._LayPipe ";                    */
-            authenticateButton.Image = Core.Utilities.LoadImage(JPP.Core.Properties.Resources.Locked);
-            authenticateButton.Size = RibbonItemSize.Standard;
-            stack.Items.Add(authenticateButton);
-            stack.Items.Add(new RibbonRowBreak());
-
-            //Add button to update all JPP libraries
+            //Add button to re load all JPP libraries
             RibbonButton runLoad = new RibbonButton();
             runLoad.ShowText = true;
             runLoad.Text = "Update";
             runLoad.Name = "Check for updates";
             runLoad.CommandHandler = new RibbonCommandHandler();
             runLoad.CommandParameter = "._Update ";
-#if DEBUG
-            runLoad.IsEnabled = false;
-#endif
-            stack.Items.Add(runLoad);
-            source.Items.Add(stack);
+            source.Items.Add(runLoad);
 
+            //Not sure why but something in the next three lines crashes the addin when auto loaded from init
             //Build the UI hierarchy
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
+            
+            
+            PaletteSet _ps = new PaletteSet("JPP", new Guid("8bc0c89e-3be0-4e30-975e-1a4e09cb0524"));
+            _ps.Size = new Size(600, 800);
+            _ps.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
+            _ps.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);            
 
-            PaletteSet _ps = new PaletteSet("WPF Palette");
-            _ps.Size = new Size(400, 600);
-            _ps.DockEnabled =
-              (DockSides)((int)DockSides.Left + (int)DockSides.Right);
-
-            // Create our first user control instance and
-            // host it on a palette using AddVisual()
-
-            /*PlotUserControl uc = new PlotUserControl();
-            _ps.AddVisual("AddVisual", uc);*/
-
-            // Create our second user control instance and
-            // host it in an ElementHost, which allows
-            // interop between WinForms and WPF
+            SettingsUserControl suc = new SettingsUserControl();
+            ElementHost host1 = new ElementHost();
+            host1.AutoSize = true;
+            host1.Dock = DockStyle.Fill;
+            host1.Child = suc;
+            _ps.Add("Settings", host1);
 
             PlotUserControl uc2 = new PlotUserControl();
             uc2.DataContext = DocumentStore.Current.Plots;
-            ElementHost host = new ElementHost();
-            host.AutoSize = true;
-            host.Dock = DockStyle.Fill;
-            host.Child = uc2;
-            _ps.Add("Add ElementHost", host);
+            ElementHost host2 = new ElementHost();
+            host2.AutoSize = true;
+            host2.Dock = DockStyle.Fill;
+            host2.Child = uc2;
+            _ps.Add("Plots", host2);
 
             // Display our palette set
 
@@ -194,6 +173,7 @@ namespace JPP.Core
             _ps.Visible = true;
 
             Load();
+            //Update();
         }
 
         public static RibbonTab CreateTab()
