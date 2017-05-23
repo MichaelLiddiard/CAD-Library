@@ -142,6 +142,7 @@ namespace JPPCommands
                 {
                     Point2d lastVertex = CheckForAccessPoint(outline, vertexIndex, false);
                     hatchBoundaryPoints.Add(lastVertex);
+                    // offsetVertices.Add(offsetPLine.GetPoint2dAt(vertexIndex));
                     // Now need to close the hatch boundary
                     for (int index2 = offsetVertices.Count - 1; index2 >= 0; index2--)
                     {
@@ -497,6 +498,8 @@ namespace JPPCommands
                     for (int index = 0; index < textData.Count(); index = index + 2)
                     {
                         int nextVertex = 0;
+
+                        // DBText singleText = new DBText();
                         MText courseText = new MText();
                         if (textData[index] == acPline.NumberOfVertices - 1)
                             nextVertex = 0;
@@ -547,7 +550,7 @@ namespace JPPCommands
                         courseText.TextStyleId = acTxtStyleRecord.ObjectId;
                         courseText.Width = 2.5;
                         courseText.Height = 0.6;
-                        courseText.TextHeight = 0.4;
+                        courseText.TextHeight = 0.2;
                         if (isExposed)
                         {
                             courseText.Color = Color.FromColorIndex(ColorMethod.ByAci, 80);
@@ -559,7 +562,7 @@ namespace JPPCommands
                             courseText.Contents = "Tank " + Math.Abs((0.075 * textData[index + 1])).ToString("N3") + "m";
                         }
 
-                        // Transform etxt location by the blcok trasnform
+                        // Transform text location by the block transform
                         courseText.Location = courseText.Location.TransformBy(fflBlock.BlockTransform);
 
                         BlockTable acBlkTbl = acTrans.GetObject(acCurrDb.BlockTableId, OpenMode.ForRead) as BlockTable;
