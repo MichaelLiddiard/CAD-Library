@@ -14,7 +14,7 @@ using Autodesk.AutoCAD.Windows;
 
 namespace JPPCommands
 {
-    class JPPCommandsInitialisation
+    public class JPPCommandsInitialisation
     {
         public static bool JPPCommandsInitialise()
         {
