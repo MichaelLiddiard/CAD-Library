@@ -37,6 +37,7 @@ namespace JPP.Civils
 
             RibbonPanel utilitiesPanel = new RibbonPanel();
             RibbonPanelSource utilitiesSource = new RibbonPanelSource();
+            RibbonRowPanel plotStack = new RibbonRowPanel();
             RibbonRowPanel utilitiesStack = new RibbonRowPanel();
             RibbonRowPanel utilitiesStack2 = new RibbonRowPanel();
 
@@ -76,6 +77,21 @@ namespace JPP.Civils
             utilitiesSource.Title = "Civil Utilities";
 
             //Add button to import xref
+            RibbonToggleButton plotButton = new RibbonToggleButton();
+            //RibbonButton plotButton = new RibbonButton();
+            plotButton.ShowText = true;
+            plotButton.ShowImage = true;
+            plotButton.Text = "Housing Scheme";
+            plotButton.Name = "Import As Xref";
+            plotButton.CheckStateChanged += PlotButton_CheckStateChanged;
+            plotButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
+            plotButton.CommandParameter = "._ImportAsXref ";
+            plotButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.housingscheme);
+            plotButton.Size = RibbonItemSize.Large;
+            plotButton.Orientation = System.Windows.Controls.Orientation.Vertical;
+            plotStack.Items.Add(plotButton);
+
+            //Add button to import xref
             RibbonButton importXrefButton = new RibbonButton();
             importXrefButton.ShowText = true;
             importXrefButton.ShowImage = true;
@@ -87,7 +103,6 @@ namespace JPP.Civils
             importXrefButton.Size = RibbonItemSize.Large;
             importXrefButton.Orientation = System.Windows.Controls.Orientation.Vertical;
             utilitiesStack.Items.Add(importXrefButton);
-            utilitiesStack.Items.Add(new RibbonRowBreak());
 
             //Add button to level polyline
             RibbonButton levelPLineButtone = new RibbonButton();
@@ -114,7 +129,6 @@ namespace JPP.Civils
             addFFLButton.CommandParameter = "._NewFFL ";
             //addFFLButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
             addFFLButton.Size = RibbonItemSize.Standard;
-            addFFLButton.Orientation = System.Windows.Controls.Orientation.Vertical;
             fflStack.Items.Add(addFFLButton);
             fflStack.Items.Add(new RibbonRowBreak());
 
@@ -128,7 +142,6 @@ namespace JPP.Civils
             editFFLButton.CommandParameter = "._EditFFL ";
             //editFFLButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
             editFFLButton.Size = RibbonItemSize.Standard;
-            editFFLButton.Orientation = System.Windows.Controls.Orientation.Vertical;
             fflStack.Items.Add(editFFLButton);
             fflStack.Items.Add(new RibbonRowBreak());
 
@@ -141,14 +154,14 @@ namespace JPP.Civils
             plineToFFLButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
             plineToFFLButton.CommandParameter = "._PlineToFFL ";
             //plineToFFLButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
-            plineToFFLButton.Size = RibbonItemSize.Standard;
-            plineToFFLButton.Orientation = System.Windows.Controls.Orientation.Vertical;
+            plineToFFLButton.Size = RibbonItemSize.Standard;            
             fflStack.Items.Add(plineToFFLButton);
 
             //Build the UI hierarchy
             source.Items.Add(drainagePipeStack);
             Panel.Source = source;
 
+            utilitiesSource.Items.Add(plotStack);
             utilitiesSource.Items.Add(utilitiesStack);
             utilitiesSource.Items.Add(utilitiesStack2);
             utilitiesPanel.Source = utilitiesSource;
@@ -159,6 +172,17 @@ namespace JPP.Civils
             JPPTab.Panels.Add(Panel);
             JPPTab.Panels.Add(utilitiesPanel);
             JPPTab.Panels.Add(fflPanel);
+        }
+
+        private void PlotButton_CheckStateChanged(object sender, EventArgs e)
+        {
+            if(((RibbonToggleButton)sender).CheckState == true)
+            {
+                
+            } else
+            {
+
+            }
         }
 
         public static void LoadBlocks()
@@ -225,6 +249,13 @@ namespace JPP.Civils
         {
             JPPCommandsInitialisation.JPPCommandsInitialise();
             JPPCommands.EditFFL.EditFFLOrLevels();
+        }
+
+        [CommandMethod("DeleteFFL")]
+        public static void DeleteFFL()
+        {
+            JPPCommandsInitialisation.JPPCommandsInitialise();
+            throw new NotImplementedException();//JPPCommands.
         }
     }
 }

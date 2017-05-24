@@ -93,7 +93,7 @@
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Loader.cs" />
-    <Compile Include="Plot.cs" />
+    <Compile Include="HousingScheme\Plot.cs" />
     <Compile Include="PlotUserControl.xaml.cs">
       <DependentUpon>PlotUserControl.xaml</DependentUpon>
     </Compile>
@@ -108,7 +108,7 @@
       <DependentUpon>SettingsUserControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utilities.cs" />
-    <Compile Include="WallSegment.cs" />
+    <Compile Include="HousingScheme\WallSegment.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -138,6 +138,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\add.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\delete.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
