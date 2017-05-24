@@ -15,9 +15,9 @@ using System.Windows.Forms;
 using System.Windows.Forms.Integration;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
-[assembly: CommandClass(typeof(JPP.Structures.Foundation))]
+[assembly: CommandClass(typeof(JPP.CivilStructures.Foundation))]
 
-namespace JPP.Structures
+namespace JPP.CivilStructures
 {
     public class Foundation
     {

@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JPP.Structures
+namespace JPP.CivilStructures
 {
     class Main
     {

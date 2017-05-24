@@ -7,7 +7,7 @@
     <ProjectGuid>{1F2709F0-C5C2-4E63-9BFB-B38A42A2DD23}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>JPP.Structures</RootNamespace>
+    <RootNamespace>JPP.CivilStructures</RootNamespace>
     <AssemblyName>Structures</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
