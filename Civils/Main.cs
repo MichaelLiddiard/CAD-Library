@@ -25,6 +25,7 @@ namespace JPP.Civils
     {
         PaletteSet _ps;
         PlotUserControl uc2;
+        PlotTypeUserControl uc3;
 
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need
@@ -196,11 +197,19 @@ namespace JPP.Civils
             host2.AutoSize = true;
             host2.Dock = DockStyle.Fill;
             host2.Child = uc2;
+            uc3 = new PlotTypeUserControl();
+            ElementHost host3 = new ElementHost();
+            host3.AutoSize = true;
+            host3.Dock = DockStyle.Fill;
+            host3.Child = uc3;
+            _ps.Add("Plot Types", host3);
             _ps.Add("Plots", host2);
 
             // Display our palette set
 
             _ps.KeepFocus = true;
+
+            JPPCommandsInitialisation.JPPCommandsInitialise();
         }
 
         private void PlotButton_CheckStateChanged(object sender, EventArgs e)
@@ -209,10 +218,12 @@ namespace JPP.Civils
             {
                 _ps.Visible = true;
                 uc2.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().Plots;
+                uc3.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes;
             } else
             {
                 _ps.Visible = false;
                 uc2.DataContext = null;
+                uc3.DataContext = null;
             }
         }
 

@@ -13,6 +13,7 @@ namespace JPP.Civils
     public class CivilDocumentStore : DocumentStore
     {
         public ObservableCollection<Plot> Plots { get; set; }
+        public ObservableCollection<PlotType> PlotTypes { get; set; }
 
         public int GroundBearingPressure { get; set;}
 
@@ -24,6 +25,7 @@ namespace JPP.Civils
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
 
             SaveBinary("JPP_Plot", Plots);
+            SaveBinary("JPP_PlotTypes", PlotTypes);
 
             Xrecord siteXRecord = new Xrecord();
             ResultBuffer siteRb = new ResultBuffer();
@@ -46,9 +48,11 @@ namespace JPP.Civils
             DBDictionary nod = (DBDictionary)tr.GetObject(acCurDb.NamedObjectsDictionaryId, OpenMode.ForWrite);
 
             Plots = LoadBinary<ObservableCollection<Plot>>("JPP_Plot");
+            PlotTypes = LoadBinary<ObservableCollection<PlotType>>("JPP_PlotTypes");
             if (Plots == null)
             {
                 Plots = new ObservableCollection<Plot>();
+                PlotTypes = new ObservableCollection<PlotType>();
             }
 
             foreach(Plot p in Plots)

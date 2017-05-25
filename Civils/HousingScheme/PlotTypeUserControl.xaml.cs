@@ -19,9 +19,9 @@ namespace JPP.Civils
     /// <summary>
     /// Interaction logic for PlotUserControl.xaml
     /// </summary>
-    public partial class PlotUserControl : UserControl
+    public partial class PlotTypeUserControl : UserControl
     {       
-        public PlotUserControl()
+        public PlotTypeUserControl()
         {
             InitializeComponent();
         }
@@ -29,7 +29,7 @@ namespace JPP.Civils
         private void button_Click(object sender, RoutedEventArgs e)
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            acDoc.SendStringToExecute("NewPlot ", false, false, false);
+            acDoc.SendStringToExecute("CreatePlotType ", false, false, false);
         }
 
         private void deletebutton_Click(object sender, RoutedEventArgs e)

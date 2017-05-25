@@ -86,6 +86,10 @@
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="HousingScheme\Plot.cs" />
+    <Compile Include="HousingScheme\PlotType.cs" />
+    <Compile Include="HousingScheme\PlotTypeUserControl.xaml.cs">
+      <DependentUpon>PlotTypeUserControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="HousingScheme\PlotUserControl.xaml.cs">
       <DependentUpon>PlotUserControl.xaml</DependentUpon>
     </Compile>
@@ -140,6 +144,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="HousingScheme\FoundationControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="HousingScheme\PlotTypeUserControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

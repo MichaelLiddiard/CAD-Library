@@ -1,6 +1,8 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
 using JPP.Core;
 using System;
 using System.Collections.Generic;
@@ -8,16 +10,61 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
+
+[assembly: CommandClass(typeof(JPP.Civils.Plot))]
 
 namespace JPP.Civils
 {
     [Serializable]
     public class Plot
     {        
+        public string PlotTypeId { get; set; }
+
+        [XmlIgnore]
+        public PlotType PlotType
+        {
+            get
+            {
+                if(_PlotType == null)
+                {
+                    var pt = from p in Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes where p.PlotTypeName == PlotTypeId select p;
+                    _PlotType = pt.First();
+                }
+
+                return _PlotType;
+            }
+            set
+            {
+                PlotTypeId = value.PlotTypeName;
+                _PlotType = value;
+            }
+        }
+        private PlotType _PlotType;
+
+        Point3d BasePoint { get; set; }
+
         public ObservableCollection<WallSegment> WallSegments { get; set; }
 
-        public string PlotName { get; set; } 
-        
+        public string PlotName { get; set; }
+
+        public long BlockRefPtr { get; set; }
+
+        [XmlIgnore]
+        public ObjectId BlockRef
+        {
+            get
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(BlockRefPtr), 0);
+            }
+            set
+            {
+                BlockRefPtr = value.Handle.Value;
+            }
+        }
+
         public Plot()
         {
             WallSegments = new ObservableCollection<WallSegment>();
@@ -239,11 +286,29 @@ namespace JPP.Civils
 
         public void Generate()
         {
+            
             Database acCurDb;
             acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
 
             Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
 
+            if(BlockRefPtr == 0)
+            {
+                //Create new block reference
+                // Add a block reference to model space. 
+                BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+                BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                BlockReference newBlockRef = new BlockReference(BasePoint, PlotType.BlockID);
+                acBlkTblRec.AppendEntity(newBlockRef);
+                acTrans.AddNewlyCreatedDBObject(newBlockRef, true);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+            
+            /*
             // Open the Block table for read
             BlockTable acBlkTbl;
             acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -252,13 +317,13 @@ namespace JPP.Civils
 
             if (!acBlkTbl.Has("FormationTag"))
             {
-                Utilities.LoadBlocks();
+                Core.Utilities.LoadBlocks();
             }
 
             foreach (WallSegment ws in WallSegments)
             {
                 ws.Generate();
-            }
+            }*/
         }
 
         public void Rebuild()
@@ -267,6 +332,39 @@ namespace JPP.Civils
             {
                 ws.Parent = this;
             }
+        }
+
+        [CommandMethod("NewPlot")]
+        public static void NewPlot()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ");
+            pStrOpts.AllowSpaces = true;
+            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
+            string plotTypeId = pStrRes.StringResult;
+
+            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot type name: ");
+            pStrOptsPlot.AllowSpaces = true;
+            PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
+            string plotId = pStrResPlot.StringResult;
+
+            Plot p = new Plot();
+            p.PlotName = plotId;
+            p.PlotTypeId = plotTypeId;
+            
+            PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
+            PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
+            p.BasePoint = pPtRes.Value;
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                p.Generate();
+                tr.Commit();
+            }
+
+            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
         }
     }
 }
