@@ -63,6 +63,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Civils\Civils.csproj">
+      <Project>{7E40BA37-DD5D-4114-B660-588438827952}</Project>
+      <Name>Civils</Name>
+    </ProjectReference>
     <ProjectReference Include="..\JPPCore\JPPCore.csproj">
       <Project>{265173E9-D3F3-4C37-9B29-071D4A7453B0}</Project>
       <Name>JPPCore</Name>

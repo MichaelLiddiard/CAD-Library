@@ -1,14 +1,19 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.Windows;
 using Autodesk.Windows;
+using JPP.Core;
 using JPPCommands;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Windows.Forms.Integration;
 using System.Windows.Media;
 
 [assembly: ExtensionApplication(typeof(JPP.Civils.Main))]
@@ -18,6 +23,9 @@ namespace JPP.Civils
 {
     public class Main : IExtensionApplication
     {
+        PaletteSet _ps;
+        PlotUserControl uc2;
+
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need
         /// </summary>
@@ -84,8 +92,6 @@ namespace JPP.Civils
             plotButton.Text = "Housing Scheme";
             plotButton.Name = "Import As Xref";
             plotButton.CheckStateChanged += PlotButton_CheckStateChanged;
-            plotButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
-            plotButton.CommandParameter = "._ImportAsXref ";
             plotButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.housingscheme);
             plotButton.Size = RibbonItemSize.Large;
             plotButton.Orientation = System.Windows.Controls.Orientation.Vertical;
@@ -172,22 +178,47 @@ namespace JPP.Civils
             JPPTab.Panels.Add(Panel);
             JPPTab.Panels.Add(utilitiesPanel);
             JPPTab.Panels.Add(fflPanel);
+
+            _ps = new PaletteSet("JPP", new Guid("8bc0c89e-3be0-4e30-975e-1a4e09cb0524"));
+            _ps.Size = new Size(600, 800);
+            _ps.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
+            _ps.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
+
+            /*SettingsUserControl suc = new SettingsUserControl();
+            ElementHost host1 = new ElementHost();
+            host1.AutoSize = true;
+            host1.Dock = DockStyle.Fill;
+            host1.Child = suc;
+            _ps.Add("Settings", host1);*/
+
+            uc2 = new PlotUserControl();            
+            ElementHost host2 = new ElementHost();
+            host2.AutoSize = true;
+            host2.Dock = DockStyle.Fill;
+            host2.Child = uc2;
+            _ps.Add("Plots", host2);
+
+            // Display our palette set
+
+            _ps.KeepFocus = true;
         }
 
         private void PlotButton_CheckStateChanged(object sender, EventArgs e)
         {
             if(((RibbonToggleButton)sender).CheckState == true)
             {
-                
+                _ps.Visible = true;
+                uc2.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().Plots;
             } else
             {
-
+                _ps.Visible = false;
+                uc2.DataContext = null;
             }
         }
 
         public static void LoadBlocks()
         {
-            Document doc = Application.DocumentManager.MdiActiveDocument;
+            Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             using (Database OpenDb = new Database(false, true))
             {               
                 string path = Assembly.GetExecutingAssembly().Location;

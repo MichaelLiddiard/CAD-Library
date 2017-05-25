@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,17 +25,17 @@ namespace JPP.Core
             acDoc.BeginDocumentClose += AcDoc_BeginDocumentClose;
             acDoc.Database.BeginSave += Database_BeginSave;
 
-            Load();
+            LoadWrapper();
         }
 
         private void Database_BeginSave(object sender, DatabaseIOEventArgs e)
         {
-            Save();
+            SaveWrapper();
         }
 
         private void AcDoc_BeginDocumentClose(object sender, DocumentBeginCloseEventArgs e)
         {
-            Save();
+            SaveWrapper();
         }
 
         protected virtual void Save()
@@ -58,6 +59,7 @@ namespace JPP.Core
                     using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
                     {
                         Save();
+                        tr.Commit();                        
                     }
                 }
             }
@@ -78,6 +80,7 @@ namespace JPP.Core
                     using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
                     {
                         Load();
+                        tr.Commit();
                     }
                 }
             }
@@ -87,7 +90,7 @@ namespace JPP.Core
             }
         }
 
-        private void SaveBinary(string key, object binaryObject)
+        protected void SaveBinary(string key, object binaryObject)
         {
             Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
@@ -98,12 +101,13 @@ namespace JPP.Core
             // We use Xrecord class to store data in Dictionaries
             Xrecord plotXRecord = new Xrecord();
 
-            XmlSerializer xml = new XmlSerializer(typeof(BinaryHelper));
-            BinaryHelper bh = new BinaryHelper() { t = binaryObject.GetType(), o = binaryObject };
+            XmlSerializer xml = new XmlSerializer(binaryObject.GetType());
+            BinaryHelper bh = new BinaryHelper(binaryObject);
+            //BinaryHelper bh = new BinaryHelper() { t = binaryObject.GetType(), o = binaryObject };
 
             //BinaryFormatter bf = new BinaryFormatter();
             MemoryStream ms = new MemoryStream();
-            xml.Serialize(ms, bh);
+            xml.Serialize(ms, binaryObject);
             string s = Encoding.ASCII.GetString(ms.ToArray());
 
             byte[] data = new byte[512];
@@ -127,7 +131,7 @@ namespace JPP.Core
             tr.AddNewlyCreatedDBObject(plotXRecord, true);
         }
 
-        public object LoadBinary(string Key)
+        protected T LoadBinary<T>(string Key)
         {
             Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
@@ -151,13 +155,14 @@ namespace JPP.Core
                 }
                 ms.Position = 0;
                 //System.Diagnostics.Debug.Print("===== OUR DATA: " + value.TypeCode.ToString() + ". " + value.Value.ToString());
-                XmlSerializer xml = new XmlSerializer(typeof(BinaryHelper));
+                XmlSerializer xml = new XmlSerializer(typeof(T));
 
                 try
                 {
                     string s = Encoding.ASCII.GetString(ms.ToArray());
-                    BinaryHelper bh = (BinaryHelper)xml.Deserialize(ms);
-                    return bh.o;           
+                    return (T) xml.Deserialize(ms);
+                    //return bh.Data;
+                    //return bh.o;           
                 }
                 catch (Exception e)
                 {
@@ -166,8 +171,26 @@ namespace JPP.Core
             }
             else
             {
-                return null;
+                return default(T);
             }
+        }
+
+        private Type[] GetInheritedTypes(Type baseType)
+        {
+            List<Type> results = new List<Type>();
+            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            foreach(Assembly a in loadedAssemblies)
+            {
+                foreach(Type t in a.GetTypes())
+                {
+                    if(t.IsAssignableFrom(baseType))
+                    {
+                        results.Add(t);
+                    }
+                }
+            }
+
+            return results.ToArray();
         }
 
         //public ObservableCollection<Plot> Plots { get; set; }
@@ -177,9 +200,18 @@ namespace JPP.Core
         //public float DefaultWidth { get; set; }
     }
 
-    struct BinaryHelper
+    public class BinaryHelper
     {
-        public Type t;
-        public object o;
+        public string Type;
+        public object Data;
+
+        public BinaryHelper(object data)
+        {
+            Type = data.GetType().AssemblyQualifiedName;
+            Data = data;
+        }
+
+        public BinaryHelper()
+        { }
     }
 }

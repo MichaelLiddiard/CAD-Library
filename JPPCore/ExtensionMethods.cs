@@ -27,7 +27,11 @@ namespace JPP.Core
 
         private static void Doc_BeginDocumentClose(object sender, DocumentBeginCloseEventArgs e)
         {
-            Stores.Remove(((Document)sender).Name + typeof(T));
+            var currentStores = (from s in Stores where s.Key.Contains(((Document)sender).Name) select s.Key).ToArray();            
+            foreach (string s in currentStores)
+            {
+                Stores.Remove(s);
+            }
         }
     }
 }

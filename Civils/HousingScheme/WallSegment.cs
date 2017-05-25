@@ -107,12 +107,13 @@ namespace JPP.Civils
         {
             this.Parent = parent;
             this.Name = Name;
-            ObjectId = centreline;
-            FoundationWidth = DocumentStore.Current.DefaultWidth;
+            ObjectId = centreline;            
 
             //Establish links
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
+
+            FoundationWidth = acDoc.GetDocumentStore<CivilDocumentStore>().DefaultWidth;
 
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {

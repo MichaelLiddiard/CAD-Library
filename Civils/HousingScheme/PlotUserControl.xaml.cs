@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JPP.Core
+namespace JPP.Civils
 {
     /// <summary>
     /// Interaction logic for PlotUserControl.xaml

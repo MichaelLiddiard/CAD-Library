@@ -4,6 +4,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
+using JPP.Civils;
 using JPP.Core;
 using System;
 using System.Collections.Generic;
@@ -97,7 +98,7 @@ namespace JPP.CivilStructures
                 }
             }           
 
-            DocumentStore.Current.Plots.Add(newPlot);
+            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(newPlot);
         }
 
         [CommandMethod("UpdateFoundation")]
@@ -128,7 +129,7 @@ namespace JPP.CivilStructures
                             {
                                 Xrecord xRec = tr.GetObject(dbExt.GetAt("JPP_Plot"), OpenMode.ForRead) as Xrecord;
                                 string plot = xRec.Data.AsArray()[0].Value.ToString();
-                                var target = from p in DocumentStore.Current.Plots where p.PlotName == plot select p; //DocumentStore.Current.Plots[plot];
+                                var target = from p in acDoc.GetDocumentStore<CivilDocumentStore>().Plots where p.PlotName == plot select p; //DocumentStore.Current.Plots[plot];
                                 foreach (Plot p in target)
                                 {
                                     p.Update();
@@ -170,7 +171,7 @@ namespace JPP.CivilStructures
                             {
                                 Xrecord xRec = tr.GetObject(dbExt.GetAt("JPP_Plot"), OpenMode.ForRead) as Xrecord;
                                 string plot = xRec.Data.AsArray()[0].Value.ToString();
-                                var target = from p in DocumentStore.Current.Plots where p.PlotName == plot select p; //DocumentStore.Current.Plots[plot];
+                                var target = from p in acDoc.GetDocumentStore<CivilDocumentStore>().Plots where p.PlotName == plot select p; //DocumentStore.Current.Plots[plot];
                                 foreach (Plot p in target)
                                 {
                                     PaletteSet _ps = new PaletteSet("WPF Palette");

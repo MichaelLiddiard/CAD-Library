@@ -145,32 +145,6 @@ namespace JPP.Core
             //Build the UI hierarchy
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
-            
-            
-            PaletteSet _ps = new PaletteSet("JPP", new Guid("8bc0c89e-3be0-4e30-975e-1a4e09cb0524"));
-            _ps.Size = new Size(600, 800);
-            _ps.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
-            _ps.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);            
-
-            SettingsUserControl suc = new SettingsUserControl();
-            ElementHost host1 = new ElementHost();
-            host1.AutoSize = true;
-            host1.Dock = DockStyle.Fill;
-            host1.Child = suc;
-            _ps.Add("Settings", host1);
-
-            PlotUserControl uc2 = new PlotUserControl();
-            uc2.DataContext = DocumentStore.Current.Plots;
-            ElementHost host2 = new ElementHost();
-            host2.AutoSize = true;
-            host2.Dock = DockStyle.Fill;
-            host2.Child = uc2;
-            _ps.Add("Plots", host2);
-
-            // Display our palette set
-
-            _ps.KeepFocus = true;
-            _ps.Visible = true;
 
             Load();
             //Update();
