@@ -44,6 +44,8 @@ namespace JPP.Civils
 
         Point3d BasePoint { get; set; }
 
+        double Rotation { get; set; }
+
         public ObservableCollection<WallSegment> WallSegments { get; set; }
 
         public string PlotName { get; set; }
@@ -345,7 +347,7 @@ namespace JPP.Civils
                 BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
                 BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
-                newBlockRef = new BlockReference(BasePoint, PlotType.BlockID);
+                newBlockRef = new BlockReference(BasePoint, PlotType.BlockID);                
                 BlockRef = acBlkTblRec.AppendEntity(newBlockRef);
                 acTrans.AddNewlyCreatedDBObject(newBlockRef, true);
 
@@ -367,8 +369,9 @@ namespace JPP.Civils
                     Polyline acPline = entToAdd as Polyline;
                     foreach(AccessPoint ap in PlotType.AccessPoints)
                     {
+                        
                         MText label = new MText();
-                        label.Contents = "Level label";
+                        label.Contents = (FinishedFloorLevel + ap.Offset).ToString("N3");
                         Point3d loc = acPline.GetPointAtParameter(ap.Parameter);
                         label.Location = new Point3d(loc.X, loc.Y, 0);
 
@@ -436,25 +439,53 @@ namespace JPP.Civils
             }
         }
 
+        public void Regen()
+        {
+
+        }
+
+        public void Highlight()
+        {
+
+        }
+
+        public void Unhighlight()
+        {
+
+        }
+
         [CommandMethod("NewPlot")]
         public static void NewPlot()
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
-            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ");
+            /*PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ");
+
             pStrOpts.AllowSpaces = true;
-            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
-            string plotTypeId = pStrRes.StringResult;
+            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);*/
+            PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
+            pKeyOpts.Message = "Enter plot type: ";
+
+            foreach(PlotType pt in acDoc.GetDocumentStore<CivilDocumentStore>().PlotTypes)
+            {
+                pKeyOpts.Keywords.Add(pt.PlotTypeName);
+            }            
+            pKeyOpts.AllowNone = false;
+            PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
+            string plotTypeId = pKeyRes.StringResult;
 
             PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ");
             pStrOptsPlot.AllowSpaces = true;
             PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
             string plotId = pStrResPlot.StringResult;
 
+            PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");
+
             Plot p = new Plot();
             p.PlotName = plotId;
             p.PlotTypeId = plotTypeId;
+            p.FinishedFloorLevel = promptFFLDouble.Value;
             
             PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
             PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);

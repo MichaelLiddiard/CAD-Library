@@ -1,4 +1,5 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using JPP.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +37,14 @@ namespace JPP.Civils
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             //acDoc.SendStringToExecute("NewFFL ", false, false, false);
+        }
+
+        private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            CivilDocumentStore cds = acDoc.GetDocumentStore<CivilDocumentStore>();
+
+            cds.Plots[dataGrid.SelectedIndex].Highlight();
         }
     }
 }
