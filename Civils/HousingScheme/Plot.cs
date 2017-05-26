@@ -65,9 +65,53 @@ namespace JPP.Civils
             }
         }
 
+        public List<long> LevelPtr { get; set; }
+
+        [XmlIgnore]
+        public ObservableCollection<ObjectId> Level
+        {
+            get
+            {
+                if(_Level == null)
+                {
+                    _Level = new ObservableCollection<ObjectId>();
+                    _Level.CollectionChanged += _Level_CollectionChanged;
+                    foreach (long l in LevelPtr)
+                    {                        
+                        Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                        Database acCurDb = acDoc.Database;
+                        _Level.Add(acCurDb.GetObjectId(false, new Handle(l), 0));
+                    }
+                }
+
+                return _Level;
+                
+            }
+            set
+            {
+                _Level = value;
+                _Level.CollectionChanged += _Level_CollectionChanged;
+            }
+        }
+
+        private void _Level_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if(e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+            {
+                foreach(ObjectId oi in e.NewItems)
+                {
+                    LevelPtr.Add(oi.Handle.Value);
+                }
+            }
+        }
+
+        [XmlIgnore]
+        private ObservableCollection<ObjectId> _Level;
+
         public Plot()
         {
             WallSegments = new ObservableCollection<WallSegment>();
+            LevelPtr = new List<long>();
         }       
 
         public double FormationLevel { get; set; }
@@ -292,22 +336,52 @@ namespace JPP.Civils
 
             Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
 
-            if(BlockRefPtr == 0)
+            BlockReference newBlockRef;
+
+            if (BlockRefPtr == 0)
             {
                 //Create new block reference
                 // Add a block reference to model space. 
                 BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
                 BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
-                BlockReference newBlockRef = new BlockReference(BasePoint, PlotType.BlockID);
-                acBlkTblRec.AppendEntity(newBlockRef);
+                newBlockRef = new BlockReference(BasePoint, PlotType.BlockID);
+                BlockRef = acBlkTblRec.AppendEntity(newBlockRef);
                 acTrans.AddNewlyCreatedDBObject(newBlockRef, true);
+
             }
             else
             {
                 throw new NotImplementedException();
             }
-            
+
+            //Explode the blockref
+            DBObjectCollection explodedBlock = new DBObjectCollection();
+            newBlockRef.Explode(explodedBlock);
+
+            foreach (Entity entToAdd in explodedBlock)
+            {
+                //Entity entToAdd = acTrans.GetObject(objectId, OpenMode.ForRead) as Entity;
+                if (entToAdd is Polyline)
+                {
+                    Polyline acPline = entToAdd as Polyline;
+                    foreach(AccessPoint ap in PlotType.AccessPoints)
+                    {
+                        MText label = new MText();
+                        label.Contents = "Level label";
+                        Point3d loc = acPline.GetPointAtParameter(ap.Parameter);
+                        label.Location = new Point3d(loc.X, loc.Y, 0);
+
+                        BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+                        BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+                        Level.Add(acBlkTblRec.AppendEntity(label));
+                        acTrans.AddNewlyCreatedDBObject(label, true);
+
+                    }
+
+                }
+            }
+
             /*
             // Open the Block table for read
             BlockTable acBlkTbl;
@@ -324,6 +398,34 @@ namespace JPP.Civils
             {
                 ws.Generate();
             }*/
+        }
+
+        public void Lock()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                DBDictionary gd = (DBDictionary)tr.GetObject(acCurDb.GroupDictionaryId, OpenMode.ForWrite);
+                Group group = new Group("Plot group", true);
+                gd.SetAt(PlotName, group);
+                tr.AddNewlyCreatedDBObject(group, true);
+
+                group.InsertAt(0, BlockRef);
+                foreach(ObjectId obj in Level)
+                {
+                    group.Append(obj);
+                }
+
+                tr.Commit();
+            }
+        }
+
+        public void Unlock()
+        {
+
+
         }
 
         public void Rebuild()
@@ -345,7 +447,7 @@ namespace JPP.Civils
             PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
             string plotTypeId = pStrRes.StringResult;
 
-            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot type name: ");
+            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ");
             pStrOptsPlot.AllowSpaces = true;
             PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
             string plotId = pStrResPlot.StringResult;
@@ -363,6 +465,8 @@ namespace JPP.Civils
                 p.Generate();
                 tr.Commit();
             }
+
+            p.Lock();
 
             acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
         }
