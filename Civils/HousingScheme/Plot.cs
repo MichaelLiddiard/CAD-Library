@@ -342,14 +342,16 @@ namespace JPP.Civils
 
             if (BlockRefPtr == 0)
             {
-                //Create new block reference
+                /*//Create new block reference
                 // Add a block reference to model space. 
                 BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
                 BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
                 newBlockRef = new BlockReference(BasePoint, PlotType.BlockID);                
                 BlockRef = acBlkTblRec.AppendEntity(newBlockRef);
-                acTrans.AddNewlyCreatedDBObject(newBlockRef, true);
+                acTrans.AddNewlyCreatedDBObject(newBlockRef, true);*/
+                BlockRef = Core.Utilities.InsertBlock(BasePoint, Rotation, PlotType.BlockID);
+                newBlockRef = (BlockReference) BlockRef.GetObject(OpenMode.ForWrite);
 
             }
             else
@@ -361,6 +363,8 @@ namespace JPP.Civils
             DBObjectCollection explodedBlock = new DBObjectCollection();
             newBlockRef.Explode(explodedBlock);
 
+            Main.LoadBlocks();
+
             foreach (Entity entToAdd in explodedBlock)
             {
                 //Entity entToAdd = acTrans.GetObject(objectId, OpenMode.ForRead) as Entity;
@@ -369,16 +373,17 @@ namespace JPP.Civils
                     Polyline acPline = entToAdd as Polyline;
                     foreach(AccessPoint ap in PlotType.AccessPoints)
                     {
-                        
-                        MText label = new MText();
-                        label.Contents = (FinishedFloorLevel + ap.Offset).ToString("N3");
+
+                        //MText label = new MText();
+                        string contents = (FinishedFloorLevel + ap.Offset).ToString("N3");
                         Point3d loc = acPline.GetPointAtParameter(ap.Parameter);
-                        label.Location = new Point3d(loc.X, loc.Y, 0);
+                        /*label.Location = new Point3d(loc.X, loc.Y, 0);
 
                         BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
                         BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
                         Level.Add(acBlkTblRec.AppendEntity(label));
-                        acTrans.AddNewlyCreatedDBObject(label, true);
+                        acTrans.AddNewlyCreatedDBObject(label, true);*/
+                        Level.Add(Core.Utilities.InsertBlock(loc, 0, "ProposedLevel"));
 
                     }
 
@@ -490,6 +495,14 @@ namespace JPP.Civils
             PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
             PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
             p.BasePoint = pPtRes.Value;
+
+            PromptPointOptions pAnglePtOpts = new PromptPointOptions("\nSelect point on base line: ");
+            PromptPointResult pAnglePtRes = acDoc.Editor.GetPoint(pAnglePtOpts);
+            Point3d p3d = pAnglePtRes.Value;
+            double x, y;
+            x = p3d.X - p.BasePoint.X;
+            y = p3d.Y - p.BasePoint.Y;
+            p.Rotation = Math.Atan(y / x);
 
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {

@@ -256,6 +256,10 @@ namespace JPP.Civils
                     {
                         ids.Add(bt["StormAdoptableManhole"]);
                     }
+                    if (bt.Has("ProposedLevel"))
+                    {
+                        ids.Add(bt["ProposedLevel"]);
+                    }
                     tr.Commit();
                 }
 
