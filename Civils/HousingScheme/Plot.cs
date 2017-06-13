@@ -67,7 +67,7 @@ namespace JPP.Civils
             }
         }
 
-        public List<long> LevelPtr { get; set; }
+        /*public List<long> LevelPtr { get; set; }
 
         [XmlIgnore]
         public ObservableCollection<ObjectId> Level
@@ -108,12 +108,15 @@ namespace JPP.Civils
         }
 
         [XmlIgnore]
-        private ObservableCollection<ObjectId> _Level;
+        private ObservableCollection<ObjectId> _Level;*/
+
+        public ObservableCollection<PlotLevel> Level;
 
         public Plot()
         {
             WallSegments = new ObservableCollection<WallSegment>();
-            LevelPtr = new List<long>();
+            Level = new ObservableCollection<PlotLevel>();
+            //LevelPtr = new List<long>();
         }       
 
         public double FormationLevel { get; set; }
@@ -374,17 +377,20 @@ namespace JPP.Civils
                     foreach(AccessPoint ap in PlotType.AccessPoints)
                     {
 
-                        //MText label = new MText();
-                        string contents = (FinishedFloorLevel + ap.Offset).ToString("N3");
+                        /*//MText label = new MText();
+                        string contents = (Parent.FinishedFloorLevel + ap.Offset).ToString("N3");
                         Point3d loc = acPline.GetPointAtParameter(ap.Parameter);
                         /*label.Location = new Point3d(loc.X, loc.Y, 0);
 
                         BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
                         BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
                         Level.Add(acBlkTblRec.AppendEntity(label));
-                        acTrans.AddNewlyCreatedDBObject(label, true);*/
-                        Level.Add(Core.Utilities.InsertBlock(loc, 0, "ProposedLevel"));
+                        acTrans.AddNewlyCreatedDBObject(label, true);
+                        Level.Add(Core.Utilities.InsertBlock(loc, 0, "ProposedLevel"));*/
 
+                        PlotLevel pl = new PlotLevel(false, ap.Offset, this);
+                        pl.Generate(acPline.GetPointAtParameter(ap.Parameter));
+                        Level.Add(pl);
                     }
 
                 }
@@ -421,9 +427,9 @@ namespace JPP.Civils
                 tr.AddNewlyCreatedDBObject(group, true);
 
                 group.InsertAt(0, BlockRef);
-                foreach(ObjectId obj in Level)
+                foreach(PlotLevel pl in Level)
                 {
-                    group.Append(obj);
+                    pl.Lock(group);                    
                 }
 
                 tr.Commit();

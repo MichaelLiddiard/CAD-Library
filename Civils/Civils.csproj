@@ -110,6 +110,7 @@
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="HousingScheme\Plot.cs" />
+    <Compile Include="HousingScheme\PlotLevel.cs" />
     <Compile Include="HousingScheme\PlotType.cs" />
     <Compile Include="HousingScheme\PlotTypeUserControl.xaml.cs">
       <DependentUpon>PlotTypeUserControl.xaml</DependentUpon>
