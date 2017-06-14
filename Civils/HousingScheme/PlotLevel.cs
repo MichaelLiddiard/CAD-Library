@@ -63,7 +63,7 @@ namespace JPP.Civils
                 }
                 else
                 {
-                    return (Parent.FinishedFloorLevel - Level).ToString("F3");
+                    return (Parent.FinishedFloorLevel + Level).ToString("F3");
                 }
             }
         }
@@ -96,7 +96,8 @@ namespace JPP.Civils
                 if (attDef.Tag == "LEVEL")
                 {
                     this.Text = attDef.ObjectId;
-                    attDef.TextString = TextValue;
+                    //Set to level offset otherwise event handler overrides
+                    attDef.TextString = TextValue;//Level.ToString("F3");
                     attDef.Modified += AttDef_Modified;
                 }
             }
@@ -128,12 +129,22 @@ namespace JPP.Civils
                     }
                     else
                     {
-                        Level = double.Parse(value);
+                        Level = double.Parse(value) - Parent.FinishedFloorLevel;
                     }
 
-                    attRef.TextString = TextValue;
+                    attRef.Modified -= AttDef_Modified;
+                    attRef.TextString = TextValue;                    
 
                     trans.Commit();
+
+                    //attRef.Modified += AttDef_Modified;
+                }
+                //Dont know why but if this is part of the main transcation it crashes autocad. Needs to be reviewed at some stage
+                //TODO: Review
+                using (Transaction trans = acCurDb.TransactionManager.StartTransaction())
+                {
+                    AttributeReference attRef = trans.GetObject(this.Text, OpenMode.ForWrite) as AttributeReference;
+                    attRef.Modified += AttDef_Modified;
                 }
             }
         }

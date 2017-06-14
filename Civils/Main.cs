@@ -27,6 +27,8 @@ namespace JPP.Civils
         PlotUserControl uc2;
         PlotTypeUserControl uc3;
 
+        RibbonToggleButton plotButton;
+
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need
         /// </summary>
@@ -86,7 +88,7 @@ namespace JPP.Civils
             utilitiesSource.Title = "Civil Utilities";
 
             //Add button to import xref
-            RibbonToggleButton plotButton = new RibbonToggleButton();
+            plotButton = new RibbonToggleButton();
             //RibbonButton plotButton = new RibbonButton();
             plotButton.ShowText = true;
             plotButton.ShowImage = true;
@@ -207,18 +209,32 @@ namespace JPP.Civils
 
             // Display our palette set
 
-            _ps.KeepFocus = true;
+            _ps.KeepFocus = false;
+
+            //Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.DocumentActivationChanged += DocumentManager_DocumentActivationChanged;
+            Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.DocumentActivated += PlotButton_CheckStateChanged;
 
             JPPCommandsInitialisation.JPPCommandsInitialise();
         }
 
+        private void DocumentManager_DocumentActivationChanged(object sender, DocumentActivationChangedEventArgs e)
+        {
+            _ps.Visible = false;
+            uc2.DataContext = null;
+            uc3.DataContext = null;
+        }
+
         private void PlotButton_CheckStateChanged(object sender, EventArgs e)
         {
-            if(((RibbonToggleButton)sender).CheckState == true)
+            //if(((RibbonToggleButton)sender).CheckState == true)
+            if ((plotButton).CheckState == true)
             {
+                if (Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument != null)
+                {
+                    uc2.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().Plots;
+                    uc3.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes;
+                }
                 _ps.Visible = true;
-                uc2.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().Plots;
-                uc3.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes;
             } else
             {
                 _ps.Visible = false;

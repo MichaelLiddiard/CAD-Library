@@ -369,30 +369,26 @@ namespace JPP.Civils
             Main.LoadBlocks();
 
             foreach (Entity entToAdd in explodedBlock)
-            {
-                //Entity entToAdd = acTrans.GetObject(objectId, OpenMode.ForRead) as Entity;
+            {                
                 if (entToAdd is Polyline)
                 {
                     Polyline acPline = entToAdd as Polyline;
                     foreach(AccessPoint ap in PlotType.AccessPoints)
                     {
-
-                        /*//MText label = new MText();
-                        string contents = (Parent.FinishedFloorLevel + ap.Offset).ToString("N3");
-                        Point3d loc = acPline.GetPointAtParameter(ap.Parameter);
-                        /*label.Location = new Point3d(loc.X, loc.Y, 0);
-
-                        BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-                        BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                        Level.Add(acBlkTblRec.AppendEntity(label));
-                        acTrans.AddNewlyCreatedDBObject(label, true);
-                        Level.Add(Core.Utilities.InsertBlock(loc, 0, "ProposedLevel"));*/
-
                         PlotLevel pl = new PlotLevel(false, ap.Offset, this);
                         pl.Generate(acPline.GetPointAtParameter(ap.Parameter));
                         Level.Add(pl);
                     }
 
+                    int vn = acPline.NumberOfVertices;
+                    for (int i = 0; i < vn; i++)
+                    {
+                        // Could also get the 3D point here
+                        Point3d pt = acPline.GetPoint3dAt(i);
+                        PlotLevel pl = new PlotLevel(false, -0.15, this);
+                        pl.Generate(pt);
+                        Level.Add(pl);
+                    }
                 }
             }
 
