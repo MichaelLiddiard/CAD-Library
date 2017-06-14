@@ -129,7 +129,12 @@ namespace JPP.Civils
                     }
                     else
                     {
-                        Level = double.Parse(value) - Parent.FinishedFloorLevel;
+                        double input = double.Parse(value);
+                        //Ignore changes to an absolute value
+                        if (Level != input)
+                        {
+                            Level = input - Parent.FinishedFloorLevel;
+                        }
                     }
 
                     attRef.Modified -= AttDef_Modified;
@@ -141,6 +146,30 @@ namespace JPP.Civils
                 }
                 //Dont know why but if this is part of the main transcation it crashes autocad. Needs to be reviewed at some stage
                 //TODO: Review
+                using (Transaction trans = acCurDb.TransactionManager.StartTransaction())
+                {
+                    AttributeReference attRef = trans.GetObject(this.Text, OpenMode.ForWrite) as AttributeReference;
+                    attRef.Modified += AttDef_Modified;
+                }
+            }
+        }
+
+        public void Update()
+        {
+            Application.DocumentManager.MdiActiveDocument.Editor.EnteringQuiescentState -= Editor_EnteringQuiescentState;
+
+            Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+
+            using (DocumentLock dl = Application.DocumentManager.MdiActiveDocument.LockDocument())
+            {
+                using (Transaction trans = acCurDb.TransactionManager.StartTransaction())
+                {
+                    AttributeReference attRef = trans.GetObject(this.Text, OpenMode.ForWrite) as AttributeReference;
+                    attRef.Modified -= AttDef_Modified;
+                    attRef.TextString = TextValue;
+
+                    trans.Commit();
+                }
                 using (Transaction trans = acCurDb.TransactionManager.StartTransaction())
                 {
                     AttributeReference attRef = trans.GetObject(this.Text, OpenMode.ForWrite) as AttributeReference;

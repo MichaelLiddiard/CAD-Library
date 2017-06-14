@@ -41,10 +41,24 @@ namespace JPP.Civils
 
         private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            
+        }
+
+        private void dataGrid_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
+        {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             CivilDocumentStore cds = acDoc.GetDocumentStore<CivilDocumentStore>();
 
-            cds.Plots[dataGrid.SelectedIndex].Highlight();
+
+            using (DocumentLock dl = acDoc.LockDocument())
+            {
+                cds.Plots[dataGrid.SelectedIndex].Highlight();
+                cds.Plots[dataGrid.SelectedIndex].Update();
+
+                // Redraw the drawing
+                Autodesk.AutoCAD.ApplicationServices.Application.UpdateScreen();
+                Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.UpdateScreen();
+            }
         }
     }
 }

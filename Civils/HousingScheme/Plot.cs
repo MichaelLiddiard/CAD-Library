@@ -132,7 +132,12 @@ namespace JPP.Civils
 
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())//acCurDb.TransactionManager.StartTransaction())
             {
-                foreach (WallSegment ws in WallSegments)
+                foreach (PlotLevel pl in Level)
+                {
+                    pl.Update();
+                }
+
+                /*foreach (WallSegment ws in WallSegments)
                 {
                     ws.Update();
                 }
@@ -144,7 +149,7 @@ namespace JPP.Civils
                     foundations.Add(tr.GetObject(ws.PositiveFoundationId, OpenMode.ForWrite) as Curve);
                 }
 
-                TrimFoundation(foundations);
+                TrimFoundation(foundations);*/
 
                 tr.Commit();
             }
