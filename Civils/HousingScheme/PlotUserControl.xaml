@@ -11,7 +11,20 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Plot Name" Binding="{Binding PlotName, UpdateSourceTrigger=PropertyChanged}" Width="0.5*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Plot Type" Binding="{Binding PlotTypeId, UpdateSourceTrigger=PropertyChanged}" Width="0.4*" IsReadOnly="True"/>
-                <DataGridTextColumn Header="FFL" Binding="{Binding FinishedFloorLevel, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}" Width="0.3*" />
+                <DataGridTextColumn Header="FFL" Width="0.3*" >
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type TextBox}">
+                            <Setter Property="Text" Value="{Binding FinishedFloorLevel, UpdateSourceTrigger=PropertyChanged}" />
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+
+                    <!-- not editing view -->
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Text" Value="{Binding FinishedFloorLevel, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}" />                            
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
                 <DataGridCheckBoxColumn Header="Locked" Binding="{Binding Locked, UpdateSourceTrigger=PropertyChanged}" Width="0.2*"/>
             </DataGrid.Columns>
         </DataGrid>
