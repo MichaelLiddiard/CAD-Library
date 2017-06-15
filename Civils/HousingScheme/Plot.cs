@@ -44,13 +44,21 @@ namespace JPP.Civils
 
         Point3d BasePoint { get; set; }
 
-        double Rotation { get; set; }
+        public double Rotation { get; set; }
 
         public ObservableCollection<WallSegment> WallSegments { get; set; }
 
         public string PlotName { get; set; }
 
         public long BlockRefPtr { get; set; }
+
+        public string FinishedFloorLevelText
+        {
+            get
+            {
+                return "FFL: " + FinishedFloorLevel;
+            }
+        }
 
         [XmlIgnore]
         public ObjectId BlockRef
@@ -64,6 +72,23 @@ namespace JPP.Civils
             set
             {
                 BlockRefPtr = value.Handle.Value;
+            }
+        }
+
+        public long FFLLabelPtr { get; set; }
+
+        [XmlIgnore]
+        public ObjectId FFLLabel
+        {
+            get
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(FFLLabelPtr), 0);
+            }
+            set
+            {
+                FFLLabelPtr = value.Handle.Value;
             }
         }
 
@@ -136,6 +161,9 @@ namespace JPP.Civils
                 {
                     pl.Update();
                 }
+
+                MText text = tr.GetObject(FFLLabel, OpenMode.ForWrite) as MText;
+                text.Contents = FinishedFloorLevelText;                                       
 
                 /*foreach (WallSegment ws in WallSegments)
                 {
@@ -394,8 +422,35 @@ namespace JPP.Civils
                         pl.Generate(pt);
                         Level.Add(pl);
                     }
+
+                    // Open the Block table for read
+                    BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                    // Open the Block table record Model space for write
+                    BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                    //Ad the FFL Label
+                    // Create a multiline text object
+                    using (MText acMText = new MText())
+                    {
+                        Solid3d Solid = new Solid3d();
+                        DBObjectCollection coll = new DBObjectCollection();
+                        coll.Add(acPline);
+                        Solid.Extrude(((Region)Region.CreateFromCurves(coll)[0]), 1, 0);                        
+                        Point3d centroid = new Point3d(Solid.MassProperties.Centroid.X, Solid.MassProperties.Centroid.Y, 0);
+                        Solid.Dispose();
+
+                        acMText.Location = centroid;
+                        acMText.Contents = FinishedFloorLevelText;
+                        acMText.Rotation = Rotation;
+                        acMText.Height = 7;
+                        acMText.Attachment = AttachmentPoint.MiddleCenter;
+
+                        FFLLabel = acBlkTblRec.AppendEntity(acMText);
+                        acTrans.AddNewlyCreatedDBObject(acMText, true);
+                    }
                 }
-            }
+            }          
 
             /*
             // Open the Block table for read
@@ -499,6 +554,64 @@ namespace JPP.Civils
             p.PlotTypeId = plotTypeId;
             p.FinishedFloorLevel = promptFFLDouble.Value;
             
+            PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
+            PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
+            p.BasePoint = pPtRes.Value;
+
+            PromptPointOptions pAnglePtOpts = new PromptPointOptions("\nSelect point on base line: ");
+            PromptPointResult pAnglePtRes = acDoc.Editor.GetPoint(pAnglePtOpts);
+            Point3d p3d = pAnglePtRes.Value;
+            double x, y;
+            x = p3d.X - p.BasePoint.X;
+            y = p3d.Y - p.BasePoint.Y;
+            p.Rotation = Math.Atan(y / x);
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                p.Generate();
+                tr.Commit();
+            }
+
+            p.Lock();
+
+            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
+        }
+
+        [CommandMethod("DeletePlot")]
+        public static void DeletePlot()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot name: ");
+
+            pStrOpts.AllowSpaces = true;
+            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
+            string plotName = pStrRes.StringResult;
+
+            PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
+            pKeyOpts.Message = "Enter plot type: ";
+
+            foreach (PlotType pt in acDoc.GetDocumentStore<CivilDocumentStore>().PlotTypes)
+            {
+                pKeyOpts.Keywords.Add(pt.PlotTypeName);
+            }
+            pKeyOpts.AllowNone = false;
+            PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
+            string plotTypeId = pKeyRes.StringResult;
+
+            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ");
+            pStrOptsPlot.AllowSpaces = true;
+            PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
+            string plotId = pStrResPlot.StringResult;
+
+            PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");
+
+            Plot p = new Plot();
+            p.PlotName = plotId;
+            p.PlotTypeId = plotTypeId;
+            p.FinishedFloorLevel = promptFFLDouble.Value;
+
             PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
             PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
             p.BasePoint = pPtRes.Value;

@@ -87,7 +87,7 @@ namespace JPP.Civils
 
             //string contents = (Parent.FinishedFloorLevel + ap.Offset).ToString("N3");            
 
-            this.BlockID = Core.Utilities.InsertBlock(location, 0, "ProposedLevel");
+            this.BlockID = Core.Utilities.InsertBlock(location, Parent.Rotation, "ProposedLevel");
             BlockReference acBlkTblRec = trans.GetObject(this.BlockID, OpenMode.ForRead) as BlockReference;//this.BlockID.Open(OpenMode.ForRead) as BlockReference;
             foreach(ObjectId attId in acBlkTblRec.AttributeCollection)
             {

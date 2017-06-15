@@ -36,7 +36,10 @@ namespace JPP.Civils
         private void deletebutton_Click(object sender, RoutedEventArgs e)
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            //acDoc.SendStringToExecute("NewFFL ", false, false, false);
+            /*CivilDocumentStore cds = acDoc.GetDocumentStore<CivilDocumentStore>();
+            string plotName = cds.Plots[dataGrid.SelectedIndex].PlotName;
+            acDoc.SendStringToExecute("DeletePlot " + plotName + " ", false, false, false);*/
+            acDoc.SendStringToExecute("DeletePlot ", false, false, false);
         }
 
         private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
