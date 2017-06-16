@@ -1,9 +1,11 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using JPP.Core;
+using JPPCommands;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -136,11 +138,13 @@ namespace JPP.Civils
         private ObservableCollection<ObjectId> _Level;*/
 
         public ObservableCollection<PlotLevel> Level;
+        public ObservableCollection<PlotHatch> Hatches;
 
         public Plot()
         {
             WallSegments = new ObservableCollection<WallSegment>();
             Level = new ObservableCollection<PlotLevel>();
+            Hatches = new ObservableCollection<PlotHatch>();
             //LevelPtr = new List<long>();
         }       
 
@@ -163,7 +167,7 @@ namespace JPP.Civils
                 }
 
                 MText text = tr.GetObject(FFLLabel, OpenMode.ForWrite) as MText;
-                text.Contents = FinishedFloorLevelText;                                       
+                text.Contents = FinishedFloorLevelText;
 
                 /*foreach (WallSegment ws in WallSegments)
                 {
@@ -178,6 +182,8 @@ namespace JPP.Civils
                 }
 
                 TrimFoundation(foundations);*/
+
+                
 
                 tr.Commit();
             }
@@ -395,7 +401,7 @@ namespace JPP.Civils
                 throw new NotImplementedException();
             }
 
-            //Explode the blockref
+            //Explode the blockref            
             DBObjectCollection explodedBlock = new DBObjectCollection();
             newBlockRef.Explode(explodedBlock);
 
@@ -406,9 +412,9 @@ namespace JPP.Civils
                 if (entToAdd is Polyline)
                 {
                     Polyline acPline = entToAdd as Polyline;
-                    foreach(AccessPoint ap in PlotType.AccessPoints)
+                    foreach (AccessPoint ap in PlotType.AccessPoints)
                     {
-                        PlotLevel pl = new PlotLevel(false, ap.Offset, this);
+                        PlotLevel pl = new PlotLevel(false, ap.Offset, this, ap.Parameter);
                         pl.Generate(acPline.GetPointAtParameter(ap.Parameter));
                         Level.Add(pl);
                     }
@@ -418,7 +424,7 @@ namespace JPP.Civils
                     {
                         // Could also get the 3D point here
                         Point3d pt = acPline.GetPoint3dAt(i);
-                        PlotLevel pl = new PlotLevel(false, -0.15, this);
+                        PlotLevel pl = new PlotLevel(false, -0.15, this, acPline.GetParameterAtPoint(pt));
                         pl.Generate(pt);
                         Level.Add(pl);
                     }
@@ -436,7 +442,7 @@ namespace JPP.Civils
                         Solid3d Solid = new Solid3d();
                         DBObjectCollection coll = new DBObjectCollection();
                         coll.Add(acPline);
-                        Solid.Extrude(((Region)Region.CreateFromCurves(coll)[0]), 1, 0);                        
+                        Solid.Extrude(((Region)Region.CreateFromCurves(coll)[0]), 1, 0);
                         Point3d centroid = new Point3d(Solid.MassProperties.Centroid.X, Solid.MassProperties.Centroid.Y, 0);
                         Solid.Dispose();
 
@@ -449,6 +455,8 @@ namespace JPP.Civils
                         FFLLabel = acBlkTblRec.AppendEntity(acMText);
                         acTrans.AddNewlyCreatedDBObject(acMText, true);
                     }
+
+                    GenerateHatching();
                 }
             }          
 
@@ -468,6 +476,96 @@ namespace JPP.Civils
             {
                 ws.Generate();
             }*/
+        }
+
+        public void GenerateHatching()
+        {
+            foreach(PlotHatch ph in Hatches)
+            {
+                ph.Erase();
+            }
+            Hatches.Clear();
+
+            Database acCurDb;
+            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+
+            Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
+
+            BlockReference newBlockRef = (BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
+            DBObjectCollection explodedBlock = new DBObjectCollection();
+            newBlockRef.Explode(explodedBlock);
+
+            foreach (Entity entToAdd in explodedBlock)
+            {
+                if (entToAdd is Polyline)
+                {
+                    Polyline acPline = entToAdd as Polyline;
+
+                    // Open the Block table for read
+                    BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                    // Open the Block table record Model space for write
+                    BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                    //Add tanking and exposed brickwork
+                    var levelChanges = (from l in Level orderby l.Param ascending select l).ToList();
+
+                    //Check if first point is ok
+                    if (Math.Round(levelChanges[0].Level, 3) != -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 150))
+                    {
+                        //Need to handle first point not being at level
+                        throw new NotImplementedException();
+                    }
+
+                    bool Tanking = false;
+                    Point3dCollection hatchBoundaryPoints = new Point3dCollection();
+                    Point3dCollection hatchOffsetPoints = new Point3dCollection();
+
+                    // Create the offset polyline
+                    DBObjectCollection offsetOutlineObjects = acPline.GetOffsetCurves(0.500);
+                    Polyline offsetOutline = offsetOutlineObjects[0] as Polyline;
+
+                    for (int i = 0; i < levelChanges.Count; i++)
+                    {
+                        if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 150))
+                        {
+                            if (!Tanking)
+                            {
+                                Tanking = true;
+                                hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i - 1].Param));
+                            }
+                            hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i].Param));
+                            hatchOffsetPoints.Add(offsetOutline.GetPointAtParameter(levelChanges[i].Param));
+                        }
+                        else
+                        {
+                            if (Tanking)
+                            {
+                                //end point found
+                                Tanking = false;
+                                hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i].Param));
+
+                                //Create hatch object
+                                //Traverse outline backwards to pick up points
+                                for (int j = hatchOffsetPoints.Count - 1; j >= 0; j--)
+                                {
+                                    hatchBoundaryPoints.Add(hatchOffsetPoints[j]);
+                                }
+
+                                // Lose this line in the real command
+                                bool success = JPPCommandsInitialisation.setJPPLayers();
+
+                                PlotHatch ph = new PlotHatch();
+                                ph.Generate(hatchBoundaryPoints);
+                                Hatches.Add(ph);
+
+                                hatchBoundaryPoints.Clear();
+                                hatchOffsetPoints.Clear();
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         public void Lock()
@@ -503,6 +601,10 @@ namespace JPP.Civils
             foreach(WallSegment ws in WallSegments)
             {
                 ws.Parent = this;
+            }
+            foreach(PlotLevel pl in Level)
+            {
+                pl.Parent = this;
             }
         }
 

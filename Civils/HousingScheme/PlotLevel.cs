@@ -68,16 +68,19 @@ namespace JPP.Civils
             }
         }
 
+        public double Param { get; set; }
+
         public PlotLevel()
         {
 
         }
 
-        public PlotLevel(bool absolute, double Level, Plot Parent)
+        public PlotLevel(bool absolute, double Level, Plot Parent, double Parameter)
         {
             this.Absolute = absolute;
             this.Level = Level;
             this.Parent = Parent;
+            Param = Parameter;
         }
 
         public void Generate(Point3d location)
@@ -138,7 +141,9 @@ namespace JPP.Civils
                     }
 
                     attRef.Modified -= AttDef_Modified;
-                    attRef.TextString = TextValue;                    
+                    attRef.TextString = TextValue;
+
+                    Parent.GenerateHatching();
 
                     trans.Commit();
 
