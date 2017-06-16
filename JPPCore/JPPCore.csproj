@@ -136,9 +136,9 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="Resources\Locked.png" />
-    <None Include="StructuralBlocks.dwg">
+    <Content Include="StructuralBlocks.dwg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\UnLocked.png" />

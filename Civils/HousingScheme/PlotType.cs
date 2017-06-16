@@ -106,6 +106,8 @@ namespace JPP.Civils
         [CommandMethod("CreatePlotType")]
         public static void CreatePlotType()
         {
+            JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
+
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 

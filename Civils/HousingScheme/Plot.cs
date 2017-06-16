@@ -524,6 +524,8 @@ namespace JPP.Civils
         [CommandMethod("NewPlot")]
         public static void NewPlot()
         {
+            JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
+
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 

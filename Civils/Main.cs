@@ -214,7 +214,9 @@ namespace JPP.Civils
             //Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.DocumentActivationChanged += DocumentManager_DocumentActivationChanged;
             Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.DocumentActivated += PlotButton_CheckStateChanged;
 
-            JPPCommandsInitialisation.JPPCommandsInitialise();
+            
+            //Throws exception
+            //JPPCommandsInitialisation.JPPCommandsInitialise();
         }
 
         private void DocumentManager_DocumentActivationChanged(object sender, DocumentActivationChangedEventArgs e)
