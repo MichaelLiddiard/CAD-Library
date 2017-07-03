@@ -2,6 +2,7 @@
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+using Autodesk.Windows;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -178,6 +179,21 @@ namespace JPP.Core
                 // Save the changes and dispose of the transaction
                 acTrans.Commit();
             }
+        }
+
+        public static RibbonButton CreateButton(string buttonText, Bitmap icon, RibbonItemSize size, string command)
+        {
+            RibbonButton newButton = new RibbonButton();
+            newButton.ShowText = true;
+            newButton.ShowImage = true;
+            newButton.Text = buttonText;
+            newButton.Name = buttonText;
+            newButton.Image = Core.Utilities.LoadImage(icon);
+            newButton.Size = size;
+            newButton.CommandHandler = new RibbonCommandHandler();
+            newButton.CommandParameter = "._" + command + " ";
+
+            return newButton;
         }
     }
 }

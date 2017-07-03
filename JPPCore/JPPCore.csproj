@@ -92,7 +92,7 @@
     <Compile Include="FoundationControl.xaml.cs">
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Loader.cs" />
+    <Compile Include="JPPMain.cs" />
     <Compile Include="Plot.cs" />
     <Compile Include="PlotUserControl.xaml.cs">
       <DependentUpon>PlotUserControl.xaml</DependentUpon>
@@ -103,6 +103,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="RegistryHelper.cs" />
     <Compile Include="RibbonCommandHandler.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="WallSegment.cs" />

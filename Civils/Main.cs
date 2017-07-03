@@ -28,7 +28,7 @@ namespace JPP.Civils
             RibbonTab JPPTab = rc.FindTab("JPPCORE_JPP_TAB");
             if(JPPTab == null)
             {
-                JPPTab = JPP.Core.Loader.CreateTab();
+                JPPTab = JPP.Core.JPPMain.CreateTab();
             }
 
             RibbonPanel Panel = new RibbonPanel();
