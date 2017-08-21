@@ -2,6 +2,8 @@
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
+using Autodesk.Civil.ApplicationServices;
+using Autodesk.Civil.DatabaseServices;
 using Autodesk.Windows;
 using JPP.Core;
 using JPPCommands;
@@ -29,6 +31,8 @@ namespace JPP.Civils
 
         RibbonToggleButton plotButton;
 
+        public static bool C3DActive;
+
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need
         /// </summary>
@@ -37,7 +41,7 @@ namespace JPP.Civils
             //Add the menu options
             RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
             RibbonTab JPPTab = rc.FindTab("JPPCORE_JPP_TAB");
-            if(JPPTab == null)
+            if (JPPTab == null)
             {
                 JPPTab = JPP.Core.Loader.CreateTab();
             }
@@ -56,7 +60,7 @@ namespace JPP.Civils
             RibbonPanelSource fflSource = new RibbonPanelSource();
             RibbonRowPanel fflStack = new RibbonRowPanel();
 
-            source.Title = "Civil Drainage";            
+            source.Title = "Civil Drainage";
 
             //Add button to re load all JPP libraries
             RibbonButton layPipeButton = new RibbonButton();
@@ -65,7 +69,7 @@ namespace JPP.Civils
             layPipeButton.Text = "Lay Pipe";
             layPipeButton.Name = "Lay Pipe";
             layPipeButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
-            layPipeButton.CommandParameter = "._LayPipe ";        
+            layPipeButton.CommandParameter = "._LayPipe ";
             layPipeButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon);
             layPipeButton.Image = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon_small);
             layPipeButton.Size = RibbonItemSize.Standard;
@@ -79,7 +83,7 @@ namespace JPP.Civils
             annotatePipeButton.Text = "Annotate Pipe";
             annotatePipeButton.Name = "Annotate Pipe";
             annotatePipeButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
-            annotatePipeButton.CommandParameter = "._AnnotatePipe ";            
+            annotatePipeButton.CommandParameter = "._AnnotatePipe ";
             annotatePipeButton.Image = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeAnnotate_small);
             annotatePipeButton.Size = RibbonItemSize.Standard;
             annotatePipeButton.IsEnabled = false;
@@ -163,7 +167,7 @@ namespace JPP.Civils
             plineToFFLButton.CommandHandler = new JPP.Core.RibbonCommandHandler();
             plineToFFLButton.CommandParameter = "._PlineToFFL ";
             //plineToFFLButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
-            plineToFFLButton.Size = RibbonItemSize.Standard;            
+            plineToFFLButton.Size = RibbonItemSize.Standard;
             fflStack.Items.Add(plineToFFLButton);
 
             //Build the UI hierarchy
@@ -194,7 +198,7 @@ namespace JPP.Civils
             host1.Child = suc;
             _ps.Add("Settings", host1);*/
 
-            uc2 = new PlotUserControl();            
+            uc2 = new PlotUserControl();
             ElementHost host2 = new ElementHost();
             host2.AutoSize = true;
             host2.Dock = DockStyle.Fill;
@@ -214,9 +218,26 @@ namespace JPP.Civils
             //Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.DocumentActivationChanged += DocumentManager_DocumentActivationChanged;
             Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.DocumentActivated += PlotButton_CheckStateChanged;
 
-            
+
             //Throws exception
             //JPPCommandsInitialisation.JPPCommandsInitialise();
+
+            //Check if running under Civil3D by trying to load dll
+            try
+            {
+                AttemptC3DLoad();
+                C3DActive = true;
+            }
+            catch (System.Exception e)
+            {
+                C3DActive = false;
+            }
+        }
+
+        private static void AttemptC3DLoad()
+        {
+            CivilDocument currentC3D = CivilApplication.ActiveDocument;
+
         }
 
         private void DocumentManager_DocumentActivationChanged(object sender, DocumentActivationChangedEventArgs e)
@@ -250,7 +271,7 @@ namespace JPP.Civils
             Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             using (Database OpenDb = new Database(false, true))
             {               
-                string path = Assembly.GetExecutingAssembly().Location;
+                string path = System.Reflection.Assembly.GetExecutingAssembly().Location;
                 path = path.Replace("Civils.dll", "");
                 doc.Editor.WriteMessage(path);
                 OpenDb.ReadDwgFile(path + "Templates.dwg", System.IO.FileShare.ReadWrite, true, "");
