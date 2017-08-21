@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CivilDocumentStore.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="HousingScheme\FoundationControl.xaml.cs">
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>

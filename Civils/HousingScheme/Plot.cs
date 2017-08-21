@@ -510,30 +510,66 @@ namespace JPP.Civils
                     //Add tanking and exposed brickwork
                     var levelChanges = (from l in Level orderby l.Param ascending select l).ToList();
 
+                    int startPoint = 0;
+                    bool Tanking = false;
+
                     //Check if first point is ok
                     if (Math.Round(levelChanges[0].Level, 3) != -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 150))
                     {
                         //TODO: Need to handle first point not being at level
-                        throw new NotImplementedException();
+                        //Step backwards through the list untill point is found
+                        int negCount = 0;
+                        for (int i = levelChanges.Count - 1; i >= 0; i--)
+                        {
+                            if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) == FinishedFloorLevel - 150))
+                            {
+                                negCount--;
+                            }
+                            else
+                            {
+                                //Select first "end" only. Clunky, change to while loop?
+                                if (startPoint == 0)
+                                {
+                                    startPoint = negCount;
+                                }
+                            }
+                        }
                     }
-
-                    bool Tanking = false;
+                    
                     Point3dCollection hatchBoundaryPoints = new Point3dCollection();
                     Point3dCollection hatchOffsetPoints = new Point3dCollection();
 
                     // Create the offset polyline
                     //TODO: Add check here for very small lines not able to be offset
-                    DBObjectCollection offsetOutlineObjects = acPline.GetOffsetCurves(0.500);
+                    DBObjectCollection offsetOutlineObjects = acPline.GetOffsetCurves(Civils.Constants.TankingHatchOffest);
                     Polyline offsetOutline = offsetOutlineObjects[0] as Polyline;
 
-                    for (int i = 0; i < levelChanges.Count; i++)
+                    for (int step = startPoint; step < levelChanges.Count; step++)
                     {
+                        int i = 0; //Convert step to accessor
+                        if (step < 0)
+                        {
+                            i = levelChanges.Count + startPoint;
+                            
+                        } else
+                        {
+                            i = step;
+                        }
+
                         if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 150))
                         {
                             if (!Tanking)
                             {
                                 Tanking = true;
-                                hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i - 1].Param));
+                                //Stop overflow if the first point is one
+                                if (i == 0)
+                                {
+                                    hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[levelChanges.Count - 1].Param));
+                                }
+                                else
+                                {
+                                    hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i - 1].Param));
+                                }
                             }
                             hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i].Param));
                             hatchOffsetPoints.Add(offsetOutline.GetPointAtParameter(levelChanges[i].Param));
@@ -564,6 +600,30 @@ namespace JPP.Civils
                                 hatchOffsetPoints.Clear();
                             }
                         }
+                    }
+
+                    //Loop finished without tank ending, therefore first point is end
+                    if(Tanking)
+                    {
+                        Tanking = false;
+                        hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[0].Param));
+
+                        //Create hatch object
+                        //Traverse outline backwards to pick up points
+                        for (int j = hatchOffsetPoints.Count - 1; j >= 0; j--)
+                        {
+                            hatchBoundaryPoints.Add(hatchOffsetPoints[j]);
+                        }
+
+                        // Lose this line in the real command
+                        bool success = JPPCommandsInitialisation.setJPPLayers();
+
+                        PlotHatch ph = new PlotHatch();
+                        ph.Generate(hatchBoundaryPoints);
+                        Hatches.Add(ph);
+
+                        hatchBoundaryPoints.Clear();
+                        hatchOffsetPoints.Clear();
                     }
                 }
             }
