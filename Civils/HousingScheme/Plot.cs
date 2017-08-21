@@ -479,7 +479,7 @@ namespace JPP.Civils
         }
 
         public void GenerateHatching()
-        {
+        {            
             foreach(PlotHatch ph in Hatches)
             {
                 ph.Erase();
@@ -513,7 +513,7 @@ namespace JPP.Civils
                     //Check if first point is ok
                     if (Math.Round(levelChanges[0].Level, 3) != -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 150))
                     {
-                        //Need to handle first point not being at level
+                        //TODO: Need to handle first point not being at level
                         throw new NotImplementedException();
                     }
 
@@ -522,6 +522,7 @@ namespace JPP.Civils
                     Point3dCollection hatchOffsetPoints = new Point3dCollection();
 
                     // Create the offset polyline
+                    //TODO: Add check here for very small lines not able to be offset
                     DBObjectCollection offsetOutlineObjects = acPline.GetOffsetCurves(0.500);
                     Polyline offsetOutline = offsetOutlineObjects[0] as Polyline;
 
