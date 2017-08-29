@@ -194,8 +194,8 @@ namespace JPP.Core
             return InsertBlock(anchorPoint, Rotation, blockDef.ObjectId);
         }
 
-            public static ObjectId InsertBlock(Point3d anchorPoint, double Rotation, ObjectId BlockID)
-        { 
+        public static ObjectId InsertBlock(Point3d anchorPoint, double Rotation, ObjectId BlockID)
+        {  
             // Get the current document and database
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
@@ -218,6 +218,9 @@ namespace JPP.Core
                 CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
 
                 acBlkRef.TransformBy(Matrix3d.Rotation(Rotation, curUCS.Zaxis, anchorPoint));
+                //For some unknown reason this is needed in Civil3D
+                //TODO: Find reason below line is needed and fix it                
+                acBlkRef.TransformBy(Matrix3d.Scaling(1000, anchorPoint));
                
                 acBlkRef.AddContext(occ.GetContext("1:1"));
 

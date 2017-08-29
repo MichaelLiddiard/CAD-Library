@@ -12,5 +12,7 @@ namespace JPP.Civils
         /// Number of drawing units to offset tanking hatch by
         /// </summary>
         public const float TankingHatchOffest = 1f;
+
+        public const string ProposedGroundName = "Proposed Ground";
     }
 }

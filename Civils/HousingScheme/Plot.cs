@@ -4,6 +4,8 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.Civil.ApplicationServices;
+using Autodesk.Civil.DatabaseServices;
 using JPP.Core;
 using JPPCommands;
 using System;
@@ -13,6 +15,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+
+using CivSurface = Autodesk.Civil.DatabaseServices.Surface;
+using Entity = Autodesk.AutoCAD.DatabaseServices.Entity;
+using DBObject = Autodesk.AutoCAD.DatabaseServices.DBObject;
 
 [assembly: CommandClass(typeof(JPP.Civils.Plot))]
 
@@ -684,6 +690,54 @@ namespace JPP.Civils
 
         }
 
+        public void GetFFLfromSurface()
+        {
+            Database acCurDb;
+            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+
+            Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
+
+            BlockReference newBlockRef = acTrans.GetObject(BlockRef, OpenMode.ForWrite) as BlockReference;//(BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
+            DBObjectCollection explodedBlock = new DBObjectCollection();
+            newBlockRef.Explode(explodedBlock);
+
+            foreach (Entity entToAdd in explodedBlock)
+            {
+                if (entToAdd is Polyline)
+                {
+                    Polyline acPline = entToAdd as Polyline;
+
+                    ObjectIdCollection SurfaceIds = CivilApplication.ActiveDocument.GetSurfaceIds();
+                    foreach (ObjectId surfaceId in SurfaceIds)
+                    {
+                        CivSurface oSurface = surfaceId.GetObject(OpenMode.ForRead) as CivSurface;
+                        if (oSurface.Name == Civils.Constants.ProposedGroundName)
+                        {
+                            //Need to add the temp line to create feature line from it
+                            BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+                            BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+                            ObjectId obj1 = acBlkTblRec.AppendEntity(acPline);
+                            acTrans.AddNewlyCreatedDBObject(acPline, true);
+
+                            ObjectId perimId = FeatureLine.Create("tempLine", obj1);
+
+                            FeatureLine perim = acTrans.GetObject(perimId, OpenMode.ForWrite) as FeatureLine;
+                            perim.AssignElevationsFromSurface(oSurface.Id, false);
+
+                            this.FinishedFloorLevel = perim.MaxElevation;
+                            for(int i = 0; i < this.Level.Count; i++)
+                            {
+                                var points = perim.GetPoints(Autodesk.Civil.FeatureLinePointType.AllPoints);
+                                this.Level[i].Level = points[i].Z;
+                            }
+                            this.Update();
+                        }
+
+                    }
+                }
+            }
+        }
+
         [CommandMethod("NewPlot")]
         public static void NewPlot()
         {
@@ -712,12 +766,17 @@ namespace JPP.Civils
             PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
             string plotId = pStrResPlot.StringResult;
 
-            PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");
-
             Plot p = new Plot();
             p.PlotName = plotId;
             p.PlotTypeId = plotTypeId;
-            p.FinishedFloorLevel = promptFFLDouble.Value;
+
+            //Switch here for civil3d
+            if (!Civils.Main.C3DActive)
+            {            
+                //Civil 3d not available so prompt for level
+                PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");                                
+                p.FinishedFloorLevel = promptFFLDouble.Value;
+            }
             
             PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
             PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
@@ -734,6 +793,16 @@ namespace JPP.Civils
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
                 p.Generate();
+
+                if (Civils.Main.C3DActive)
+                {
+                    //p.GetFFLfromSurface();
+                }
+
+                //TODO: This is horrendous but fuck it. Need to refactor to remove extra regen
+                //p.Generate();
+                p.Update();
+
                 tr.Commit();
             }
 
@@ -745,7 +814,8 @@ namespace JPP.Civils
         [CommandMethod("DeletePlot")]
         public static void DeletePlot()
         {
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            //TODO: get deletion to work
+            /*Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
             PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot name: ");
@@ -797,7 +867,32 @@ namespace JPP.Civils
 
             p.Lock();
 
-            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
+            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);*/
+        }
+
+        [CommandMethod("SetPlotFFL")]
+        public static void SetPlotFFL()
+        {
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            using (DocumentLock dl = acDoc.LockDocument())
+            {
+                var Plots = acDoc.GetDocumentStore<CivilDocumentStore>().Plots;
+
+                foreach(Plot p in Plots)
+                {
+                    using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        p.GetFFLfromSurface();
+                        tr.Commit();
+                    }
+                }                
+            }
+
+            // Redraw the drawing
+            Autodesk.AutoCAD.ApplicationServices.Application.UpdateScreen();
+            Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.UpdateScreen();
         }
     }
 }
