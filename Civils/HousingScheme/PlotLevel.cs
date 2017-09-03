@@ -50,6 +50,8 @@ namespace JPP.Civils
 
         public bool Absolute { get; set; }
 
+        public bool LevelAccess { get; set; }
+
         [XmlIgnore]
         public Plot Parent { get; set; }
 
@@ -81,6 +83,12 @@ namespace JPP.Civils
             this.Level = Level;
             this.Parent = Parent;
             Param = Parameter;
+
+            //Check if access point?
+            if(Level == 0)
+            {
+                this.LevelAccess = true;
+            }
         }
 
         public void Generate(Point3d location)
@@ -121,8 +129,6 @@ namespace JPP.Civils
             {
                 using (Transaction trans = acCurDb.TransactionManager.StartTransaction())
                 {
-
-
                     AttributeReference attRef = trans.GetObject(this.Text, OpenMode.ForWrite) as AttributeReference;
                     string value = attRef.TextString;
                     if (value[0] == '@')
@@ -131,12 +137,13 @@ namespace JPP.Civils
                         Level = double.Parse(value.Remove(0, 1));
                     }
                     else
-                    {
+                    {                        
                         double input = double.Parse(value);
                         //Ignore changes to an absolute value
                         if (Level != input)
                         {
                             Level = input - Parent.FinishedFloorLevel;
+                            Absolute = false;
                         }
                     }
 

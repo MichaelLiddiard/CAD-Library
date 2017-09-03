@@ -175,6 +175,8 @@ namespace JPP.Civils
                 MText text = tr.GetObject(FFLLabel, OpenMode.ForWrite) as MText;
                 text.Contents = FinishedFloorLevelText;
 
+                this.GenerateHatching();
+
                 /*foreach (WallSegment ws in WallSegments)
                 {
                     ws.Update();
@@ -486,6 +488,7 @@ namespace JPP.Civils
 
         public void GenerateHatching()
         {            
+            //Set to only work for exposed brickwork
             foreach(PlotHatch ph in Hatches)
             {
                 ph.Erase();
@@ -520,14 +523,16 @@ namespace JPP.Civils
                     bool Tanking = false;
 
                     //Check if first point is ok
-                    if (Math.Round(levelChanges[0].Level, 3) != -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 150))
+                    //if (Math.Round(levelChanges[0].Level, 3) != -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 0.150))
+                    if (Math.Round(levelChanges[0].Level, 3) < -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) < FinishedFloorLevel - 0.150))
                     {
                         //TODO: Need to handle first point not being at level
                         //Step backwards through the list untill point is found
                         int negCount = 0;
                         for (int i = levelChanges.Count - 1; i >= 0; i--)
                         {
-                            if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) == FinishedFloorLevel - 150))
+                            //if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) == FinishedFloorLevel - 0.150))
+                            if (Math.Round(levelChanges[i].Level, 3) < -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) < FinishedFloorLevel - 0.150))
                             {
                                 negCount--;
                             }
@@ -562,7 +567,8 @@ namespace JPP.Civils
                             i = step;
                         }
 
-                        if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 150))
+                        //if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) == FinishedFloorLevel - 0.150))
+                        if (Math.Round(levelChanges[i].Level, 3) < -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) < FinishedFloorLevel - 0.150))
                         {
                             if (!Tanking)
                             {
@@ -724,13 +730,23 @@ namespace JPP.Civils
                             FeatureLine perim = acTrans.GetObject(perimId, OpenMode.ForWrite) as FeatureLine;
                             perim.AssignElevationsFromSurface(oSurface.Id, false);
 
-                            this.FinishedFloorLevel = perim.MaxElevation;
-                            for(int i = 0; i < this.Level.Count; i++)
+                            this.FinishedFloorLevel = Math.Round(perim.MaxElevation * 1000)/ 1000 + 0.15;
+                            this.Update();
+                            for (int i = 0; i < this.Level.Count; i++)
                             {
                                 var points = perim.GetPoints(Autodesk.Civil.FeatureLinePointType.AllPoints);
-                                this.Level[i].Level = points[i].Z;
+                                AttributeReference levelText = acTrans.GetObject(this.Level[i].Text, OpenMode.ForWrite) as AttributeReference;
+                                if(Level[i].LevelAccess)
+                                {
+                                    levelText.TextString = (Math.Round(perim.MaxElevation * 1000) / 1000 + 0.15).ToString();
+                                } else
+                                {
+                                    levelText.TextString = "@" + Math.Round(points[i].Z * 1000) / 1000;
+                                }                                
                             }
-                            this.Update();
+
+                            perim.Erase();
+                            acPline.Erase();
                         }
 
                     }
@@ -796,7 +812,7 @@ namespace JPP.Civils
 
                 if (Civils.Main.C3DActive)
                 {
-                    //p.GetFFLfromSurface();
+                    p.GetFFLfromSurface();
                 }
 
                 //TODO: This is horrendous but fuck it. Need to refactor to remove extra regen
