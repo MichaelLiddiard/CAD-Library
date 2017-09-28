@@ -23,28 +23,18 @@ using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace JPP.Core
 {
-<<<<<<< HEAD:JPPCore/Loader.cs
-    public class Loader : IExtensionApplication
-=======
     /// <summary>
     /// Loader class, the main entry point for the full application suite. Implements IExtensionApplication is it automatically initialised and terminated by AutoCad.
     /// </summary>
     public class JPPMain : IExtensionApplication
->>>>>>> Core:JPPCore/JPPMain.cs
     {
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need. Main library entry point
         /// </summary>
         public void Initialize()
         {
-<<<<<<< HEAD:JPPCore/Loader.cs
-#if DEBUG
-            //Application.ShowAlertDialog("Init called");
-#endif
-=======
             //Detect if ribbon is currently loaded, and if not wait until the application is Idle.
             //Throws an error if try to add to the menu with the ribbon unloaded
->>>>>>> Core:JPPCore/JPPMain.cs
             if (ComponentManager.Ribbon == null)
             {
                 Application.Idle += Application_Idle;
@@ -52,26 +42,7 @@ namespace JPP.Core
             }
             else
             {
-<<<<<<< HEAD:JPPCore/Loader.cs
-                InitJPP(); //Removed as menu causes a crash for some reason
-            }
-        }
-
-        private void Application_Idle(object sender, EventArgs e)
-        {
-            Application.Idle -= Application_Idle;
-            InitJPP();
-        }
-
-        private void ComponentManager_ItemInitialized(object sender, RibbonItemEventArgs e)
-        {
-            Application.ShowAlertDialog("triggered");
-            if (ComponentManager.Ribbon != null)
-            {
-                Application.ShowAlertDialog("Ribbon active");
-=======
                 //Ribbon existis, call the initialize method directly
->>>>>>> Core:JPPCore/JPPMain.cs
                 InitJPP();
             }
         }
@@ -83,51 +54,6 @@ namespace JPP.Core
         {
             throw new NotImplementedException();
         }
-<<<<<<< HEAD:JPPCore/Loader.cs
-
-        [CommandMethod("LoadJPP")]
-        public static void Load()
-        {
-            List<string> allAssemblies = new List<string>();
-            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
-
-            foreach (string dll in Directory.GetFiles(path, "*.dll"))
-            {
-                string dllPath = dll.Replace('\\', '/');
-                //Application.DocumentManager.MdiActiveDocument.SendStringToExecute("command \"NETLOAD\" \"" + dllPath + "\"", true, false, false);
-                /*ResultBuffer args = new ResultBuffer(
-                new TypedValue((int)LispDataType.Text, "command"),
-                new TypedValue((int)LispDataType.Text, "NETLOAD"),
-                new TypedValue((int)LispDataType.Text, dllPath));
-                Application.Invoke(args);
-                //Assembly loaded = Assembly.LoadFrom(dll);*/
-                ExtensionLoader.Load(dll);                
-            }            
-        }
-
-        [CommandMethod("Update")]
-        public static void Update()
-        {
-            string archivePath = "M:\\ML\\CAD-Library\\Libraries-v";
-
-            //Get manifest
-            using (TextReader tr = File.OpenText("M:\\ML\\CAD-Library\\manifest.txt"))
-            {
-                archivePath = archivePath + tr.ReadToEnd() + ".zip";
-            }
-
-            //Download the latest DLL update
-            try
-            {
-                ZipArchive archive = ZipFile.OpenRead(archivePath);
-                
-                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path);
-                }
-                foreach (ZipArchiveEntry entry in archive.Entries)
-=======
 
         /// <summary>
         /// Event handler to detect when the program is fully loaded
@@ -162,7 +88,6 @@ namespace JPP.Core
                 autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Create Autload Setting"));                
                 autoloadPrompt.DefaultButton = 0;
                 autoloadPrompt.Callback = delegate(ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
->>>>>>> Core:JPPCore/JPPMain.cs
                 {
                     if(e.ButtonId == 1)
                     {
@@ -187,9 +112,6 @@ namespace JPP.Core
         /// <returns>The created tab</returns>
         public static RibbonTab CreateTab()
         {
-<<<<<<< HEAD:JPPCore/Loader.cs
-            RibbonTab JPPTab = CreateTab();
-=======
             RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
             RibbonTab JPPTab = new RibbonTab();
 
@@ -197,7 +119,6 @@ namespace JPP.Core
             JPPTab.Name = Constants.JPP_Tab_Title;
             JPPTab.Title = Constants.JPP_Tab_Title;
             JPPTab.Id = Constants.JPP_Tab_ID;
->>>>>>> Core:JPPCore/JPPMain.cs
 
             rc.Tabs.Add(JPPTab);
             return JPPTab;
@@ -211,12 +132,6 @@ namespace JPP.Core
         {
             RibbonPanel Panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
-<<<<<<< HEAD:JPPCore/Loader.cs
-            source.Title = "Common";
-
-            //Add button to re load all JPP libraries
-            RibbonButton runLoad = new RibbonButton();
-=======
             source.Title = "Main";
 
             RibbonRowPanel stack = new RibbonRowPanel();
@@ -228,18 +143,11 @@ namespace JPP.Core
 
             //Add button to update all JPP libraries
             /*RibbonButton runLoad = new RibbonButton();
->>>>>>> Core:JPPCore/JPPMain.cs
             runLoad.ShowText = true;
             runLoad.Text = "Update";
             runLoad.Name = "Check for updates";
             runLoad.CommandHandler = new RibbonCommandHandler();
             runLoad.CommandParameter = "._Update ";
-<<<<<<< HEAD:JPPCore/Loader.cs
-            source.Items.Add(runLoad);
-
-            //Not sure why but something in the next three lines crashes the addin when auto loaded from init
-            //Build the UI hierarchy
-=======
 #if DEBUG
             runLoad.IsEnabled = false;
 #endif
@@ -247,22 +155,17 @@ namespace JPP.Core
             source.Items.Add(stack);*/
 
             //Add the new tab section to the main tab
->>>>>>> Core:JPPCore/JPPMain.cs
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
         }
 
-<<<<<<< HEAD:JPPCore/Loader.cs
-            Load();
-            //Update();
-=======
         //TODO: Fix this method, and make more functional
         /// <summary>
         /// Create the pallette set window to which individual panels get added
         /// </summary>
         public static void CreateWindow()
         {
-            PaletteSet _ps = new PaletteSet("WPF Palette");
+            /*PaletteSet _ps = new PaletteSet("WPF Palette");
             _ps.Size = new Size(400, 600);
             _ps.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
 
@@ -276,7 +179,7 @@ namespace JPP.Core
 
             // Display our palette set
             _ps.KeepFocus = true;
-            _ps.Visible = true;
+            _ps.Visible = true;*/
         }
 
         /// <summary>
@@ -298,7 +201,6 @@ namespace JPP.Core
                     ExtensionLoader.Load(dll);
                 }
             }
->>>>>>> Core:JPPCore/JPPMain.cs
         }
 
         [CommandMethod("Update")]

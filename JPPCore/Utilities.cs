@@ -2,11 +2,8 @@
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
-<<<<<<< HEAD
 using Autodesk.AutoCAD.Geometry;
-=======
 using Autodesk.Windows;
->>>>>>> Core
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -185,7 +182,6 @@ namespace JPP.Core
             }
         }
 
-<<<<<<< HEAD
         public static ObjectId InsertBlock(Point3d anchorPoint, double Rotation, string BlockID)
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
@@ -200,7 +196,7 @@ namespace JPP.Core
         }
 
         public static ObjectId InsertBlock(Point3d anchorPoint, double Rotation, ObjectId BlockID)
-        {  
+        {
             // Get the current document and database
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
@@ -212,7 +208,7 @@ namespace JPP.Core
             BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
 
             BlockTableRecord blockDef = BlockID.GetObject(OpenMode.ForRead) as BlockTableRecord;
-            
+
             // Open the Block table record Model space for write
             BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
@@ -226,7 +222,7 @@ namespace JPP.Core
                 //For some unknown reason this is needed in Civil3D
                 //TODO: Find reason below line is needed and fix it                
                 acBlkRef.TransformBy(Matrix3d.Scaling(1000, anchorPoint));
-               
+
                 acBlkRef.AddContext(occ.GetContext("1:1"));
 
                 acBlkTblRec = acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -256,7 +252,8 @@ namespace JPP.Core
 
                 return acBlkRef.ObjectId;
             }
-=======
+        }
+
         public static RibbonButton CreateButton(string buttonText, Bitmap icon, RibbonItemSize size, string command)
         {
             RibbonButton newButton = new RibbonButton();
@@ -270,7 +267,7 @@ namespace JPP.Core
             newButton.CommandParameter = "._" + command + " ";
 
             return newButton;
->>>>>>> Core
+
         }
     }
 }
