@@ -2,7 +2,11 @@
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+<<<<<<< HEAD
 using Autodesk.AutoCAD.Geometry;
+=======
+using Autodesk.Windows;
+>>>>>>> Core
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -181,6 +185,7 @@ namespace JPP.Core
             }
         }
 
+<<<<<<< HEAD
         public static ObjectId InsertBlock(Point3d anchorPoint, double Rotation, string BlockID)
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
@@ -251,6 +256,21 @@ namespace JPP.Core
 
                 return acBlkRef.ObjectId;
             }
+=======
+        public static RibbonButton CreateButton(string buttonText, Bitmap icon, RibbonItemSize size, string command)
+        {
+            RibbonButton newButton = new RibbonButton();
+            newButton.ShowText = true;
+            newButton.ShowImage = true;
+            newButton.Text = buttonText;
+            newButton.Name = buttonText;
+            newButton.Image = Core.Utilities.LoadImage(icon);
+            newButton.Size = size;
+            newButton.CommandHandler = new RibbonCommandHandler();
+            newButton.CommandParameter = "._" + command + " ";
+
+            return newButton;
+>>>>>>> Core
         }
     }
 }
