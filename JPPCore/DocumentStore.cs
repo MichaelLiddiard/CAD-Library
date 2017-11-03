@@ -13,41 +13,51 @@ using System.Xml.Serialization;
 
 namespace JPP.Core
 {
+    //TODO: Rework to use reflection, no need to override save and load?
+    /// <summary>
+    /// Class for storing of document level data
+    /// </summary>
     public class DocumentStore
     {
+        #region Constructor and Fields
+        /// <summary>
+        /// Create a new document store
+        /// </summary>
         public DocumentStore()
         {
-            //Load the data
+            //Get a reference to the active document
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
-            //Attach to current doc
+            //Attach to current doc to allow for automatically persisting the database
             acDoc.BeginDocumentClose += AcDoc_BeginDocumentClose;
             acDoc.Database.BeginSave += Database_BeginSave;
 
             LoadWrapper();
         }
+        #endregion
 
-        private void Database_BeginSave(object sender, DatabaseIOEventArgs e)
-        {
-            SaveWrapper();
-        }
-
-        private void AcDoc_BeginDocumentClose(object sender, DocumentBeginCloseEventArgs e)
-        {
-            SaveWrapper();
-        }
-
+        #region Save and Load Methods
+        /// <summary>
+        /// Save all fields in class
+        /// </summary>
         protected virtual void Save()
         {
             //Doesnt have nay default fields to save
         }
 
+
+        /// <summary>
+        /// Load all fields in class
+        /// </summary>
         protected virtual void Load()
         {
             //Doesnt have any default fields to load
         }
 
+        /// <summary>
+        /// Wrapper around the save method to ensure a transaction is active when called
+        /// </summary>
         private void SaveWrapper()
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
@@ -69,6 +79,9 @@ namespace JPP.Core
             }
         }
 
+        /// <summary>
+        /// Wrapper around the load method to ensure a transaction is active when called
+        /// </summary>
         private void LoadWrapper()
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
@@ -90,6 +103,19 @@ namespace JPP.Core
             }
         }
 
+        private void Database_BeginSave(object sender, DatabaseIOEventArgs e)
+        {
+            SaveWrapper();
+        }
+
+        private void AcDoc_BeginDocumentClose(object sender, DocumentBeginCloseEventArgs e)
+        {
+            SaveWrapper();
+        }
+
+        #endregion
+
+        #region Binary Methods
         protected void SaveBinary(string key, object binaryObject)
         {
             Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
@@ -102,10 +128,6 @@ namespace JPP.Core
             Xrecord plotXRecord = new Xrecord();
 
             XmlSerializer xml = new XmlSerializer(binaryObject.GetType());
-            BinaryHelper bh = new BinaryHelper(binaryObject);
-            //BinaryHelper bh = new BinaryHelper() { t = binaryObject.GetType(), o = binaryObject };
-
-            //BinaryFormatter bf = new BinaryFormatter();
             MemoryStream ms = new MemoryStream();
             xml.Serialize(ms, binaryObject);
             string s = Encoding.ASCII.GetString(ms.ToArray());
@@ -119,7 +141,6 @@ namespace JPP.Core
                 data = new byte[512];
                 moreData = ms.Read(data, 0, data.Length);
                 string dataString = Encoding.ASCII.GetString(data);
-                //dataString = dataString.Replace('\0', '\a');
                 TypedValue tv = new TypedValue((int)DxfCode.Text, dataString);
                 rb.Add(tv);
             }
@@ -149,20 +170,16 @@ namespace JPP.Core
                     byte[] data = new byte[512];
 
                     string message = (string)value.Value;
-                    //message = message.Replace('\a', '\0');
                     data = Encoding.ASCII.GetBytes(message);
                     ms.Write(data, 0, data.Length);
                 }
                 ms.Position = 0;
-                //System.Diagnostics.Debug.Print("===== OUR DATA: " + value.TypeCode.ToString() + ". " + value.Value.ToString());
                 XmlSerializer xml = new XmlSerializer(typeof(T));
 
                 try
                 {
                     string s = Encoding.ASCII.GetString(ms.ToArray());
-                    return (T) xml.Deserialize(ms);
-                    //return bh.Data;
-                    //return bh.o;           
+                    return (T) xml.Deserialize(ms);     
                 }
                 catch (Exception e)
                 {
@@ -174,44 +191,6 @@ namespace JPP.Core
                 return default(T);
             }
         }
-
-        private Type[] GetInheritedTypes(Type baseType)
-        {
-            List<Type> results = new List<Type>();
-            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-            foreach(Assembly a in loadedAssemblies)
-            {
-                foreach(Type t in a.GetTypes())
-                {
-                    if(t.IsAssignableFrom(baseType))
-                    {
-                        results.Add(t);
-                    }
-                }
-            }
-
-            return results.ToArray();
-        }
-
-        //public ObservableCollection<Plot> Plots { get; set; }
-
-        //public int GroundBearingPressure { get; set;}
-
-        //public float DefaultWidth { get; set; }
-    }
-
-    public class BinaryHelper
-    {
-        public string Type;
-        public object Data;
-
-        public BinaryHelper(object data)
-        {
-            Type = data.GetType().AssemblyQualifiedName;
-            Data = data;
-        }
-
-        public BinaryHelper()
-        { }
+        #endregion
     }
 }
