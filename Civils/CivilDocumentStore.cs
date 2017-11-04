@@ -10,34 +10,53 @@ using System.Threading.Tasks;
 
 namespace JPP.Civils
 {
+    /// <summary>
+    /// Class for storing of document level data, specific to Civil modules
+    /// </summary>
     public class CivilDocumentStore : DocumentStore
     {
+        /// <summary>
+        /// List of plots in the current drawing
+        /// </summary>
         public ObservableCollection<Plot> Plots { get; set; }
+
+        /// <summary>
+        /// List of plot types in the current drawing
+        /// </summary>
         public ObservableCollection<PlotType> PlotTypes { get; set; }
 
+        /// <summary>
+        /// Safe ground bearing pressure in kN/m2
+        /// </summary>
         public int GroundBearingPressure { get; set;}
 
+        /// <summary>
+        /// Default width for all foundations
+        /// </summary>
         public float DefaultWidth { get; set; }
 
         protected override void Save()
         {
             Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
-            Transaction tr = acCurDb.TransactionManager.TopTransaction;
+            Transaction tr = acCurDb.TransactionManager.TopTransaction; //Could this potentially throw an error??
 
-            SaveBinary("JPP_Plot", Plots);
-            SaveBinary("JPP_PlotTypes", PlotTypes);
+            SaveBinary(Constants.PlotID, Plots);
+            SaveBinary(Constants.PlotTypeID, PlotTypes);
 
-            Xrecord siteXRecord = new Xrecord();
-            ResultBuffer siteRb = new ResultBuffer();
+            using (Xrecord siteXRecord = new Xrecord())
+            {
+                using (ResultBuffer siteRb = new ResultBuffer())
+                {
 
-            siteRb.Add(new TypedValue((int)DxfCode.Int32, GroundBearingPressure));
-            siteRb.Add(new TypedValue((int)DxfCode.Text, DefaultWidth));
+                    siteRb.Add(new TypedValue((int)DxfCode.Int32, GroundBearingPressure));
+                    siteRb.Add(new TypedValue((int)DxfCode.Text, DefaultWidth));
 
-            siteXRecord.Data = siteRb;
-            DBDictionary nod = (DBDictionary)tr.GetObject(acCurDb.NamedObjectsDictionaryId, OpenMode.ForWrite);
-            nod.SetAt("JPP_Site", siteXRecord);
-            tr.AddNewlyCreatedDBObject(siteXRecord, true);
-
+                    siteXRecord.Data = siteRb;
+                    DBDictionary nod = (DBDictionary)tr.GetObject(acCurDb.NamedObjectsDictionaryId, OpenMode.ForWrite);
+                    nod.SetAt(Constants.SiteID, siteXRecord);
+                    tr.AddNewlyCreatedDBObject(siteXRecord, true);
+                }
+            }
             base.Save();
         }
 
@@ -47,8 +66,8 @@ namespace JPP.Civils
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
             DBDictionary nod = (DBDictionary)tr.GetObject(acCurDb.NamedObjectsDictionaryId, OpenMode.ForWrite);
 
-            Plots = LoadBinary<ObservableCollection<Plot>>("JPP_Plot");
-            PlotTypes = LoadBinary<ObservableCollection<PlotType>>("JPP_PlotTypes");
+            Plots = LoadBinary<ObservableCollection<Plot>>(Constants.PlotID);
+            PlotTypes = LoadBinary<ObservableCollection<PlotType>>(Constants.PlotTypeID);
             if (Plots == null)
             {
                 Plots = new ObservableCollection<Plot>();
@@ -60,14 +79,16 @@ namespace JPP.Civils
                 p.Rebuild();
             }
 
-            if (nod.Contains("JPP_Site"))
+            if (nod.Contains(Constants.SiteID))
             {
 
-                ObjectId plotId = nod.GetAt("JPP_Site");
-                Xrecord plotXRecord = (Xrecord)tr.GetObject(plotId, OpenMode.ForRead);
-                var buffers = plotXRecord.Data.AsArray();
-                GroundBearingPressure = (int)buffers[0].Value;
-                DefaultWidth = float.Parse((string)buffers[1].Value);
+                ObjectId plotId = nod.GetAt(Constants.SiteID);
+                using (Xrecord plotXRecord = (Xrecord)tr.GetObject(plotId, OpenMode.ForRead))
+                {
+                    var buffers = plotXRecord.Data.AsArray();
+                    GroundBearingPressure = (int)buffers[0].Value;
+                    DefaultWidth = float.Parse((string)buffers[1].Value);
+                }
             }
             else
             {
