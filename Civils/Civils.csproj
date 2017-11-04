@@ -115,6 +115,11 @@
   <ItemGroup>
     <Compile Include="CivilDocumentStore.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Drainage\DrainageNetwork.cs" />
+    <Compile Include="Drainage\DrainageNode.cs" />
+    <Compile Include="Drainage\DrainageControl.xaml.cs">
+      <DependentUpon>DrainageControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="HousingScheme\FoundationControl.xaml.cs">
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>
@@ -129,6 +134,7 @@
       <DependentUpon>PlotUserControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="HousingScheme\WallSegment.cs" />
+    <Compile Include="Drainage\Node.cs" />
     <Compile Include="PolylineUtilities.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Pipe.cs" />
@@ -179,6 +185,10 @@
     <None Include="Resources\housingscheme.png" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Drainage\DrainageControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="HousingScheme\FoundationControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
