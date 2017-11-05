@@ -14,15 +14,15 @@ namespace JPP.Civils
 
         private bool Search(Node current)
         {
-            List<Node> nextNodes = GetAdjacentWalkableNodes(current);
-            nextNodes.Sort(())
+            //List<Node> nextNodes = GetAdjacentWalkableNodes(current);
+            //nextNodes.Sort(())
 
             return true;
         }
 
-        private List<Node> GetAdjacentWalkableNodes(Node fromNode)
+        /*private List<Node> GetAdjacentWalkableNodes(Node fromNode)
         {
-            List<Node> walkableNodes = new List<Node>();
+            /*List<Node> walkableNodes = new List<Node>();
             IEnumerable<Point> nextLocations = GetAdjacentLocations(fromNode);
 
             foreach (var location in nextLocations)
@@ -64,6 +64,6 @@ namespace JPP.Civils
             }
 
             return walkableNodes;
-        }
+        }*/
     }
 }

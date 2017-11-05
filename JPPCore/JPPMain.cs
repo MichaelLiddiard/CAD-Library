@@ -33,6 +33,9 @@ namespace JPP.Core
         /// </summary>
         public void Initialize()
         {
+            //Upgrade and load the app settings
+            Properties.Settings.Default.Upgrade();
+
             //Detect if ribbon is currently loaded, and if not wait until the application is Idle.
             //Throws an error if try to add to the menu with the ribbon unloaded
             if (ComponentManager.Ribbon == null)
@@ -80,18 +83,19 @@ namespace JPP.Core
                 //No autoload found
                 TaskDialog autoloadPrompt = new TaskDialog();
                 autoloadPrompt.WindowTitle = Constants.Friendly_Name;
-                autoloadPrompt.MainInstruction = "No autoload setting has been found. Would you like one to be created?";
+                autoloadPrompt.MainInstruction = "JPP Library does not currently load automatically. Would you like to enable this?";
                 autoloadPrompt.MainIcon = TaskDialogIcon.Information;
-                autoloadPrompt.FooterText = "WARNING: May cause unexpected behaviour on an unsupported version of Autocad";
+                autoloadPrompt.FooterText = "May cause unexpected behaviour on an unsupported version of Autocad";
                 autoloadPrompt.FooterIcon = TaskDialogIcon.Warning;
-                autoloadPrompt.Buttons.Add(new TaskDialogButton(0, "Continue Without"));
-                autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Create Autload Setting"));                
+                autoloadPrompt.Buttons.Add(new TaskDialogButton(0, "No, continue without"));
+                autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Enable autoload"));                
                 autoloadPrompt.DefaultButton = 0;
                 autoloadPrompt.Callback = delegate(ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
                 {
                     if(e.ButtonId == 1)
                     {
-                        RegistryHelper.CreateAutoload();
+                        //TODO: Disable when registry is ok
+                        //RegistryHelper.CreateAutoload();
                     }
                     return false;
                 };
@@ -103,7 +107,23 @@ namespace JPP.Core
             CreateCoreMenu(JPPTab);                       
 
             //Load the additional DLL files
-            LoadAssemblies();
+            LoadModules();
+
+            //Create settings window
+            PaletteSet _ps = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
+            _ps.Size = new Size(600, 800);
+            _ps.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
+            _ps.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
+
+            SettingsUserControl suc = new SettingsUserControl();
+            ElementHost host1 = new ElementHost();
+            host1.AutoSize = true;
+            host1.Dock = DockStyle.Fill;
+            host1.Child = new SettingsUserControl();
+            _ps.Add("Settings", host1);                       
+
+            _ps.KeepFocus = false;
+            //_ps.Visible = true;
         }
 
         /// <summary>
@@ -185,29 +205,33 @@ namespace JPP.Core
         /// <summary>
         /// Find all assemblies in the subdirectory, and load them into memory
         /// </summary>
-        private static void LoadAssemblies()
+        private static void LoadModules()
         {
             List<string> allAssemblies = new List<string>();
-            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
+            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + Properties.Settings.Default.ModulePath;
 
             //Check if authenticated, otherwise block the auto loading
             if (Authentication.Current.Authenticated())
             {
                 //Iterate over every dll found in bin folder
-                foreach (string dll in Directory.GetFiles(path, "*.dll"))
+                if (Directory.Exists(path))
                 {
-                    string dllPath = dll.Replace('\\', '/');
-                    //Load the additional libraries found
-                    ExtensionLoader.Load(dll);
+                    foreach (string dll in Directory.GetFiles(path, "*.dll"))
+                    {
+                        string dllPath = dll.Replace('\\', '/');
+                        //Load the additional libraries found
+                        ExtensionLoader.Load(dll);
+                    }
                 }
             }
         }
 
+        //TODO: Trigger update method somehow
         [CommandMethod("Update")]
         public static void Update()
         {
             string archivePath;
-            //Get manifest fiel from known location
+            //Get manifest file from known location
             using (TextReader tr = File.OpenText("M:\\ML\\CAD-Library\\manifest.txt"))
             {
                 //Currently manifest file contians version of zip file to pull data from
@@ -229,7 +253,7 @@ namespace JPP.Core
                     entry.ExtractToFile(Path.Combine(path, entry.FullName), true);
                 }
 
-                LoadAssemblies();
+                LoadModules();
             }
             catch (System.Exception e)
             {

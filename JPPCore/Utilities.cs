@@ -267,7 +267,8 @@ namespace JPP.Core
             newButton.CommandParameter = "._" + command + " ";
 
             return newButton;
-
         }
+
+
     }
 }

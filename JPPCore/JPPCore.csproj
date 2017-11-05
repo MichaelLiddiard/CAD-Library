@@ -114,15 +114,21 @@
     <Compile Include="Constants.cs" />
     <Compile Include="DocumentStore.cs" />
     <Compile Include="ExtensionMethods.cs" />
-    <Compile Include="JPPMain.cs" />    
+    <Compile Include="JPPMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="RegistryHelper.cs" />
     <Compile Include="RibbonCommandHandler.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="SettingsUserControl.xaml.cs">
       <DependentUpon>SettingsUserControl.xaml</DependentUpon>
     </Compile>
@@ -135,7 +141,12 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
     <None Include="Resources\Locked.png" />
     <Content Include="StructuralBlocks.dwg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
