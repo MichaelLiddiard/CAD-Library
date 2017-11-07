@@ -17,6 +17,7 @@ using System.Windows.Forms.Integration;
 using System.Windows.Forms;
 
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using System.Diagnostics;
 
 [assembly: ExtensionApplication(typeof(JPP.Core.JPPMain))]
 [assembly: CommandClass(typeof(JPP.Core.JPPMain))]
@@ -96,6 +97,7 @@ namespace JPP.Core
                     {
                         //TODO: Disable when registry is ok
                         //RegistryHelper.CreateAutoload();
+                        Application.ShowAlertDialog("Autload creation currently disabled.");
                     }
                     return false;
                 };
@@ -104,10 +106,11 @@ namespace JPP.Core
 
             //Create the main UI
             RibbonTab JPPTab = CreateTab();
-            CreateCoreMenu(JPPTab);                       
+            CreateCoreMenu(JPPTab);
 
             //Load the additional DLL files
-            LoadModules();
+            Update();
+            //LoadModules();
 
             //Create settings window
             PaletteSet _ps = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
@@ -231,11 +234,16 @@ namespace JPP.Core
         public static void Update()
         {
             string archivePath;
+            string installerPath = "";
             //Get manifest file from known location
             using (TextReader tr = File.OpenText("M:\\ML\\CAD-Library\\manifest.txt"))
             {
                 //Currently manifest file contians version of zip file to pull data from
-                archivePath = Constants.ArchivePath + tr.ReadToEnd() + ".zip";
+                archivePath = Constants.ArchivePath + tr.ReadLine() + ".zip";
+                if(tr.Peek() != -1)
+                {
+                    installerPath = "M:\\ML\\CAD - Library\\" + tr.ReadLine() + ".exe";
+                }
             }
 
             //Download the latest resources update
@@ -254,6 +262,28 @@ namespace JPP.Core
                 }
 
                 LoadModules();
+
+                //if there is a new installer...
+                if(installerPath != "")
+                {
+                    TaskDialog autoloadPrompt = new TaskDialog();
+                    autoloadPrompt.WindowTitle = Constants.Friendly_Name;
+                    autoloadPrompt.MainInstruction = "A new version of the application has been found. Would you like to install now?";
+                    autoloadPrompt.MainIcon = TaskDialogIcon.Information;
+                    autoloadPrompt.Buttons.Add(new TaskDialogButton(0, "Exit and install"));
+                    autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Not right now"));
+                    autoloadPrompt.DefaultButton = 0;
+                    autoloadPrompt.Callback = delegate (ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
+                    {
+                        if (e.ButtonId == 0)
+                        {
+                            Process.Start(installerPath);
+                            Application.Quit();                            
+                        }
+                        return false;
+                    };
+                    autoloadPrompt.Show(Application.MainWindow.Handle);
+                }
             }
             catch (System.Exception e)
             {

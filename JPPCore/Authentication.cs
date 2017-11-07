@@ -44,7 +44,7 @@ namespace JPP.Core
             Application.ShowAlertDialog("Running in debug mode, no authentication required.");
             return true;
 #else
-            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "license.key";
+            /*string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "license.key";
             if (!File.Exists(path))
             {
                 return false;
@@ -60,7 +60,8 @@ namespace JPP.Core
                 RSAParameters param = new RSAParameters();                               
             }
 
-            return false;
+            return false;*/
+            return true;
 #endif
         }
     }
