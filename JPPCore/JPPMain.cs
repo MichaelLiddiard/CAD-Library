@@ -110,7 +110,7 @@ namespace JPP.Core
 
             //Load the additional DLL files
             Update();
-            //LoadModules();
+            LoadModules();
 
             //Create settings window
             PaletteSet _ps = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
@@ -233,61 +233,92 @@ namespace JPP.Core
         [CommandMethod("Update")]
         public static void Update()
         {
+            bool updateRequired = false;
+            bool installUpdateRequired = false;
             string archivePath;
             string installerPath = "";
             //Get manifest file from known location
-            using (TextReader tr = File.OpenText("M:\\ML\\CAD-Library\\manifest.txt"))
+            if (File.Exists("M:\\ML\\CAD-Library\\manifest.txt"))
             {
-                //Currently manifest file contians version of zip file to pull data from
-                archivePath = Constants.ArchivePath + tr.ReadLine() + ".zip";
-                if(tr.Peek() != -1)
+                using (TextReader tr = File.OpenText("M:\\ML\\CAD-Library\\manifest.txt"))
                 {
-                    installerPath = "M:\\ML\\CAD - Library\\" + tr.ReadLine() + ".exe";
-                }
-            }
-
-            //Download the latest resources update
-            try
-            {
-                ZipArchive archive = ZipFile.OpenRead(archivePath);
-
-                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\update";
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path);
-                }
-                foreach (ZipArchiveEntry entry in archive.Entries)
-                {
-                    entry.ExtractToFile(Path.Combine(path, entry.FullName), true);
-                }
-
-                LoadModules();
-
-                //if there is a new installer...
-                if(installerPath != "")
-                {
-                    TaskDialog autoloadPrompt = new TaskDialog();
-                    autoloadPrompt.WindowTitle = Constants.Friendly_Name;
-                    autoloadPrompt.MainInstruction = "A new version of the application has been found. Would you like to install now?";
-                    autoloadPrompt.MainIcon = TaskDialogIcon.Information;
-                    autoloadPrompt.Buttons.Add(new TaskDialogButton(0, "Exit and install"));
-                    autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Not right now"));
-                    autoloadPrompt.DefaultButton = 0;
-                    autoloadPrompt.Callback = delegate (ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
+                    //Currently manifest file contians version of zip file to pull data from
+                    archivePath = Constants.ArchivePath + tr.ReadLine() + ".zip";
+                    if (tr.Peek() != -1)
                     {
-                        if (e.ButtonId == 0)
-                        {
-                            Process.Start(installerPath);
-                            Application.Quit();                            
-                        }
-                        return false;
-                    };
-                    autoloadPrompt.Show(Application.MainWindow.Handle);
+                        installerPath = "M:\\ML\\CAD-Library\\" + tr.ReadLine() + ".exe";
+                    }
                 }
-            }
-            catch (System.Exception e)
-            {
-                throw new NotImplementedException();
+                if (File.Exists(Assembly.GetExecutingAssembly().Location + "\\manifest.txt"))
+                {
+                    using (TextReader tr = File.OpenText(Assembly.GetExecutingAssembly().Location + "\\manifest.txt"))
+                    {
+                        //Currently manifest file contians version of zip file to pull data from
+                        if (archivePath != Constants.ArchivePath + tr.ReadLine() + ".zip")
+                        {
+                            updateRequired = true;
+                        }
+                        if (tr.Peek() != -1)
+                        {
+                            if (installerPath != "M:\\ML\\CAD-Library\\" + tr.ReadLine() + ".exe")
+                            {
+                                installUpdateRequired = true;
+                            }
+                        }
+                    }
+                } else
+                {
+                    updateRequired = true;
+                    installUpdateRequired = true;
+                }
+
+                //Get the current version for comparison
+
+
+                //Download the latest resources update
+                try
+                {
+                    if (updateRequired)
+                    {
+                        ZipArchive archive = ZipFile.OpenRead(archivePath);
+
+                        string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
+                        if (!Directory.Exists(path))
+                        {
+                            Directory.CreateDirectory(path);
+                        }
+                        foreach (ZipArchiveEntry entry in archive.Entries)
+                        {
+                            entry.ExtractToFile(Path.Combine(path, entry.FullName), true);
+                        }
+                    }                    
+
+                    //if there is a new installer...
+                    if (installerPath != "" && installUpdateRequired)
+                    {
+                        TaskDialog autoloadPrompt = new TaskDialog();
+                        autoloadPrompt.WindowTitle = Constants.Friendly_Name;
+                        autoloadPrompt.MainInstruction = "A new version of the application has been found. Would you like to install now?";
+                        autoloadPrompt.MainIcon = TaskDialogIcon.Information;
+                        autoloadPrompt.Buttons.Add(new TaskDialogButton(0, "Exit and install"));
+                        autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Not right now"));
+                        autoloadPrompt.DefaultButton = 0;
+                        autoloadPrompt.Callback = delegate (ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
+                        {
+                            if (e.ButtonId == 0)
+                            {
+                                Process.Start(installerPath);
+                                Application.Quit();
+                            }
+                            return false;
+                        };
+                        autoloadPrompt.Show(Application.MainWindow.Handle);
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    throw new NotImplementedException();
+                }
             }
         }
         
