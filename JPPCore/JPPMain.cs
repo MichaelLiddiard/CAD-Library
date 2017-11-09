@@ -93,11 +93,14 @@ namespace JPP.Core
                 autoloadPrompt.DefaultButton = 0;
                 autoloadPrompt.Callback = delegate(ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
                 {
-                    if(e.ButtonId == 1)
+                    if (e.Notification == TaskDialogNotification.ButtonClicked)
                     {
-                        //TODO: Disable when registry is ok
-                        //RegistryHelper.CreateAutoload();
-                        Application.ShowAlertDialog("Autload creation currently disabled.");
+                        if (e.ButtonId == 1)
+                        {
+                            //TODO: Disable when registry is ok
+                            //RegistryHelper.CreateAutoload();
+                            Application.ShowAlertDialog("Autload creation currently disabled.");
+                        }
                     }
                     return false;
                 };
@@ -211,7 +214,7 @@ namespace JPP.Core
         private static void LoadModules()
         {
             List<string> allAssemblies = new List<string>();
-            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + Properties.Settings.Default.ModulePath;
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library";
 
             //Check if authenticated, otherwise block the auto loading
             if (Authentication.Current.Authenticated())
@@ -282,7 +285,8 @@ namespace JPP.Core
                     {
                         ZipArchive archive = ZipFile.OpenRead(archivePath);
 
-                        string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
+                        //string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
+                        string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library";
                         if (!Directory.Exists(path))
                         {
                             Directory.CreateDirectory(path);
@@ -305,10 +309,14 @@ namespace JPP.Core
                         autoloadPrompt.DefaultButton = 0;
                         autoloadPrompt.Callback = delegate (ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
                         {
-                            if (e.ButtonId == 0)
+                            if (e.Notification == TaskDialogNotification.ButtonClicked)
                             {
-                                Process.Start(installerPath);
-                                Application.Quit();
+                                if (e.ButtonId == 0)
+                                {
+                                    Process.Start(installerPath);
+                                    Application.DocumentManager.MdiActiveDocument.SendStringToExecute("quit ", true, false, true);
+                                    //Application.Quit();
+                                }
                             }
                             return false;
                         };
