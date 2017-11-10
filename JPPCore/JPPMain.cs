@@ -240,6 +240,7 @@ namespace JPP.Core
             bool installUpdateRequired = false;
             string archivePath;
             string installerPath = "";
+
             //Get manifest file from known location
             if (File.Exists("M:\\ML\\CAD-Library\\manifest.txt"))
             {
@@ -252,9 +253,9 @@ namespace JPP.Core
                         installerPath = "M:\\ML\\CAD-Library\\" + tr.ReadLine() + ".exe";
                     }
                 }
-                if (File.Exists(Assembly.GetExecutingAssembly().Location + "\\manifest.txt"))
+                if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library\\manifest.txt"))
                 {
-                    using (TextReader tr = File.OpenText(Assembly.GetExecutingAssembly().Location + "\\manifest.txt"))
+                    using (TextReader tr = File.OpenText(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library\\manifest.txt")
                     {
                         //Currently manifest file contians version of zip file to pull data from
                         if (archivePath != Constants.ArchivePath + tr.ReadLine() + ".zip")
@@ -277,55 +278,62 @@ namespace JPP.Core
 
                 //Get the current version for comparison
 
-
-                //Download the latest resources update
-                try
+                using (StreamWriter sw = new StreamWriter(File.Open(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library\\manifest.txt", FileMode.Create)))
                 {
-                    if (updateRequired)
-                    {
-                        ZipArchive archive = ZipFile.OpenRead(archivePath);
 
-                        //string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
-                        string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library";
-                        if (!Directory.Exists(path))
-                        {
-                            Directory.CreateDirectory(path);
-                        }
-                        foreach (ZipArchiveEntry entry in archive.Entries)
-                        {
-                            entry.ExtractToFile(Path.Combine(path, entry.FullName), true);
-                        }
-                    }                    
-
-                    //if there is a new installer...
-                    if (installerPath != "" && installUpdateRequired)
+                    //Download the latest resources update
+                    try
                     {
-                        TaskDialog autoloadPrompt = new TaskDialog();
-                        autoloadPrompt.WindowTitle = Constants.Friendly_Name;
-                        autoloadPrompt.MainInstruction = "A new version of the application has been found. Would you like to install now?";
-                        autoloadPrompt.MainIcon = TaskDialogIcon.Information;
-                        autoloadPrompt.Buttons.Add(new TaskDialogButton(0, "Exit and install"));
-                        autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Not right now"));
-                        autoloadPrompt.DefaultButton = 0;
-                        autoloadPrompt.Callback = delegate (ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
+                        if (updateRequired)
                         {
-                            if (e.Notification == TaskDialogNotification.ButtonClicked)
+                            ZipArchive archive = ZipFile.OpenRead(archivePath);
+
+                            //string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\bin";
+                            string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library";
+                            if (!Directory.Exists(path))
                             {
-                                if (e.ButtonId == 0)
-                                {
-                                    Process.Start(installerPath);
-                                    Application.DocumentManager.MdiActiveDocument.SendStringToExecute("quit ", true, false, true);
-                                    //Application.Quit();
-                                }
+                                Directory.CreateDirectory(path);
                             }
-                            return false;
-                        };
-                        autoloadPrompt.Show(Application.MainWindow.Handle);
+                            foreach (ZipArchiveEntry entry in archive.Entries)
+                            {
+                                entry.ExtractToFile(Path.Combine(path, entry.FullName), true);
+                            }
+
+                            sw.WriteLine(archivePath);
+                        }
+
+                        //if there is a new installer...
+                        if (installerPath != "" && installUpdateRequired)
+                        {
+                            TaskDialog autoloadPrompt = new TaskDialog();
+                            autoloadPrompt.WindowTitle = Constants.Friendly_Name;
+                            autoloadPrompt.MainInstruction = "A new version of the application has been found. Would you like to install now?";
+                            autoloadPrompt.MainIcon = TaskDialogIcon.Information;
+                            autoloadPrompt.Buttons.Add(new TaskDialogButton(0, "Exit and install"));
+                            autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Not right now"));
+                            autoloadPrompt.DefaultButton = 0;
+                            autoloadPrompt.Callback = delegate (ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
+                            {
+                                if (e.Notification == TaskDialogNotification.ButtonClicked)
+                                {
+                                    if (e.ButtonId == 0)
+                                    {
+                                        Process.Start(installerPath);
+                                        Application.DocumentManager.MdiActiveDocument.SendStringToExecute("quit ", true, false, true);
+                                        //Application.Quit();
+                                    }
+                                }
+                                return false;
+                            };
+                            autoloadPrompt.Show(Application.MainWindow.Handle);
+
+                            sw.WriteLine(installerPath);
+                        }
                     }
-                }
-                catch (System.Exception e)
-                {
-                    throw new NotImplementedException();
+                    catch (System.Exception e)
+                    {
+                        throw new NotImplementedException();
+                    }
                 }
             }
         }
