@@ -18,6 +18,7 @@ using System.Windows.Forms;
 
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Diagnostics;
+using System.Configuration;
 
 [assembly: ExtensionApplication(typeof(JPP.Core.JPPMain))]
 [assembly: CommandClass(typeof(JPP.Core.JPPMain))]
@@ -112,9 +113,10 @@ namespace JPP.Core
             CreateCoreMenu(JPPTab);
 
             //Load the additional DLL files
+#if !DEBUG
             Update();
             LoadModules();
-
+#endif
             //Create settings window
             PaletteSet _ps = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
             _ps.Size = new Size(600, 800);
@@ -129,7 +131,7 @@ namespace JPP.Core
             _ps.Add("Settings", host1);                       
 
             _ps.KeepFocus = false;
-            //_ps.Visible = true;
+            _ps.Visible = true;
         }
 
         /// <summary>
@@ -232,6 +234,16 @@ namespace JPP.Core
             }
         }
 
+        /// <summary>
+        /// Find all assemblies in the subdirectory, and load them into memory
+        /// </summary>
+        private static void PrepareDrawing()
+        {
+            //Add the default JPP handler
+
+            
+        }
+
         //TODO: Trigger update method somehow
         [CommandMethod("Update")]
         public static void Update()
@@ -255,7 +267,7 @@ namespace JPP.Core
                 }
                 if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library\\manifest.txt"))
                 {
-                    using (TextReader tr = File.OpenText(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library\\manifest.txt")
+                    using (TextReader tr = File.OpenText(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library\\manifest.txt"))
                     {
                         //Currently manifest file contians version of zip file to pull data from
                         if (archivePath != Constants.ArchivePath + tr.ReadLine() + ".zip")

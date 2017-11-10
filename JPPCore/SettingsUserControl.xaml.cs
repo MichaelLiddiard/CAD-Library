@@ -32,7 +32,7 @@ namespace JPP.Core
 
             foreach (SettingsProperty currentProperty in Properties.Settings.Default.Properties)
             {
-                SettingsKeyValue skv = new SettingsKeyValue() { Properties = currentProperty.Name, Value = currentProperty.DefaultValue.ToString() };
+                SettingsKeyValue skv = new SettingsKeyValue() { Properties = currentProperty.Name, Value = Properties.Settings.Default[currentProperty.Name].ToString() };
                 settingsList.Add(skv);
             }            
 
