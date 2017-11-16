@@ -167,7 +167,10 @@ namespace JPP.Core
 
             RibbonRowPanel stack = new RibbonRowPanel();
 
-            //RibbonButton authenticateButton = new RibbonButton();
+            RibbonButton finaliseButton = Utilities.CreateButton("Finalise Drawing", Properties.Resources.package, RibbonItemSize.Standard, "Finalise");
+            stack.Items.Add(finaliseButton);
+            stack.Items.Add(new RibbonRowBreak());
+
             RibbonButton authenticateButton = Utilities.CreateButton("Authenticate", Properties.Resources.Locked, RibbonItemSize.Standard, "");
             stack.Items.Add(authenticateButton);
             stack.Items.Add(new RibbonRowBreak());
@@ -375,6 +378,32 @@ namespace JPP.Core
                     }
                 }
             }
+        }
+
+        [CommandMethod("Finalise", CommandFlags.Session)]
+        public static void Finalise()
+        {
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+
+            using (DocumentLock dl = acDoc.LockDocument())
+            {
+                using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
+                {
+
+                    //Run the cleanup commands
+                    Core.Utilities.Purge();
+
+                    acDoc.Database.Audit(true, false);
+                }
+            }
+
+            string path = acDoc.Database.Filename;
+
+            acDoc.Database.SaveAs(path, DwgVersion.Current);
+            acDoc.CloseAndDiscard();
+
+            FileInfo fi = new FileInfo(path);
+            fi.IsReadOnly = true;
         }
     }
 }
