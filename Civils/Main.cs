@@ -73,7 +73,7 @@ namespace JPP.Civils
             layPipeButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon);
             layPipeButton.Image = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.pipeIcon_small);
             layPipeButton.Size = RibbonItemSize.Standard;
-            //layPipeButton.IsEnabled = false;
+            layPipeButton.IsEnabled = false;
             drainagePipeStack.Items.Add(layPipeButton);
             drainagePipeStack.Items.Add(new RibbonRowBreak());
 
@@ -127,11 +127,12 @@ namespace JPP.Civils
             levelPLineButtone.CommandParameter = "._LevelPolyline ";
             levelPLineButtone.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
             levelPLineButtone.Size = RibbonItemSize.Standard;
+            levelPLineButtone.IsEnabled = false;
             levelPLineButtone.Orientation = System.Windows.Controls.Orientation.Vertical;
             utilitiesStack2.Items.Add(levelPLineButtone);
             utilitiesStack2.Items.Add(new RibbonRowBreak());
 
-            fflSource.Title = "Plot Commands";
+            /*fflSource.Title = "Plot Commands";
             //Add button to import xref
             RibbonButton addFFLButton = new RibbonButton();
             addFFLButton.ShowText = true;
@@ -168,7 +169,7 @@ namespace JPP.Civils
             plineToFFLButton.CommandParameter = "._PlineToFFL ";
             //plineToFFLButton.LargeImage = Core.Utilities.LoadImage(JPP.Civils.Properties.Resources.importXref);
             plineToFFLButton.Size = RibbonItemSize.Standard;
-            fflStack.Items.Add(plineToFFLButton);
+            fflStack.Items.Add(plineToFFLButton);*/
 
             //Build the UI hierarchy
             source.Items.Add(drainagePipeStack);
@@ -184,7 +185,7 @@ namespace JPP.Civils
 
             JPPTab.Panels.Add(Panel);
             JPPTab.Panels.Add(utilitiesPanel);
-            JPPTab.Panels.Add(fflPanel);
+            //JPPTab.Panels.Add(fflPanel);
 
             _ps = new PaletteSet("JPP", new Guid("8bc0c89e-3be0-4e30-975e-1a4e09cb0524"));
             _ps.Size = new Size(600, 800);

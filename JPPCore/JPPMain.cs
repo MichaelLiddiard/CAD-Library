@@ -30,6 +30,9 @@ namespace JPP.Core
     /// </summary>
     public class JPPMain : IExtensionApplication
     {
+        public static PaletteSet _ps;
+        public static RibbonToggleButton settingsButton;
+
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need. Main library entry point
         /// </summary>
@@ -76,11 +79,11 @@ namespace JPP.Core
         /// <summary>
         /// Init JPP command loads all essential elements of the program, including the helper DLL files.
         /// </summary>
-        [CommandMethod("InitJPP")]        
+        [CommandMethod("InitJPP")]
         public static void InitJPP()
         {
             //Check for registry key for autoload
-            if(!RegistryHelper.IsAutoload())
+            if (!RegistryHelper.IsAutoload())
             {
                 //No autoload found
                 TaskDialog autoloadPrompt = new TaskDialog();
@@ -90,9 +93,9 @@ namespace JPP.Core
                 autoloadPrompt.FooterText = "May cause unexpected behaviour on an unsupported version of Autocad";
                 autoloadPrompt.FooterIcon = TaskDialogIcon.Warning;
                 autoloadPrompt.Buttons.Add(new TaskDialogButton(0, "No, continue without"));
-                autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Enable autoload"));                
+                autoloadPrompt.Buttons.Add(new TaskDialogButton(1, "Enable autoload"));
                 autoloadPrompt.DefaultButton = 0;
-                autoloadPrompt.Callback = delegate(ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
+                autoloadPrompt.Callback = delegate (ActiveTaskDialog atd, TaskDialogCallbackArgs e, object sender)
                 {
                     if (e.Notification == TaskDialogNotification.ButtonClicked)
                     {
@@ -118,7 +121,7 @@ namespace JPP.Core
             LoadModules();
 #endif
             //Create settings window
-            PaletteSet _ps = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
+            _ps = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
             _ps.Size = new Size(600, 800);
             _ps.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
             _ps.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
@@ -128,10 +131,10 @@ namespace JPP.Core
             host1.AutoSize = true;
             host1.Dock = DockStyle.Fill;
             host1.Child = new SettingsUserControl();
-            _ps.Add("Settings", host1);                       
+            _ps.Add("Settings", host1);
 
             _ps.KeepFocus = false;
-            _ps.Visible = true;
+            //_ps.Visible = true;
         }
 
         /// <summary>
@@ -169,6 +172,18 @@ namespace JPP.Core
             stack.Items.Add(authenticateButton);
             stack.Items.Add(new RibbonRowBreak());
 
+            settingsButton = new RibbonToggleButton();//Utilities.CreateButton("Settings", Properties.Resources.settings, RibbonItemSize.Standard, "");            
+            settingsButton.ShowText = true;
+            settingsButton.ShowImage = true;
+            settingsButton.Text = "Settings";
+            settingsButton.Name = "Display the settings window";
+            settingsButton.CheckStateChanged += settingsButton_CheckStateChanged;
+            settingsButton.Image = Core.Utilities.LoadImage(Properties.Resources.settings);
+            settingsButton.Size = RibbonItemSize.Standard;
+            settingsButton.Orientation = System.Windows.Controls.Orientation.Horizontal;
+            stack.Items.Add(settingsButton);
+            stack.Items.Add(new RibbonRowBreak());
+
             //Add button to update all JPP libraries
             /*RibbonButton runLoad = new RibbonButton();
             runLoad.ShowText = true;
@@ -179,12 +194,23 @@ namespace JPP.Core
 #if DEBUG
             runLoad.IsEnabled = false;
 #endif
-            stack.Items.Add(runLoad);
-            source.Items.Add(stack);*/
+            stack.Items.Add(runLoad);*/
 
             //Add the new tab section to the main tab
+            source.Items.Add(stack);
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
+        }
+
+        private static void settingsButton_CheckStateChanged(object sender, EventArgs e)
+        {
+            if(settingsButton.CheckState == true)
+            {
+                _ps.Visible = true;
+            } else
+            {
+                _ps.Visible = false;
+            }
         }
 
         //TODO: Fix this method, and make more functional
@@ -241,7 +267,7 @@ namespace JPP.Core
         {
             //Add the default JPP handler
 
-            
+
         }
 
         //TODO: Trigger update method somehow
@@ -282,7 +308,8 @@ namespace JPP.Core
                             }
                         }
                     }
-                } else
+                }
+                else
                 {
                     updateRequired = true;
                     installUpdateRequired = true;
@@ -349,7 +376,5 @@ namespace JPP.Core
                 }
             }
         }
-        
-        
     }
 }

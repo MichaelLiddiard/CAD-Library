@@ -150,6 +150,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <None Include="Resources\Locked.png" />
+    <None Include="Resources\settings.png" />
     <Content Include="StructuralBlocks.dwg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
