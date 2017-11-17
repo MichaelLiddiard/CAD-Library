@@ -1,4 +1,8 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
 using JPP.Core;
 using System;
 using System.Collections.Generic;
@@ -62,6 +66,77 @@ namespace JPP.Civils
                 Autodesk.AutoCAD.ApplicationServices.Application.UpdateScreen();
                 Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.UpdateScreen();
             }
+        }
+
+        [CommandMethod("NewPlot")]
+        public static void NewPlot()
+        {
+            JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
+
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            /*PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ");
+
+            pStrOpts.AllowSpaces = true;
+            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);*/
+            PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
+            pKeyOpts.Message = "Enter plot type: ";
+
+            foreach (PlotType pt in acDoc.GetDocumentStore<CivilDocumentStore>().PlotTypes)
+            {
+                pKeyOpts.Keywords.Add(pt.PlotTypeName);
+            }
+            pKeyOpts.AllowNone = false;
+            PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
+            string plotTypeId = pKeyRes.StringResult;
+
+            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ");
+            pStrOptsPlot.AllowSpaces = true;
+            PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
+            string plotId = pStrResPlot.StringResult;
+
+            Plot p = new Plot();
+            p.PlotName = plotId;
+            p.PlotTypeId = plotTypeId;
+
+            //Switch here for civil3d
+            if (!Civils.Main.C3DActive)
+            {
+                //Civil 3d not available so prompt for level
+                PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");
+                p.FinishedFloorLevel = promptFFLDouble.Value;
+            }
+
+            PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
+            PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
+            p.BasePoint = pPtRes.Value;
+
+            PromptPointOptions pAnglePtOpts = new PromptPointOptions("\nSelect point on base line: ");
+            PromptPointResult pAnglePtRes = acDoc.Editor.GetPoint(pAnglePtOpts);
+            Point3d p3d = pAnglePtRes.Value;
+            double x, y;
+            x = p3d.X - p.BasePoint.X;
+            y = p3d.Y - p.BasePoint.Y;
+            p.Rotation = Math.Atan(y / x);
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                p.Generate();
+
+                if (Civils.Main.C3DActive)
+                {
+                    p.GetFFLfromSurface();
+                }
+
+                //TODO: This is horrendous but fuck it. Need to refactor to remove extra regen
+                //p.Generate();
+                p.Update();
+
+                tr.Commit();
+            }
+
+            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
         }
     }
 }

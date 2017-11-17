@@ -51,11 +51,6 @@ namespace JPP.Core
 
             Properties.Settings.Default.Save();
         }
-
-        /*Properties.Settings.Default[currentProperty.Name] = result.ToString();
-                Properties.Settings.Default.Save();*/
-
-
     }
 
     class SettingsKeyValue

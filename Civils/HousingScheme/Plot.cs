@@ -26,16 +26,24 @@ namespace JPP.Civils
 {
     [Serializable]
     public class Plot
-    {        
+    {
+        #region Public variables
+        /// <summary>
+        /// ID of the plot type this plot is generated from
+        /// </summary>
         public string PlotTypeId { get; set; }
 
-        [XmlIgnore]
+        /// <summary>
+        /// Plot type that form ths basis for this plot
+        /// </summary>
+        [XmlIgnore]        
         public PlotType PlotType
         {
             get
             {
                 if(_PlotType == null)
                 {
+                    //Relink the plot type by using the name if it is found to be missing
                     var pt = from p in Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes where p.PlotTypeName == PlotTypeId select p;
                     _PlotType = pt.First();
                 }
@@ -48,9 +56,12 @@ namespace JPP.Civils
                 _PlotType = value;
             }
         }
+
+        #endregion
+
         private PlotType _PlotType;
 
-        Point3d BasePoint { get; set; }
+        public Point3d BasePoint { get; set; }
 
         public double Rotation { get; set; }
 
@@ -100,59 +111,8 @@ namespace JPP.Civils
             }
         }
 
-        /*public List<long> LevelPtr { get; set; }
-
-        [XmlIgnore]
-        public ObservableCollection<ObjectId> Level
-        {
-            get
-            {
-                if(_Level == null)
-                {
-                    _Level = new ObservableCollection<ObjectId>();
-                    _Level.CollectionChanged += _Level_CollectionChanged;
-                    foreach (long l in LevelPtr)
-                    {                        
-                        Document acDoc = Application.DocumentManager.MdiActiveDocument;
-                        Database acCurDb = acDoc.Database;
-                        _Level.Add(acCurDb.GetObjectId(false, new Handle(l), 0));
-                    }
-                }
-
-                return _Level;
-                
-            }
-            set
-            {
-                _Level = value;
-                _Level.CollectionChanged += _Level_CollectionChanged;
-            }
-        }
-
-        private void _Level_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            if(e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
-            {
-                foreach(ObjectId oi in e.NewItems)
-                {
-                    LevelPtr.Add(oi.Handle.Value);
-                }
-            }
-        }
-
-        [XmlIgnore]
-        private ObservableCollection<ObjectId> _Level;*/
-
         public ObservableCollection<PlotLevel> Level;
         public ObservableCollection<PlotHatch> Hatches;
-
-        public Plot()
-        {
-            WallSegments = new ObservableCollection<WallSegment>();
-            Level = new ObservableCollection<PlotLevel>();
-            Hatches = new ObservableCollection<PlotHatch>();
-            //LevelPtr = new List<long>();
-        }       
 
         public double FormationLevel { get; set; }
 
@@ -160,42 +120,309 @@ namespace JPP.Civils
 
         public bool Locked { get; set; }
 
+        /// <summary>
+        /// Create a new, empty plot. Constructor required for deserialization, not recommended for use
+        /// </summary>
+        public Plot()
+        {
+            WallSegments = new ObservableCollection<WallSegment>();
+            Level = new ObservableCollection<PlotLevel>();
+            Hatches = new ObservableCollection<PlotHatch>();
+        }       
+
+        /// <summary>
+        /// Update all drawing elements
+        /// </summary>
         public void Update()
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
-            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())//acCurDb.TransactionManager.StartTransaction())
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
+                //Update all plot level annotations
                 foreach (PlotLevel pl in Level)
                 {
                     pl.Update();
                 }
 
+                //Update FFL annotation
                 MText text = tr.GetObject(FFLLabel, OpenMode.ForWrite) as MText;
                 text.Contents = FinishedFloorLevelText;
 
-                this.GenerateHatching();
+                //Generate all hatching for tanking/retaining etc
+                this.GenerateHatching();                
 
-                /*foreach (WallSegment ws in WallSegments)
-                {
-                    ws.Update();
-                }
-
-                List<Curve> foundations = new List<Curve>();
-                foreach (WallSegment ws in WallSegments)
-                {
-                    foundations.Add(tr.GetObject(ws.NegativeFoundationId, OpenMode.ForWrite) as Curve);
-                    foundations.Add(tr.GetObject(ws.PositiveFoundationId, OpenMode.ForWrite) as Curve);
-                }
-
-                TrimFoundation(foundations);*/
-
-                
-
+                //Commit the changes
                 tr.Commit();
             }
+        }        
+
+        /// <summary>
+        /// Removes all existing hatching and regenerates it based on current  applied levels.
+        /// </summary>
+        public void GenerateHatching()
+        {            
+            //Remove all existing hatches
+            foreach(PlotHatch ph in Hatches)
+            {
+                ph.Erase();
+            }
+            Hatches.Clear();
+
+            Database acCurDb;
+            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+
+            //Set to only work for exposed brickwork
+            Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
+
+            BlockReference newBlockRef = (BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
+            DBObjectCollection explodedBlock = new DBObjectCollection();
+            newBlockRef.Explode(explodedBlock);
+
+            foreach (Entity entToAdd in explodedBlock)
+            {
+                if (entToAdd is Polyline)
+                {
+                    Polyline acPline = entToAdd as Polyline;
+
+                    // Open the Block table for read
+                    BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                    // Open the Block table record Model space for write
+                    BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                    //Add tanking and exposed brickwork
+                    //Order levels by param along line to include doors in the correct place
+                    var levelChanges = (from l in Level orderby l.Param ascending select l).ToList();
+
+                    int startPoint = 0;
+                    bool Tanking = false;
+
+                    //Check if first point is ok by seeing if there is a 150mm difference or less
+                    if (Math.Round(levelChanges[0].Level, 3) < -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) < FinishedFloorLevel - 0.150))
+                    {
+                        //First point is not level, step backwards through the list untill point is found
+                        int negCount = 0;
+                        for (int i = levelChanges.Count - 1; i >= 0; i--)
+                        {
+                            if (Math.Round(levelChanges[i].Level, 3) < -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) < FinishedFloorLevel - 0.150))
+                            {
+                                negCount--;
+                            }
+                            else
+                            {               
+                                //TODO: WOrk out why an if check? Thinks its so its doesnt go past the first ok pont. Change the outer if loop to a while??
+                                if (startPoint == 0)
+                                {
+                                    startPoint = negCount;
+                                }
+                            }
+                        }
+                    }
+                    
+                    //Define point collections to hold the boundary coordinates
+                    Point3dCollection hatchBoundaryPoints = new Point3dCollection();
+                    Point3dCollection hatchOffsetPoints = new Point3dCollection();
+
+                    // Create the offset polyline
+                    //TODO: Add check here for very small lines not able to be offset
+                    DBObjectCollection offsetOutlineObjects = acPline.GetOffsetCurves(Civils.Constants.TankingHatchOffest);
+                    Polyline offsetOutline = offsetOutlineObjects[0] as Polyline;
+
+                    for (int step = startPoint; step < levelChanges.Count; step++)
+                    {
+                        int i = 0; //Convert step to accessor
+                        if (step < 0)
+                        {
+                            i = levelChanges.Count + startPoint;
+                            
+                        } else
+                        {
+                            i = step;
+                        }
+
+                        //if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) == FinishedFloorLevel - 0.150))
+                        if (Math.Round(levelChanges[i].Level, 3) < -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) < FinishedFloorLevel - 0.150))
+                        {
+                            if (!Tanking)
+                            {
+                                Tanking = true;
+                                //Stop overflow if the first point is one
+                                if (i == 0)
+                                {
+                                    hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[levelChanges.Count - 1].Param));
+                                }
+                                else
+                                {
+                                    hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i - 1].Param));
+                                }
+                            }
+                            hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i].Param));
+                            hatchOffsetPoints.Add(offsetOutline.GetPointAtParameter(levelChanges[i].Param));
+                        }
+                        else
+                        {
+                            if (Tanking)
+                            {
+                                //end point found
+                                Tanking = false;
+                                hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i].Param));
+
+                                //Create hatch object
+                                //Traverse outline backwards to pick up points
+                                for (int j = hatchOffsetPoints.Count - 1; j >= 0; j--)
+                                {
+                                    hatchBoundaryPoints.Add(hatchOffsetPoints[j]);
+                                }
+
+                                // Lose this line in the real command
+                                bool success = JPPCommandsInitialisation.setJPPLayers();
+
+                                PlotHatch ph = new PlotHatch();
+                                ph.Generate(hatchBoundaryPoints);
+                                Hatches.Add(ph);
+
+                                hatchBoundaryPoints.Clear();
+                                hatchOffsetPoints.Clear();
+                            }
+                        }
+                    }
+
+                    //Loop finished without tank ending, therefore first point is end
+                    if(Tanking)
+                    {
+                        Tanking = false;
+                        hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[0].Param));
+
+                        //Create hatch object
+                        //Traverse outline backwards to pick up points
+                        for (int j = hatchOffsetPoints.Count - 1; j >= 0; j--)
+                        {
+                            hatchBoundaryPoints.Add(hatchOffsetPoints[j]);
+                        }
+
+                        // Lose this line in the real command
+                        bool success = JPPCommandsInitialisation.setJPPLayers();
+
+                        PlotHatch ph = new PlotHatch();
+                        ph.Generate(hatchBoundaryPoints);
+                        Hatches.Add(ph);
+
+                        hatchBoundaryPoints.Clear();
+                        hatchOffsetPoints.Clear();
+                    }
+                }
+            }
         }
+
+        /// <summary>
+        /// Highlight all drawing elements
+        /// </summary>
+        public void Highlight()
+        {
+            //TODO: Implement
+        }
+
+        /// <summary>
+        /// Unhighlight all drawing elements
+        /// </summary>
+        public void Unhighlight()
+        {
+            //TODO: Implement
+        }
+
+        public void GetFFLfromSurface()
+        {
+            Database acCurDb;
+            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+
+            Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
+
+            BlockReference newBlockRef = acTrans.GetObject(BlockRef, OpenMode.ForWrite) as BlockReference;//(BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
+            DBObjectCollection explodedBlock = new DBObjectCollection();
+            newBlockRef.Explode(explodedBlock);
+
+            foreach (Entity entToAdd in explodedBlock)
+            {
+                if (entToAdd is Polyline)
+                {
+                    Polyline acPline = entToAdd as Polyline;
+
+                    ObjectIdCollection SurfaceIds = CivilApplication.ActiveDocument.GetSurfaceIds();
+                    foreach (ObjectId surfaceId in SurfaceIds)
+                    {
+                        CivSurface oSurface = surfaceId.GetObject(OpenMode.ForRead) as CivSurface;
+                        if (oSurface.Name == Civils.Constants.ProposedGroundName)
+                        {
+                            //Need to add the temp line to create feature line from it
+                            BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+                            BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+                            ObjectId obj1 = acBlkTblRec.AppendEntity(acPline);
+                            acTrans.AddNewlyCreatedDBObject(acPline, true);
+
+                            ObjectId perimId = FeatureLine.Create("tempLine", obj1);
+
+                            FeatureLine perim = acTrans.GetObject(perimId, OpenMode.ForWrite) as FeatureLine;
+                            perim.AssignElevationsFromSurface(oSurface.Id, false);
+
+                            this.FinishedFloorLevel = Math.Round(perim.MaxElevation * 1000)/ 1000 + 0.15;
+                            this.Update();
+                            for (int i = 0; i < this.Level.Count; i++)
+                            {
+                                var points = perim.GetPoints(Autodesk.Civil.FeatureLinePointType.AllPoints);
+                                AttributeReference levelText = acTrans.GetObject(this.Level[i].Text, OpenMode.ForWrite) as AttributeReference;
+                                if(Level[i].LevelAccess)
+                                {
+                                    levelText.TextString = (Math.Round(perim.MaxElevation * 1000) / 1000 + 0.15).ToString();
+                                } else
+                                {
+                                    levelText.TextString = "@" + Math.Round(points[i].Z * 1000) / 1000;
+                                }                                
+                            }
+
+                            perim.Erase();
+                            acPline.Erase();
+                        }
+
+                    }
+                }
+            }
+        }
+
+        #region Plot commands        
+
+        [CommandMethod("DeletePlot")]
+        public static void DeletePlot()
+        {
+
+        }
+
+        [CommandMethod("SetPlotFFL")]
+        public static void SetPlotFFL()
+        {
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            using (DocumentLock dl = acDoc.LockDocument())
+            {
+                var Plots = acDoc.GetDocumentStore<CivilDocumentStore>().Plots;
+
+                foreach(Plot p in Plots)
+                {
+                    using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        p.GetFFLfromSurface();
+                        tr.Commit();
+                    }
+                }                
+            }
+
+            // Redraw the drawing
+            Autodesk.AutoCAD.ApplicationServices.Application.UpdateScreen();
+            Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.UpdateScreen();
+        }
+        #endregion
 
         public static List<Curve> TrimFoundation(List<Curve> allLines)
         {
@@ -380,9 +607,11 @@ namespace JPP.Civils
             return output;
         }
 
+        /// <summary>
+        /// Create the plot and establish all drawing objects
+        /// </summary>
         public void Generate()
-        {
-            
+        { 
             Database acCurDb;
             acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
 
@@ -392,16 +621,8 @@ namespace JPP.Civils
 
             if (BlockRefPtr == 0)
             {
-                /*//Create new block reference
-                // Add a block reference to model space. 
-                BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-                BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-
-                newBlockRef = new BlockReference(BasePoint, PlotType.BlockID);                
-                BlockRef = acBlkTblRec.AppendEntity(newBlockRef);
-                acTrans.AddNewlyCreatedDBObject(newBlockRef, true);*/
                 BlockRef = Core.Utilities.InsertBlock(BasePoint, Rotation, PlotType.BlockID);
-                newBlockRef = (BlockReference) BlockRef.GetObject(OpenMode.ForWrite);
+                newBlockRef = (BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
 
             }
             else
@@ -416,7 +637,7 @@ namespace JPP.Civils
             Main.LoadBlocks();
 
             foreach (Entity entToAdd in explodedBlock)
-            {                
+            {
                 if (entToAdd is Polyline)
                 {
                     Polyline acPline = entToAdd as Polyline;
@@ -427,10 +648,10 @@ namespace JPP.Civils
                         Level.Add(pl);
                     }
 
+                    //Iterate over all the corners and add to the drawing
                     int vn = acPline.NumberOfVertices;
                     for (int i = 0; i < vn; i++)
-                    {
-                        // Could also get the 3D point here
+                    {                        
                         Point3d pt = acPline.GetPoint3dAt(i);
                         PlotLevel pl = new PlotLevel(false, -0.15, this, acPline.GetParameterAtPoint(pt));
                         pl.Generate(pt);
@@ -447,6 +668,7 @@ namespace JPP.Civils
                     // Create a multiline text object
                     using (MText acMText = new MText())
                     {
+                        //Find the centre of the plot outline as an estimated point of insertion
                         Solid3d Solid = new Solid3d();
                         DBObjectCollection coll = new DBObjectCollection();
                         coll.Add(acPline);
@@ -466,449 +688,7 @@ namespace JPP.Civils
 
                     GenerateHatching();
                 }
-            }          
-
-            /*
-            // Open the Block table for read
-            BlockTable acBlkTbl;
-            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-
-            ObjectId blkRecId = ObjectId.Null;
-
-            if (!acBlkTbl.Has("FormationTag"))
-            {
-                Core.Utilities.LoadBlocks();
             }
-
-            foreach (WallSegment ws in WallSegments)
-            {
-                ws.Generate();
-            }*/
-        }
-
-        public void GenerateHatching()
-        {            
-            //Set to only work for exposed brickwork
-            foreach(PlotHatch ph in Hatches)
-            {
-                ph.Erase();
-            }
-            Hatches.Clear();
-
-            Database acCurDb;
-            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
-
-            Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
-
-            BlockReference newBlockRef = (BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
-            DBObjectCollection explodedBlock = new DBObjectCollection();
-            newBlockRef.Explode(explodedBlock);
-
-            foreach (Entity entToAdd in explodedBlock)
-            {
-                if (entToAdd is Polyline)
-                {
-                    Polyline acPline = entToAdd as Polyline;
-
-                    // Open the Block table for read
-                    BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-
-                    // Open the Block table record Model space for write
-                    BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-
-                    //Add tanking and exposed brickwork
-                    var levelChanges = (from l in Level orderby l.Param ascending select l).ToList();
-
-                    int startPoint = 0;
-                    bool Tanking = false;
-
-                    //Check if first point is ok
-                    //if (Math.Round(levelChanges[0].Level, 3) != -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) == FinishedFloorLevel - 0.150))
-                    if (Math.Round(levelChanges[0].Level, 3) < -0.15 && !(levelChanges[0].Absolute == true && double.Parse(levelChanges[0].TextValue) < FinishedFloorLevel - 0.150))
-                    {
-                        //TODO: Need to handle first point not being at level
-                        //Step backwards through the list untill point is found
-                        int negCount = 0;
-                        for (int i = levelChanges.Count - 1; i >= 0; i--)
-                        {
-                            //if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) == FinishedFloorLevel - 0.150))
-                            if (Math.Round(levelChanges[i].Level, 3) < -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) < FinishedFloorLevel - 0.150))
-                            {
-                                negCount--;
-                            }
-                            else
-                            {
-                                //Select first "end" only. Clunky, change to while loop?
-                                if (startPoint == 0)
-                                {
-                                    startPoint = negCount;
-                                }
-                            }
-                        }
-                    }
-                    
-                    Point3dCollection hatchBoundaryPoints = new Point3dCollection();
-                    Point3dCollection hatchOffsetPoints = new Point3dCollection();
-
-                    // Create the offset polyline
-                    //TODO: Add check here for very small lines not able to be offset
-                    DBObjectCollection offsetOutlineObjects = acPline.GetOffsetCurves(Civils.Constants.TankingHatchOffest);
-                    Polyline offsetOutline = offsetOutlineObjects[0] as Polyline;
-
-                    for (int step = startPoint; step < levelChanges.Count; step++)
-                    {
-                        int i = 0; //Convert step to accessor
-                        if (step < 0)
-                        {
-                            i = levelChanges.Count + startPoint;
-                            
-                        } else
-                        {
-                            i = step;
-                        }
-
-                        //if (Math.Round(levelChanges[i].Level, 3) != -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) == FinishedFloorLevel - 0.150))
-                        if (Math.Round(levelChanges[i].Level, 3) < -0.15 && !(levelChanges[i].Absolute == true && double.Parse(levelChanges[i].TextValue) < FinishedFloorLevel - 0.150))
-                        {
-                            if (!Tanking)
-                            {
-                                Tanking = true;
-                                //Stop overflow if the first point is one
-                                if (i == 0)
-                                {
-                                    hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[levelChanges.Count - 1].Param));
-                                }
-                                else
-                                {
-                                    hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i - 1].Param));
-                                }
-                            }
-                            hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i].Param));
-                            hatchOffsetPoints.Add(offsetOutline.GetPointAtParameter(levelChanges[i].Param));
-                        }
-                        else
-                        {
-                            if (Tanking)
-                            {
-                                //end point found
-                                Tanking = false;
-                                hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[i].Param));
-
-                                //Create hatch object
-                                //Traverse outline backwards to pick up points
-                                for (int j = hatchOffsetPoints.Count - 1; j >= 0; j--)
-                                {
-                                    hatchBoundaryPoints.Add(hatchOffsetPoints[j]);
-                                }
-
-                                // Lose this line in the real command
-                                bool success = JPPCommandsInitialisation.setJPPLayers();
-
-                                PlotHatch ph = new PlotHatch();
-                                ph.Generate(hatchBoundaryPoints);
-                                Hatches.Add(ph);
-
-                                hatchBoundaryPoints.Clear();
-                                hatchOffsetPoints.Clear();
-                            }
-                        }
-                    }
-
-                    //Loop finished without tank ending, therefore first point is end
-                    if(Tanking)
-                    {
-                        Tanking = false;
-                        hatchBoundaryPoints.Add(acPline.GetPointAtParameter(levelChanges[0].Param));
-
-                        //Create hatch object
-                        //Traverse outline backwards to pick up points
-                        for (int j = hatchOffsetPoints.Count - 1; j >= 0; j--)
-                        {
-                            hatchBoundaryPoints.Add(hatchOffsetPoints[j]);
-                        }
-
-                        // Lose this line in the real command
-                        bool success = JPPCommandsInitialisation.setJPPLayers();
-
-                        PlotHatch ph = new PlotHatch();
-                        ph.Generate(hatchBoundaryPoints);
-                        Hatches.Add(ph);
-
-                        hatchBoundaryPoints.Clear();
-                        hatchOffsetPoints.Clear();
-                    }
-                }
-            }
-        }
-
-        public void Lock()
-        {
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
-
-            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
-            {
-                DBDictionary gd = (DBDictionary)tr.GetObject(acCurDb.GroupDictionaryId, OpenMode.ForWrite);
-                Group group = new Group("Plot group", true);
-                gd.SetAt(PlotName, group);
-                tr.AddNewlyCreatedDBObject(group, true);
-
-                group.InsertAt(0, BlockRef);
-                foreach(PlotLevel pl in Level)
-                {
-                    pl.Lock(group);                    
-                }
-
-                tr.Commit();
-            }
-        }
-
-        public void Unlock()
-        {
-
-
-        }
-
-        public void Rebuild()
-        {
-            foreach(WallSegment ws in WallSegments)
-            {
-                ws.Parent = this;
-            }
-            foreach(PlotLevel pl in Level)
-            {
-                pl.Parent = this;
-            }
-        }
-
-        public void Regen()
-        {
-
-        }
-
-        public void Highlight()
-        {
-
-        }
-
-        public void Unhighlight()
-        {
-
-        }
-
-        public void GetFFLfromSurface()
-        {
-            Database acCurDb;
-            acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
-
-            Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
-
-            BlockReference newBlockRef = acTrans.GetObject(BlockRef, OpenMode.ForWrite) as BlockReference;//(BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
-            DBObjectCollection explodedBlock = new DBObjectCollection();
-            newBlockRef.Explode(explodedBlock);
-
-            foreach (Entity entToAdd in explodedBlock)
-            {
-                if (entToAdd is Polyline)
-                {
-                    Polyline acPline = entToAdd as Polyline;
-
-                    ObjectIdCollection SurfaceIds = CivilApplication.ActiveDocument.GetSurfaceIds();
-                    foreach (ObjectId surfaceId in SurfaceIds)
-                    {
-                        CivSurface oSurface = surfaceId.GetObject(OpenMode.ForRead) as CivSurface;
-                        if (oSurface.Name == Civils.Constants.ProposedGroundName)
-                        {
-                            //Need to add the temp line to create feature line from it
-                            BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-                            BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                            ObjectId obj1 = acBlkTblRec.AppendEntity(acPline);
-                            acTrans.AddNewlyCreatedDBObject(acPline, true);
-
-                            ObjectId perimId = FeatureLine.Create("tempLine", obj1);
-
-                            FeatureLine perim = acTrans.GetObject(perimId, OpenMode.ForWrite) as FeatureLine;
-                            perim.AssignElevationsFromSurface(oSurface.Id, false);
-
-                            this.FinishedFloorLevel = Math.Round(perim.MaxElevation * 1000)/ 1000 + 0.15;
-                            this.Update();
-                            for (int i = 0; i < this.Level.Count; i++)
-                            {
-                                var points = perim.GetPoints(Autodesk.Civil.FeatureLinePointType.AllPoints);
-                                AttributeReference levelText = acTrans.GetObject(this.Level[i].Text, OpenMode.ForWrite) as AttributeReference;
-                                if(Level[i].LevelAccess)
-                                {
-                                    levelText.TextString = (Math.Round(perim.MaxElevation * 1000) / 1000 + 0.15).ToString();
-                                } else
-                                {
-                                    levelText.TextString = "@" + Math.Round(points[i].Z * 1000) / 1000;
-                                }                                
-                            }
-
-                            perim.Erase();
-                            acPline.Erase();
-                        }
-
-                    }
-                }
-            }
-        }
-
-        [CommandMethod("NewPlot")]
-        public static void NewPlot()
-        {
-            JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
-
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
-
-            /*PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ");
-
-            pStrOpts.AllowSpaces = true;
-            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);*/
-            PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
-            pKeyOpts.Message = "Enter plot type: ";
-
-            foreach(PlotType pt in acDoc.GetDocumentStore<CivilDocumentStore>().PlotTypes)
-            {
-                pKeyOpts.Keywords.Add(pt.PlotTypeName);
-            }            
-            pKeyOpts.AllowNone = false;
-            PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
-            string plotTypeId = pKeyRes.StringResult;
-
-            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ");
-            pStrOptsPlot.AllowSpaces = true;
-            PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
-            string plotId = pStrResPlot.StringResult;
-
-            Plot p = new Plot();
-            p.PlotName = plotId;
-            p.PlotTypeId = plotTypeId;
-
-            //Switch here for civil3d
-            if (!Civils.Main.C3DActive)
-            {            
-                //Civil 3d not available so prompt for level
-                PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");                                
-                p.FinishedFloorLevel = promptFFLDouble.Value;
-            }
-            
-            PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
-            PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
-            p.BasePoint = pPtRes.Value;
-
-            PromptPointOptions pAnglePtOpts = new PromptPointOptions("\nSelect point on base line: ");
-            PromptPointResult pAnglePtRes = acDoc.Editor.GetPoint(pAnglePtOpts);
-            Point3d p3d = pAnglePtRes.Value;
-            double x, y;
-            x = p3d.X - p.BasePoint.X;
-            y = p3d.Y - p.BasePoint.Y;
-            p.Rotation = Math.Atan(y / x);
-
-            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
-            {
-                p.Generate();
-
-                if (Civils.Main.C3DActive)
-                {
-                    p.GetFFLfromSurface();
-                }
-
-                //TODO: This is horrendous but fuck it. Need to refactor to remove extra regen
-                //p.Generate();
-                p.Update();
-
-                tr.Commit();
-            }
-
-            p.Lock();
-
-            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
-        }
-
-        [CommandMethod("DeletePlot")]
-        public static void DeletePlot()
-        {
-            //TODO: get deletion to work
-            /*Document acDoc = Application.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
-
-            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot name: ");
-
-            pStrOpts.AllowSpaces = true;
-            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
-            string plotName = pStrRes.StringResult;
-
-            PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
-            pKeyOpts.Message = "Enter plot type: ";
-
-            foreach (PlotType pt in acDoc.GetDocumentStore<CivilDocumentStore>().PlotTypes)
-            {
-                pKeyOpts.Keywords.Add(pt.PlotTypeName);
-            }
-            pKeyOpts.AllowNone = false;
-            PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
-            string plotTypeId = pKeyRes.StringResult;
-
-            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ");
-            pStrOptsPlot.AllowSpaces = true;
-            PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
-            string plotId = pStrResPlot.StringResult;
-
-            PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");
-
-            Plot p = new Plot();
-            p.PlotName = plotId;
-            p.PlotTypeId = plotTypeId;
-            p.FinishedFloorLevel = promptFFLDouble.Value;
-
-            PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
-            PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
-            p.BasePoint = pPtRes.Value;
-
-            PromptPointOptions pAnglePtOpts = new PromptPointOptions("\nSelect point on base line: ");
-            PromptPointResult pAnglePtRes = acDoc.Editor.GetPoint(pAnglePtOpts);
-            Point3d p3d = pAnglePtRes.Value;
-            double x, y;
-            x = p3d.X - p.BasePoint.X;
-            y = p3d.Y - p.BasePoint.Y;
-            p.Rotation = Math.Atan(y / x);
-
-            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
-            {
-                p.Generate();
-                tr.Commit();
-            }
-
-            p.Lock();
-
-            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);*/
-        }
-
-        [CommandMethod("SetPlotFFL")]
-        public static void SetPlotFFL()
-        {
-            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
-
-            using (DocumentLock dl = acDoc.LockDocument())
-            {
-                var Plots = acDoc.GetDocumentStore<CivilDocumentStore>().Plots;
-
-                foreach(Plot p in Plots)
-                {
-                    using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
-                    {
-                        p.GetFFLfromSurface();
-                        tr.Commit();
-                    }
-                }                
-            }
-
-            // Redraw the drawing
-            Autodesk.AutoCAD.ApplicationServices.Application.UpdateScreen();
-            Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.UpdateScreen();
         }
     }
 }

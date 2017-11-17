@@ -12,8 +12,14 @@ namespace JPP.Civils
 {
     public class PlotLevel
     {
+        /// <summary>
+        /// Contains the pointer to the block inserted to display the levels
+        /// </summary>
         public long BlockIDPtr;
 
+        /// <summary>
+        /// Direct link to the Autocad object created from the pointer to the block inserted to display the levels
+        /// </summary>
         [XmlIgnore]
         public ObjectId BlockID
         {
