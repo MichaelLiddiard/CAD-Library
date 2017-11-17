@@ -11,6 +11,10 @@ namespace JPP.Core
 {
     class RegistryHelper
     {
+        /// <summary>
+        /// Check for the existence of an autload registry key
+        /// </summary>
+        /// <returns>Returns true if the key is found</returns>
         public static bool IsAutoload()
         {
             RegistryKey hive = Registry.CurrentUser;
@@ -35,6 +39,9 @@ namespace JPP.Core
             return false;
         }
 
+        /// <summary>
+        /// Create the autload settings for the current running version
+        /// </summary>
         public static void CreateAutoload()
         {
             RegistryKey hive = Registry.CurrentUser;

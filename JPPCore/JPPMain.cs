@@ -30,23 +30,34 @@ namespace JPP.Core
     /// </summary>
     public class JPPMain : IExtensionApplication
     {
-        public static PaletteSet _ps;
-        public static RibbonToggleButton settingsButton;
 
+        #region Private variables
+        /// <summary>
+        /// PaletteSet containing the settings window
+        /// </summary>
+        private static PaletteSet settingsWindow;
+
+        /// <summary>
+        /// Ribon toggle button for displaying settings window
+        /// </summary>
+        private static RibbonToggleButton settingsButton;
+        #endregion
+
+        #region Autocad Extension Lifecycle
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need. Main library entry point
         /// </summary>
         public void Initialize()
         {
             //Upgrade and load the app settings
+            //TODO: Verify this is actually required
             Properties.Settings.Default.Upgrade();
 
             //Detect if ribbon is currently loaded, and if not wait until the application is Idle.
             //Throws an error if try to add to the menu with the ribbon unloaded
             if (ComponentManager.Ribbon == null)
             {
-                Application.Idle += Application_Idle;
-                //ComponentManager.ItemInitialized += ComponentManager_ItemInitialized;
+                Application.Idle += Application_Idle;                
             }
             else
             {
@@ -60,7 +71,7 @@ namespace JPP.Core
         /// </summary>
         public void Terminate()
         {
-            throw new NotImplementedException();
+            
         }
 
         /// <summary>
@@ -72,20 +83,46 @@ namespace JPP.Core
         {
             //Unhook the event handler to prevent multiple calls
             Application.Idle -= Application_Idle;
-            //Call the initialize method now the document is loaded
+            //Call the initialize method now the application is loaded
             InitJPP();
         }
+        #endregion
 
+        #region Extension Setup
         /// <summary>
         /// Init JPP command loads all essential elements of the program, including the helper DLL files.
         /// </summary>
-        [CommandMethod("InitJPP")]
         public static void InitJPP()
-        {
+        {          
+            //Create the main UI
+            RibbonTab JPPTab = CreateTab();
+            CreateCoreMenu(JPPTab);
+
+            //Load the additional DLL files, but only not if running in debug mode
+            #if !DEBUG
+            Update();
+            LoadModules();
+            #endif
+
+            //Create settings window
+            //TODO: move common window creation code to utilities method
+            settingsWindow = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
+            settingsWindow.Size = new Size(600, 800);
+            settingsWindow.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
+            settingsWindow.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
+                        
+            ElementHost settingsWindowHost = new ElementHost();
+            settingsWindowHost.AutoSize = true;
+            settingsWindowHost.Dock = DockStyle.Fill;
+            settingsWindowHost.Child = new SettingsUserControl();
+            settingsWindow.Add("Settings", settingsWindowHost);
+            settingsWindow.KeepFocus = false;
+
             //Check for registry key for autoload
             if (!RegistryHelper.IsAutoload())
             {
                 //No autoload found
+                //TODO: try to condense this into a helper method
                 TaskDialog autoloadPrompt = new TaskDialog();
                 autoloadPrompt.WindowTitle = Constants.Friendly_Name;
                 autoloadPrompt.MainInstruction = "JPP Library does not currently load automatically. Would you like to enable this?";
@@ -109,32 +146,7 @@ namespace JPP.Core
                     return false;
                 };
                 autoloadPrompt.Show(Application.MainWindow.Handle);
-            } //Core autloads, progress
-
-            //Create the main UI
-            RibbonTab JPPTab = CreateTab();
-            CreateCoreMenu(JPPTab);
-
-            //Load the additional DLL files
-#if !DEBUG
-            Update();
-            LoadModules();
-#endif
-            //Create settings window
-            _ps = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
-            _ps.Size = new Size(600, 800);
-            _ps.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
-            _ps.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
-
-            SettingsUserControl suc = new SettingsUserControl();
-            ElementHost host1 = new ElementHost();
-            host1.AutoSize = true;
-            host1.Dock = DockStyle.Fill;
-            host1.Child = new SettingsUserControl();
-            _ps.Add("Settings", host1);
-
-            _ps.KeepFocus = false;
-            //_ps.Visible = true;
+            }
         }
 
         /// <summary>
@@ -163,7 +175,7 @@ namespace JPP.Core
         {
             RibbonPanel Panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
-            source.Title = "Main";
+            source.Title = "General";
 
             RibbonRowPanel stack = new RibbonRowPanel();
 
@@ -171,10 +183,11 @@ namespace JPP.Core
             stack.Items.Add(finaliseButton);
             stack.Items.Add(new RibbonRowBreak());
 
-            RibbonButton authenticateButton = Utilities.CreateButton("Authenticate", Properties.Resources.Locked, RibbonItemSize.Standard, "");
+            /*RibbonButton authenticateButton = Utilities.CreateButton("Authenticate", Properties.Resources.Locked, RibbonItemSize.Standard, "");
             stack.Items.Add(authenticateButton);
-            stack.Items.Add(new RibbonRowBreak());
+            stack.Items.Add(new RibbonRowBreak());*/
 
+            //Create the button used to toggle the settings on or off
             settingsButton = new RibbonToggleButton();//Utilities.CreateButton("Settings", Properties.Resources.settings, RibbonItemSize.Standard, "");            
             settingsButton.ShowText = true;
             settingsButton.ShowImage = true;
@@ -187,58 +200,25 @@ namespace JPP.Core
             stack.Items.Add(settingsButton);
             stack.Items.Add(new RibbonRowBreak());
 
-            //Add button to update all JPP libraries
-            /*RibbonButton runLoad = new RibbonButton();
-            runLoad.ShowText = true;
-            runLoad.Text = "Update";
-            runLoad.Name = "Check for updates";
-            runLoad.CommandHandler = new RibbonCommandHandler();
-            runLoad.CommandParameter = "._Update ";
-#if DEBUG
-            runLoad.IsEnabled = false;
-#endif
-            stack.Items.Add(runLoad);*/
-
             //Add the new tab section to the main tab
             source.Items.Add(stack);
             Panel.Source = source;
             JPPTab.Panels.Add(Panel);
-        }
+        }        
 
         private static void settingsButton_CheckStateChanged(object sender, EventArgs e)
         {
             if(settingsButton.CheckState == true)
             {
-                _ps.Visible = true;
+                settingsWindow.Visible = true;
             } else
             {
-                _ps.Visible = false;
+                settingsWindow.Visible = false;
             }
         }
+        #endregion
 
-        //TODO: Fix this method, and make more functional
-        /// <summary>
-        /// Create the pallette set window to which individual panels get added
-        /// </summary>
-        public static void CreateWindow()
-        {
-            /*PaletteSet _ps = new PaletteSet("WPF Palette");
-            _ps.Size = new Size(400, 600);
-            _ps.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
-
-            PlotUserControl uc2 = new PlotUserControl();
-            uc2.DataContext = DocumentStore.Current.Plots;
-            ElementHost host = new ElementHost();
-            host.AutoSize = true;
-            host.Dock = DockStyle.Fill;
-            host.Child = uc2;
-            _ps.Add("Add ElementHost", host);
-
-            // Display our palette set
-            _ps.KeepFocus = true;
-            _ps.Visible = true;*/
-        }
-
+        #region Updater
         /// <summary>
         /// Find all assemblies in the subdirectory, and load them into memory
         /// </summary>
@@ -263,18 +243,7 @@ namespace JPP.Core
             }
         }
 
-        /// <summary>
-        /// Find all assemblies in the subdirectory, and load them into memory
-        /// </summary>
-        private static void PrepareDrawing()
-        {
-            //Add the default JPP handler
-
-
-        }
-
         //TODO: Trigger update method somehow
-        [CommandMethod("Update")]
         public static void Update()
         {
             bool updateRequired = false;
@@ -380,6 +349,10 @@ namespace JPP.Core
             }
         }
 
+        #endregion
+
+        #region Command Methods
+
         [CommandMethod("Finalise", CommandFlags.Session)]
         public static void Finalise()
         {
@@ -405,5 +378,7 @@ namespace JPP.Core
             FileInfo fi = new FileInfo(path);
             fi.IsReadOnly = true;
         }
+
+        #endregion
     }
 }
