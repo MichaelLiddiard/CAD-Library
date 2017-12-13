@@ -19,6 +19,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+[assembly: CommandClass(typeof(JPP.Civils.PlotUserControl))]
+
 namespace JPP.Civils
 {
     /// <summary>
@@ -80,8 +82,10 @@ namespace JPP.Civils
 
             pStrOpts.AllowSpaces = true;
             PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);*/
-            PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
-            pKeyOpts.Message = "Enter plot type: ";
+            PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("")
+            {
+                Message = "Enter plot type: "
+            };
 
             foreach (PlotType pt in acDoc.GetDocumentStore<CivilDocumentStore>().PlotTypes)
             {
@@ -91,14 +95,18 @@ namespace JPP.Civils
             PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
             string plotTypeId = pKeyRes.StringResult;
 
-            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ");
-            pStrOptsPlot.AllowSpaces = true;
+            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ")
+            {
+                AllowSpaces = true
+            };
             PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
             string plotId = pStrResPlot.StringResult;
 
-            Plot p = new Plot();
-            p.PlotName = plotId;
-            p.PlotTypeId = plotTypeId;
+            Plot p = new Plot
+            {
+                PlotName = plotId,
+                PlotTypeId = plotTypeId
+            };
 
             //Switch here for civil3d
             if (!Civils.Main.C3DActive)

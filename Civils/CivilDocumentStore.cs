@@ -76,7 +76,7 @@ namespace JPP.Civils
 
             foreach(Plot p in Plots)
             {
-                p.Rebuild();
+                p.Update();
             }
 
             if (nod.Contains(Constants.SiteID))

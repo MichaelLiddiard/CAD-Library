@@ -20,8 +20,6 @@ using CivSurface = Autodesk.Civil.DatabaseServices.Surface;
 using Entity = Autodesk.AutoCAD.DatabaseServices.Entity;
 using DBObject = Autodesk.AutoCAD.DatabaseServices.DBObject;
 
-[assembly: CommandClass(typeof(JPP.Civils.Plot))]
-
 namespace JPP.Civils
 {
     [Serializable]
@@ -589,10 +587,6 @@ namespace JPP.Civils
                                 newStart = new Vector3d();
                             }
                         }
-                        else
-                        {
-                            int i = 0;
-                        }
                     }
 
                     c.StartPoint = c.StartPoint + newStart;
@@ -670,8 +664,10 @@ namespace JPP.Civils
                     {
                         //Find the centre of the plot outline as an estimated point of insertion
                         Solid3d Solid = new Solid3d();
-                        DBObjectCollection coll = new DBObjectCollection();
-                        coll.Add(acPline);
+                        DBObjectCollection coll = new DBObjectCollection
+                        {
+                            acPline
+                        };
                         Solid.Extrude(((Region)Region.CreateFromCurves(coll)[0]), 1, 0);
                         Point3d centroid = new Point3d(Solid.MassProperties.Centroid.X, Solid.MassProperties.Centroid.Y, 0);
                         Solid.Dispose();

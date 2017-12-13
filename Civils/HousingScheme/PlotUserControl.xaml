@@ -6,8 +6,15 @@
              xmlns:local="clr-namespace:JPP.Civils"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
-    <Grid>
-        <DataGrid x:Name="dataGrid" Margin="10,31,10,10" ItemsSource="{Binding}" AutoGenerateColumns="False" CanUserAddRows="False" RowEditEnding="dataGrid_RowEditEnding">
+    <Grid Background="#FF5C5C5C">
+        <DataGrid x:Name="dataGrid" Margin="10,31,10,10" ItemsSource="{Binding}" AutoGenerateColumns="False" CanUserAddRows="False" RowEditEnding="dataGrid_RowEditEnding" Background="#FF5C5C5C" BorderBrush="#FF333333" Foreground="White">
+            <DataGrid.Resources>
+                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                    <Setter Property="Background" Value="#FF525252" />
+                    <Setter Property="BorderBrush" Value="#FF333333"/>
+                    <Setter Property="BorderThickness" Value="0,0,1,0"/>
+                </Style>
+            </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Plot Name" Binding="{Binding PlotName, UpdateSourceTrigger=PropertyChanged}" Width="0.5*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Plot Type" Binding="{Binding PlotTypeId, UpdateSourceTrigger=PropertyChanged}" Width="0.4*" IsReadOnly="True"/>
