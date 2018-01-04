@@ -27,6 +27,7 @@ namespace JPP.CivilStructures
         [CommandMethod("CreateFoundation")]
         public static void CreateFoundation()
         {
+            /*
             Main.CreateStructuralLayers();
 
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
@@ -98,7 +99,7 @@ namespace JPP.CivilStructures
                 }
             }           
 
-            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(newPlot);
+            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(newPlot);*/
         }
 
         [CommandMethod("UpdateFoundation")]

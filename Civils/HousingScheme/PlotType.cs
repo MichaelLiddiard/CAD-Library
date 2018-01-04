@@ -3,6 +3,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.Windows;
 using JPP.Core;
 using JPPCommands;
 using System;
@@ -15,9 +16,11 @@ using System.Xml.Serialization;
 [assembly: CommandClass(typeof(JPP.Civils.PlotType))]
 
 namespace JPP.Civils
-{    
+{
     public class PlotType
     {
+        public static PlotType CurrentOpen;
+
         public string PlotTypeName { get; set; }
 
         public List<AccessPoint> AccessPoints;
@@ -52,7 +55,7 @@ namespace JPP.Civils
             }
             set
             {
-               BlockIDPtr = value.Handle.Value;
+                BlockIDPtr = value.Handle.Value;
             }
         }
 
@@ -77,13 +80,14 @@ namespace JPP.Civils
             {
                 newBlockId = bt[PlotTypeName];
                 btr = tr.GetObject(newBlockId, OpenMode.ForWrite) as BlockTableRecord;
-                foreach(ObjectId e in btr)
+                foreach (ObjectId e in btr)
                 {
                     Entity temp = tr.GetObject(e, OpenMode.ForWrite) as Entity;
                     temp.Erase();
                 }
-                
-            } else
+
+            }
+            else
             {
                 bt.UpgradeOpen();
                 btr = new BlockTableRecord();
@@ -103,9 +107,48 @@ namespace JPP.Civils
             BlockID = btr.ObjectId;
         }
 
-        [CommandMethod("CreatePlotType")]
+        [CommandMethod("PT_Create")]
         public static void CreatePlotType()
         {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;                     
+
+            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ");
+            pStrOpts.AllowSpaces = true;
+            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
+
+            // Prompt for the start point
+            PromptPointResult pPtRes;
+            PromptPointOptions pPtOpts = new PromptPointOptions("");
+            pPtOpts.Message = "\nEnter the base point: ";
+            pPtRes = acDoc.Editor.GetPoint(pPtOpts);
+
+            PlotType.CurrentOpen = new PlotType() { PlotTypeName = pStrRes.StringResult, BasePoint = pPtRes.Value };
+
+            Database acCurDb = acDoc.Database;
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+
+                BlockTable bt = (BlockTable)tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr;
+
+                bt.UpgradeOpen();
+                btr = new BlockTableRecord();
+                btr.Name = PlotType.CurrentOpen.PlotTypeName + "Background";
+                btr.Origin = PlotType.CurrentOpen.BasePoint;
+                var objRef = bt.Add(btr);
+                tr.AddNewlyCreatedDBObject(btr, true);
+
+                Core.Utilities.InsertBlock(PlotType.CurrentOpen.BasePoint, 0, objRef);
+
+                tr.Commit();
+            }
+
+            //Start create plot workflow by showing the context menu
+            RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
+            RibbonTab PlotTypeTab = rc.FindTab("JPPCIVIL_PLOT_TYPE");
+            rc.ShowContextualTab(PlotTypeTab, false, true);
+
+            /*
             JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
 
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
@@ -178,9 +221,68 @@ namespace JPP.Civils
 
                 CivilDocumentStore cds = acDoc.GetDocumentStore<CivilDocumentStore>();
                 cds.PlotTypes.Add(pt);                
-            }
+            }*/
         }
-    }    
+
+        [CommandMethod("PT_CreateWS")]
+        public static void CreateWallSegments()
+        {
+        }
+
+        [CommandMethod("PT_Add")]
+        public static void AddToBackground()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+
+                BlockTable bt = (BlockTable)tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr;
+                ObjectId newBlockId;
+
+                newBlockId = bt[PlotType.CurrentOpen.PlotTypeName + "Background"];
+                btr = tr.GetObject(newBlockId, OpenMode.ForWrite) as BlockTableRecord;
+                //TODO: What the f does this code do???
+                foreach (ObjectId e in btr)
+                {
+                    Entity temp = tr.GetObject(e, OpenMode.ForWrite) as Entity;
+                    temp.Erase();
+                }
+
+                ObjectIdCollection plotObjects = new ObjectIdCollection();
+
+                //Select objects to be added
+                PromptSelectionResult acSSPrompt = acDoc.Editor.GetSelection();
+                SelectionSet acSSet = acSSPrompt.Value;
+                foreach (SelectedObject acSSObj in acSSet)
+                {
+                    plotObjects.Add(acSSObj.ObjectId);
+                }
+
+                // Copy the entities to the block using deepclone
+                IdMapping acMapping = new IdMapping();
+                acCurDb.DeepCloneObjects(plotObjects, newBlockId, acMapping, false);
+
+                foreach (ObjectId oid in plotObjects)
+                {
+                    DBObject e = tr.GetObject(oid, OpenMode.ForWrite);
+                    e.Erase();
+                }
+
+                tr.Commit();
+            }
+
+            //Triggeer regen to update blocks display
+            //alternatively http://adndevblog.typepad.com/autocad/2012/05/redefining-a-block.html
+            Application.DocumentManager.CurrentDocument.Editor.Regen();
+        }
+
+        [CommandMethod("PT_Finalise")]
+        public static void Finalise()
+        {
+        }
+    }
 
     public struct AccessPoint
     {

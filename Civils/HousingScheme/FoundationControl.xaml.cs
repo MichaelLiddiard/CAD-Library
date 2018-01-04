@@ -39,7 +39,7 @@ namespace JPP.Civils
 
             var Binding = this.DataContext as Plot;
 
-            using (DocumentLock dl = acDoc.LockDocument())
+           /* using (DocumentLock dl = acDoc.LockDocument())
             {
                 for (int i = 0; i < Binding.WallSegments.Count; i++)
                 {
@@ -60,11 +60,12 @@ namespace JPP.Civils
                 // Redraw the drawing
                 Autodesk.AutoCAD.ApplicationServices.Application.UpdateScreen();
                 Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.UpdateScreen();
-            }            
+            }     */       
         }
 
         public void Hide()
         {
+            /*
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
@@ -83,7 +84,7 @@ namespace JPP.Civils
                 // Redraw the drawing
                 Autodesk.AutoCAD.ApplicationServices.Application.UpdateScreen();
                 Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.UpdateScreen();
-            }
+            }*/
         }
         
     }

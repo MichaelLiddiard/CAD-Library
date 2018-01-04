@@ -135,7 +135,7 @@
     <Compile Include="HousingScheme\PlotUserControl.xaml.cs">
       <DependentUpon>PlotUserControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="HousingScheme\WallSegment.cs" />
+    <Compile Include="HousingScheme\WallSegmentold.cs" />
     <Compile Include="Drainage\Node.cs" />
     <Compile Include="PolylineUtilities.cs" />
     <Compile Include="Main.cs" />
@@ -146,6 +146,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="HousingScheme\WallJoint.cs" />
+    <Compile Include="HousingScheme\WallSegment.cs" />
     <Compile Include="Xref.cs" />
   </ItemGroup>
   <ItemGroup>
