@@ -15,6 +15,12 @@ namespace JPP.Civils
 
         public const string ProposedGroundName = "Proposed Ground";
 
+        //Plot type layers
+        public const string JPP_HS_PlotPerimiter = "JPP_Civil_PlotPerimeter";
+        public const short JPP_HS_PlotPerimiterColor = 1;
+
+        public const string JPP_HS_PlotBasepoint = "JPP_Civil_PlotBasepoint";
+        public const short JPP_HS_PlotBasepointColor = 3;
 
         #region Civil Document Store
         /// <summary>

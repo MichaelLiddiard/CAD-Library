@@ -269,6 +269,16 @@ namespace JPP.Core
             return newButton;
         }
 
-
+        public static void CreateLayer(Transaction tr, LayerTable acLayerTable, string LayerName, short ColorIndex)
+        {
+            if (!acLayerTable.Has(LayerName))
+            {
+                LayerTableRecord acLayerTableRecLevels = new LayerTableRecord();
+                acLayerTableRecLevels.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByAci, ColorIndex);
+                acLayerTableRecLevels.Name = LayerName;
+                acLayerTable.Add(acLayerTableRecLevels);
+                tr.AddNewlyCreatedDBObject(acLayerTableRecLevels, true);
+            }
+        }
     }
 }

@@ -237,7 +237,7 @@ namespace JPP.Core
                     {
                         string dllPath = dll.Replace('\\', '/');
                         //Load the additional libraries found
-                        ExtensionLoader.Load(dll);
+                        Assembly module = ExtensionLoader.Load(dll);
                     }
                 }
             }

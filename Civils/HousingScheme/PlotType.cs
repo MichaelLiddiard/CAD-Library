@@ -1,4 +1,5 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -61,9 +62,12 @@ namespace JPP.Civils
 
         public Point3d BasePoint;
 
+        public List<WallSegment> Segments;
+
         public PlotType()
         {
             AccessPoints = new List<AccessPoint>();
+            Segments = new List<WallSegment>();
         }
 
         public void DefineBlock()
@@ -109,7 +113,7 @@ namespace JPP.Civils
 
         [CommandMethod("PT_Create")]
         public static void CreatePlotType()
-        {
+        {          
             Document acDoc = Application.DocumentManager.MdiActiveDocument;                     
 
             PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ");
@@ -127,6 +131,9 @@ namespace JPP.Civils
             Database acCurDb = acDoc.Database;
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
+                //Create all plot specific layers
+                LayerTable acLayerTable = tr.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite) as LayerTable;
+                Core.Utilities.CreateLayer(tr, acLayerTable, Constants.JPP_HS_PlotPerimiter, Constants.JPP_HS_PlotPerimiterColor);
 
                 BlockTable bt = (BlockTable)tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -137,8 +144,25 @@ namespace JPP.Civils
                 btr.Origin = PlotType.CurrentOpen.BasePoint;
                 var objRef = bt.Add(btr);
                 tr.AddNewlyCreatedDBObject(btr, true);
+                PlotType.CurrentOpen.BlockID = objRef;
+
+                BlockTableRecord btr2 = new BlockTableRecord();
+                btr2.Name = PlotType.CurrentOpen.PlotTypeName;
+                btr2.Origin = PlotType.CurrentOpen.BasePoint;
+                bt.Add(btr2);
+                tr.AddNewlyCreatedDBObject(btr2, true);
 
                 Core.Utilities.InsertBlock(PlotType.CurrentOpen.BasePoint, 0, objRef);
+
+                //Add basepoint
+                Circle bp = new Circle();
+                bp.Center = PlotType.CurrentOpen.BasePoint;
+                bp.Radius = 0.5f;
+
+                // Open the Block table record Model space for write
+                BlockTableRecord acBlkTblRec = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+                acBlkTblRec.AppendEntity(bp);
+                tr.AddNewlyCreatedDBObject(bp, true);
 
                 tr.Commit();
             }
@@ -227,6 +251,90 @@ namespace JPP.Civils
         [CommandMethod("PT_CreateWS")]
         public static void CreateWallSegments()
         {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+            Editor acEditor = acDoc.Editor;
+
+            // All work will be done in the WCS so save the current UCS
+            // to restore later and set the UCS to WCS
+            Matrix3d CurrentUCS = acEditor.CurrentUserCoordinateSystem;
+            acEditor.CurrentUserCoordinateSystem = Matrix3d.Identity;
+
+            // Get the current color, for temp graphics
+            // Color currCol = acCurrDb.Cecolor;
+            Color drawColor = Color.FromColorIndex(ColorMethod.ByAci, 1);
+            // Create a 3d point collection to store the vertices 
+            Point3dCollection PickPts = new Point3dCollection();
+
+            // Set up the selection options
+            PromptPointOptions promptCornerPtOpts = new PromptPointOptions("\nSelect points along segment: ");
+            promptCornerPtOpts.AllowNone = true;
+
+            // Get the start point for the polyline
+            PromptPointResult promptResult = acEditor.GetPoint(promptCornerPtOpts);
+            // Continue to add picked corner points to the polyline
+            while (promptResult.Status == PromptStatus.OK)
+            {
+                // Add the selected point PickPts collection
+                PickPts.Add(promptResult.Value);
+                // Drag a temp line during selection of subsequent points
+                promptCornerPtOpts.UseBasePoint = true;
+                promptCornerPtOpts.BasePoint = promptResult.Value;
+                promptResult = acEditor.GetPoint(promptCornerPtOpts);
+                if (promptResult.Status == PromptStatus.OK)
+                {
+                    // For each point selected, draw a temporary segment
+                    acEditor.DrawVector(PickPts[PickPts.Count - 1],     // start point
+                                    promptResult.Value,                 // end point
+                                    drawColor.ColorIndex,               // highlight colour
+                                                                        //currCol.ColorIndex,               // current color
+                                    false);                             // highlighted
+                }
+            }
+
+            Polyline acPline = new Polyline(PickPts.Count);
+            acPline.Layer = Constants.JPP_HS_PlotPerimiter;
+            // The user has pressed SPACEBAR to exit the picking points loop
+            if (promptResult.Status == PromptStatus.None)
+            {
+                foreach (Point3d pt in PickPts)
+                {
+                    // Alert user that picked point has elevation.
+                    if (pt.Z != 0.0)
+                        acEditor.WriteMessage("/nWarning: corner point has non-zero elevation. Elevation will be ignored.");
+                    acPline.AddVertexAt(acPline.NumberOfVertices, new Point2d(pt.X, pt.Y), 0, 0, 0);
+                }
+                // If user has clicked the start point to close the polyline delete this point and
+                // set polyline to closed
+                if (acPline.EndPoint == acPline.StartPoint)
+                    acPline.RemoveVertexAt(acPline.NumberOfVertices - 1);
+                acPline.Closed = true;
+            }
+
+            //Explode the line and create wall segments to match
+            DBObjectCollection lineSegments = new DBObjectCollection();
+            acPline.Explode(lineSegments);
+
+            using (Transaction tr = acDoc.TransactionManager.StartTransaction())
+            {
+                // Open the Block table for read
+                BlockTable acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                // Open the Block table record Model space for write
+                BlockTableRecord acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                foreach (DBObject dbobj in lineSegments)
+                {
+                    Entity e = dbobj as Entity;                                       
+
+                    WallSegment ws = new WallSegment() { PerimeterLine = acBlkTblRec.AppendEntity(e) };
+                    tr.AddNewlyCreatedDBObject(e, true);
+
+                    PlotType.CurrentOpen.Segments.Add(ws);
+                }
+
+                tr.Commit();                
+            }
         }
 
         [CommandMethod("PT_Add")]
@@ -243,12 +351,6 @@ namespace JPP.Civils
 
                 newBlockId = bt[PlotType.CurrentOpen.PlotTypeName + "Background"];
                 btr = tr.GetObject(newBlockId, OpenMode.ForWrite) as BlockTableRecord;
-                //TODO: What the f does this code do???
-                foreach (ObjectId e in btr)
-                {
-                    Entity temp = tr.GetObject(e, OpenMode.ForWrite) as Entity;
-                    temp.Erase();
-                }
 
                 ObjectIdCollection plotObjects = new ObjectIdCollection();
 
@@ -278,9 +380,56 @@ namespace JPP.Civils
             Application.DocumentManager.CurrentDocument.Editor.Regen();
         }
 
+        [CommandMethod("PT_AddAccess")]
+        public static void AddAccessPointd()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                //TODO: Add this stuff
+                
+            }            
+        }
+
         [CommandMethod("PT_Finalise")]
         public static void Finalise()
         {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+
+                BlockTable bt = (BlockTable)tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr;
+                ObjectId newBlockId;
+
+
+                newBlockId = bt[PlotType.CurrentOpen.PlotTypeName];
+                btr = tr.GetObject(newBlockId, OpenMode.ForWrite) as BlockTableRecord;                
+                foreach (ObjectId e in btr)
+                {
+                    Entity temp = tr.GetObject(e, OpenMode.ForWrite) as Entity;
+                    temp.Erase();
+                }
+
+                ObjectIdCollection plotObjects = new ObjectIdCollection();
+
+                plotObjects.Add(PlotType.CurrentOpen.BlockID);
+
+                foreach(WallSegment ws in PlotType.CurrentOpen.Segments)
+                {
+                    plotObjects.Add(ws.PerimeterLine);
+                }
+
+                btr.AssumeOwnershipOf(plotObjects);
+
+                tr.Commit();
+            }
+
+            //Triggeer regen to update blocks display
+            //alternatively http://adndevblog.typepad.com/autocad/2012/05/redefining-a-block.html
+            Application.DocumentManager.CurrentDocument.Editor.Regen();
         }
     }
 
