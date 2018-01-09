@@ -233,7 +233,14 @@ namespace JPP.Civils
             ctxPlotType.Title = ctxPlotType.Name;
             ctxPlotType.IsContextualTab = true;            
             rc.Tabs.Add(ctxPlotType);
-        
+
+            RibbonPanel ctxPanel = new RibbonPanel();
+            RibbonPanelSource ctxsource = new RibbonPanelSource();
+            RibbonRowPanel ctxStack = new RibbonRowPanel();
+
+            ctxsource.Items.Add(ctxStack);
+            ctxPanel.Source = ctxsource;
+            ctxPlotType.Panels.Add(ctxPanel);
 
             //Check if running under Civil3D by trying to load dll
             try

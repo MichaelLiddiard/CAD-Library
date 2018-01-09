@@ -60,6 +60,23 @@ namespace JPP.Civils
             }
         }
 
+        public long BasepointPtr;
+
+        [XmlIgnore]
+        public ObjectId BasepointID
+        {
+            get
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(BasepointPtr), 0);
+            }
+            set
+            {
+                BasepointPtr = value.Handle.Value;
+            }
+        }
+
         public Point3d BasePoint;
 
         public List<WallSegment> Segments;
@@ -143,8 +160,7 @@ namespace JPP.Civils
                 btr.Name = PlotType.CurrentOpen.PlotTypeName + "Background";
                 btr.Origin = PlotType.CurrentOpen.BasePoint;
                 var objRef = bt.Add(btr);
-                tr.AddNewlyCreatedDBObject(btr, true);
-                PlotType.CurrentOpen.BlockID = objRef;
+                tr.AddNewlyCreatedDBObject(btr, true);                
 
                 BlockTableRecord btr2 = new BlockTableRecord();
                 btr2.Name = PlotType.CurrentOpen.PlotTypeName;
@@ -152,7 +168,7 @@ namespace JPP.Civils
                 bt.Add(btr2);
                 tr.AddNewlyCreatedDBObject(btr2, true);
 
-                Core.Utilities.InsertBlock(PlotType.CurrentOpen.BasePoint, 0, objRef);
+                PlotType.CurrentOpen.BlockID = Core.Utilities.InsertBlock(PlotType.CurrentOpen.BasePoint, 0, objRef);
 
                 //Add basepoint
                 Circle bp = new Circle();
@@ -161,16 +177,14 @@ namespace JPP.Civils
 
                 // Open the Block table record Model space for write
                 BlockTableRecord acBlkTblRec = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                acBlkTblRec.AppendEntity(bp);
+                PlotType.CurrentOpen.BasepointID = acBlkTblRec.AppendEntity(bp);
                 tr.AddNewlyCreatedDBObject(bp, true);
 
                 tr.Commit();
             }
 
-            //Start create plot workflow by showing the context menu
-            RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
-            RibbonTab PlotTypeTab = rc.FindTab("JPPCIVIL_PLOT_TYPE");
-            rc.ShowContextualTab(PlotTypeTab, false, true);
+            
+            Autodesk.AutoCAD.ApplicationServices.Application.Idle += OnIdle;
 
             /*
             JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
@@ -248,6 +262,18 @@ namespace JPP.Civils
             }*/
         }
 
+        private static void OnIdle(object sender, EventArgs e)
+        {
+            //Start create plot workflow by showing the context menu
+            RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
+            RibbonTab PlotTypeTab = rc.FindTab("JPPCIVIL_PLOT_TYPE");
+            rc.ShowContextualTab(PlotTypeTab, false, true);
+
+            PlotTypeTab.IsActive = true;
+
+            Autodesk.AutoCAD.ApplicationServices.Application.Idle -= OnIdle;
+        }
+
         [CommandMethod("PT_CreateWS")]
         public static void CreateWallSegments()
         {
@@ -307,8 +333,10 @@ namespace JPP.Civils
                 // If user has clicked the start point to close the polyline delete this point and
                 // set polyline to closed
                 if (acPline.EndPoint == acPline.StartPoint)
+                {
                     acPline.RemoveVertexAt(acPline.NumberOfVertices - 1);
-                acPline.Closed = true;
+                    acPline.Closed = true;
+                }
             }
 
             //Explode the line and create wall segments to match
