@@ -1,5 +1,6 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,11 @@ namespace JPP.Civils
     {
         public WallJoint StartJoint;
 
+        public Point3d StartPoint;
+
         public WallJoint EndJoint;
+
+        public Point3d EndPoint;
 
         public long PerimeterLinePtr;
 

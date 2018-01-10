@@ -57,6 +57,8 @@ namespace JPP.Civils
 
         #endregion
 
+        public bool UpdateLevelsFromSurface;
+
         private PlotType _PlotType;
 
         public Point3d BasePoint { get; set; }
@@ -117,6 +119,9 @@ namespace JPP.Civils
         public double FinishedFloorLevel { get; set; }
 
         public bool Locked { get; set; }
+
+        public List<WallSegment> Segments;
+        public List<WallJoint> Joints;
 
         /// <summary>
         /// Create a new, empty plot. Constructor required for deserialization, not recommended for use
@@ -602,7 +607,8 @@ namespace JPP.Civils
         }
 
         /// <summary>
-        /// Create the plot and establish all drawing objects
+        /// Create the plot and establish all drawing objects. Only to be called when plot is first created or to be reset from plot types
+        /// MUST be called from an active transaction
         /// </summary>
         public void Generate()
         { 
@@ -617,7 +623,6 @@ namespace JPP.Civils
             {
                 BlockRef = Core.Utilities.InsertBlock(BasePoint, Rotation, PlotType.BlockID);
                 newBlockRef = (BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
-
             }
             else
             {
@@ -628,13 +633,49 @@ namespace JPP.Civils
             DBObjectCollection explodedBlock = new DBObjectCollection();
             newBlockRef.Explode(explodedBlock);
 
+            //TODO: Move releveant blocks here
             Main.LoadBlocks();
 
             foreach (Entity entToAdd in explodedBlock)
             {
-                if (entToAdd is Polyline)
+                if (entToAdd is Line)
                 {
-                    Polyline acPline = entToAdd as Polyline;
+                    Line segment = entToAdd as Line;
+                    WallSegment master = null;
+                    WallSegment seg = new WallSegment();
+
+                    foreach (WallSegment ptWS in this.PlotType.Segments)
+                    {
+                        //TODO: Add code to match to PlotType WS by comparing start and end points
+                        Matrix3d curUCSMatrix = Application.DocumentManager.MdiActiveDocument.Editor.CurrentUserCoordinateSystem;
+                        CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
+                        entToAdd.TransformBy(Matrix3d.Scaling(0.001, BasePoint));
+                        entToAdd.TransformBy(Matrix3d.Rotation(-Rotation, curUCS.Zaxis, BasePoint));                                    
+
+                        if (master == null)
+                        {
+                            master = ptWS;
+                        }
+                        else
+                        {
+                            throw new ArgumentOutOfRangeException("Wall segment match already found", (System.Exception)null);
+                        }
+                    }
+
+                    if (master == null)
+                    {
+                        throw new ArgumentOutOfRangeException("No matching wall segment found", (System.Exception)null);
+                    }
+
+                    seg.PerimeterLine = segment.ObjectId;
+                    seg.StartPoint = segment.StartPoint;
+                    seg.EndPoint = segment.EndPoint;
+                    AddWallSegment(seg);
+                }
+            }
+
+
+                    /*Polyline acPline = entToAdd as Polyline;
                     foreach (AccessPoint ap in PlotType.AccessPoints)
                     {
                         PlotLevel pl = new PlotLevel(false, ap.Offset, this, ap.Parameter);
@@ -682,8 +723,53 @@ namespace JPP.Civils
                         acTrans.AddNewlyCreatedDBObject(acMText, true);
                     }
 
-                    GenerateHatching();
+                    GenerateHatching();*/
+                
+            
+        }
+
+        /// <summary>
+        /// Helper method for adding wall segments to ensure everything gets linked correctly.
+        /// </summary>
+        private void AddWallSegment(WallSegment newSegment)
+        {
+            Segments.Add(newSegment);
+
+            bool startFound = false;
+            bool endFound = false;
+
+            foreach(WallJoint wj in Joints)
+            {
+                if(wj.Point == newSegment.StartPoint)
+                {
+                    startFound = true;
+                    newSegment.StartJoint = wj;
+                    wj.AddWallSegment(newSegment);
                 }
+                if (wj.Point == newSegment.EndPoint)
+                {
+                    startFound = true;
+                    newSegment.EndJoint = wj;
+                    wj.AddWallSegment(newSegment);
+                }
+            }
+
+            if(!startFound)
+            {
+                WallJoint newWj = new WallJoint();
+                newWj.Point = newSegment.StartPoint;
+                newSegment.StartJoint = newWj;
+                newWj.AddWallSegment(newSegment);
+                Joints.Add(newWj);
+            }
+
+            if (!endFound)
+            {
+                WallJoint newWj = new WallJoint();
+                newWj.Point = newSegment.EndPoint;
+                newSegment.EndJoint = newWj;
+                newWj.AddWallSegment(newSegment);
+                Joints.Add(newWj);
             }
         }
     }

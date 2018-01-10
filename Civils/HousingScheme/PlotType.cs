@@ -18,6 +18,7 @@ using System.Xml.Serialization;
 
 namespace JPP.Civils
 {
+    //TODO: Add code to check if a plot type is not currently open, and gracefully handle prompts being cancelled
     public class PlotType
     {
         public static PlotType CurrentOpen;
@@ -40,6 +41,23 @@ namespace JPP.Civils
             set
             {
                 PerimeterLinePtr = value.Handle.Value;
+            }
+        }
+
+        public long BackgroundBlockIDPtr;
+
+        [XmlIgnore]
+        public ObjectId BackgroundBlockID
+        {
+            get
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(BackgroundBlockIDPtr), 0);
+            }
+            set
+            {
+                BackgroundBlockIDPtr = value.Handle.Value;
             }
         }
 
@@ -165,10 +183,11 @@ namespace JPP.Civils
                 BlockTableRecord btr2 = new BlockTableRecord();
                 btr2.Name = PlotType.CurrentOpen.PlotTypeName;
                 btr2.Origin = PlotType.CurrentOpen.BasePoint;
-                bt.Add(btr2);
+                var blockRef = bt.Add(btr2);
                 tr.AddNewlyCreatedDBObject(btr2, true);
 
-                PlotType.CurrentOpen.BlockID = Core.Utilities.InsertBlock(PlotType.CurrentOpen.BasePoint, 0, objRef);
+                PlotType.CurrentOpen.BackgroundBlockID = Core.Utilities.InsertBlock(PlotType.CurrentOpen.BasePoint, 0, objRef);
+                PlotType.CurrentOpen.BlockID = blockRef;
 
                 //Add basepoint
                 Circle bp = new Circle();
@@ -416,7 +435,7 @@ namespace JPP.Civils
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
                 //TODO: Add this stuff
-                
+                throw new NotImplementedException();                
             }            
         }
 
@@ -443,7 +462,8 @@ namespace JPP.Civils
 
                 ObjectIdCollection plotObjects = new ObjectIdCollection();
 
-                plotObjects.Add(PlotType.CurrentOpen.BlockID);
+                plotObjects.Add(PlotType.CurrentOpen.BackgroundBlockID);
+                plotObjects.Add(PlotType.CurrentOpen.BasepointID);
 
                 foreach(WallSegment ws in PlotType.CurrentOpen.Segments)
                 {
@@ -458,6 +478,12 @@ namespace JPP.Civils
             //Triggeer regen to update blocks display
             //alternatively http://adndevblog.typepad.com/autocad/2012/05/redefining-a-block.html
             Application.DocumentManager.CurrentDocument.Editor.Regen();
+
+            //Add to the document store
+            CivilDocumentStore cds = acDoc.GetDocumentStore<CivilDocumentStore>();
+            cds.PlotTypes.Add(PlotType.CurrentOpen);
+
+            PlotType.CurrentOpen = null;
         }
     }
 

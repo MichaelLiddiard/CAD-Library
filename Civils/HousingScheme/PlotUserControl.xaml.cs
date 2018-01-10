@@ -72,16 +72,10 @@ namespace JPP.Civils
 
         [CommandMethod("NewPlot")]
         public static void NewPlot()
-        {
-            JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
-
+        {          
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
-            /*PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ");
-
-            pStrOpts.AllowSpaces = true;
-            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);*/
             PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("")
             {
                 Message = "Enter plot type: "
@@ -95,10 +89,7 @@ namespace JPP.Civils
             PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
             string plotTypeId = pKeyRes.StringResult;
 
-            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ")
-            {
-                AllowSpaces = true
-            };
+            PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter plot name: ") { AllowSpaces = true };
             PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
             string plotId = pStrResPlot.StringResult;
 
@@ -114,6 +105,11 @@ namespace JPP.Civils
                 //Civil 3d not available so prompt for level
                 PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");
                 p.FinishedFloorLevel = promptFFLDouble.Value;
+                p.UpdateLevelsFromSurface = false;
+            }
+            else
+            {
+                p.UpdateLevelsFromSurface = true;
             }
 
             PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
@@ -132,6 +128,8 @@ namespace JPP.Civils
             {
                 p.Generate();
 
+                /*p.Generate();
+
                 if (Civils.Main.C3DActive)
                 {
                     p.GetFFLfromSurface();
@@ -139,7 +137,7 @@ namespace JPP.Civils
 
                 //TODO: This is horrendous but fuck it. Need to refactor to remove extra regen
                 //p.Generate();
-                p.Update();
+                p.Update();*/
 
                 tr.Commit();
             }
