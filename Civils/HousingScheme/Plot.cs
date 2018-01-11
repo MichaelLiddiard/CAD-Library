@@ -129,6 +129,8 @@ namespace JPP.Civils
         public Plot()
         {
             WallSegments = new ObservableCollection<WallSegment>();
+            Segments = new List<WallSegment>();
+            Joints = new List<WallJoint>();
             Level = new ObservableCollection<PlotLevel>();
             Hatches = new ObservableCollection<PlotHatch>();
         }       
@@ -641,24 +643,31 @@ namespace JPP.Civils
                 if (entToAdd is Line)
                 {
                     Line segment = entToAdd as Line;
+                    string target = "";
+
+                    //Get type id
+                    var rb = segment.XData;
+                    foreach(var tv in rb)
+                    {
+                        target = tv.Value as string;
+                    }
+
                     WallSegment master = null;
                     WallSegment seg = new WallSegment();
 
                     foreach (WallSegment ptWS in this.PlotType.Segments)
                     {
                         //TODO: Add code to match to PlotType WS by comparing start and end points
-                        Matrix3d curUCSMatrix = Application.DocumentManager.MdiActiveDocument.Editor.CurrentUserCoordinateSystem;
-                        CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
-                        entToAdd.TransformBy(Matrix3d.Scaling(0.001, BasePoint));
-                        entToAdd.TransformBy(Matrix3d.Rotation(-Rotation, curUCS.Zaxis, BasePoint));                                    
-
-                        if (master == null)
+                        if (ptWS.Guid == target)
                         {
-                            master = ptWS;
-                        }
-                        else
-                        {
-                            throw new ArgumentOutOfRangeException("Wall segment match already found", (System.Exception)null);
+                            if (master == null)
+                            {
+                                master = ptWS;
+                            }
+                            else
+                            {
+                                throw new ArgumentOutOfRangeException("Wall segment match already found", (System.Exception)null);
+                            }
                         }
                     }
 

@@ -13,6 +13,8 @@ namespace JPP.Civils
     [Serializable]
     public class WallSegment
     {
+        public string Guid;
+
         public WallJoint StartJoint;
 
         public Point3d StartPoint;

@@ -1,5 +1,6 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
 using Autodesk.Civil.ApplicationServices;
@@ -231,7 +232,7 @@ namespace JPP.Civils
             ctxPlotType.Id = "JPPCIVIL_PLOT_TYPE";
             ctxPlotType.IsVisible = false;
             ctxPlotType.Title = ctxPlotType.Name;
-            ctxPlotType.IsContextualTab = true;            
+            ctxPlotType.IsContextualTab = true;
             rc.Tabs.Add(ctxPlotType);
 
             RibbonPanel ctxPanel = new RibbonPanel();
@@ -252,6 +253,9 @@ namespace JPP.Civils
             {
                 C3DActive = false;
             }
+
+            //Added registered simble for XData
+            AddRegAppTableRecord();
         }
 
         private static void AttemptC3DLoad()
@@ -278,7 +282,8 @@ namespace JPP.Civils
                     uc3.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes;
                 }
                 _ps.Visible = true;
-            } else
+            }
+            else
             {
                 _ps.Visible = false;
                 uc2.DataContext = null;
@@ -290,7 +295,7 @@ namespace JPP.Civils
         {
             Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             using (Database OpenDb = new Database(false, true))
-            {               
+            {
                 string path = System.Reflection.Assembly.GetExecutingAssembly().Location;
                 path = path.Replace("Civils.dll", "");
                 doc.Editor.WriteMessage(path);
@@ -361,6 +366,31 @@ namespace JPP.Civils
         {
             JPPCommandsInitialisation.JPPCommandsInitialise();
             throw new NotImplementedException();//JPPCommands.
+        }
+
+        static void AddRegAppTableRecord()
+        {
+
+            Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            Editor ed = doc.Editor;
+
+            Database db = doc.Database;
+
+            using (Transaction tr = doc.TransactionManager.StartTransaction())
+            {
+
+                RegAppTable rat = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead, false);
+
+                if (!rat.Has("JPP"))
+                {
+                    rat.UpgradeOpen();
+                    RegAppTableRecord ratr = new RegAppTableRecord();
+                    ratr.Name = "JPP";
+                    rat.Add(ratr);
+                    tr.AddNewlyCreatedDBObject(ratr, true);
+                }
+                tr.Commit();
+            }
         }
     }
 }

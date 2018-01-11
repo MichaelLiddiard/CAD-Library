@@ -374,7 +374,8 @@ namespace JPP.Civils
                 {
                     Entity e = dbobj as Entity;                                       
 
-                    WallSegment ws = new WallSegment() { PerimeterLine = acBlkTblRec.AppendEntity(e) };
+                    WallSegment ws = new WallSegment() { PerimeterLine = acBlkTblRec.AppendEntity(e), Guid = Guid.NewGuid().ToString() };
+                    e.XData = new ResultBuffer(new TypedValue(1001, "JPP"), new TypedValue(1000, ws.Guid));
                     tr.AddNewlyCreatedDBObject(e, true);
 
                     PlotType.CurrentOpen.Segments.Add(ws);
