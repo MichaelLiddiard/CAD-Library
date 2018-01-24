@@ -158,7 +158,7 @@ namespace JPP.Civils
             // Prompt for the start point
             PromptPointResult pPtRes;
             PromptPointOptions pPtOpts = new PromptPointOptions("");
-            pPtOpts.Message = "\nEnter the base point: ";
+            pPtOpts.Message = "\nEnter the base point. Basepoint to be located at bottom left corner of the plot: ";
             pPtRes = acDoc.Editor.GetPoint(pPtOpts);
 
             PlotType.CurrentOpen = new PlotType() { PlotTypeName = pStrRes.StringResult, BasePoint = pPtRes.Value };

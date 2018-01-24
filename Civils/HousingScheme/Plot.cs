@@ -123,6 +123,9 @@ namespace JPP.Civils
         public List<WallSegment> Segments;
         public List<WallJoint> Joints;
 
+        [XmlIgnore]
+        public List<WallJoint> PerimeterPath;
+
         /// <summary>
         /// Create a new, empty plot. Constructor required for deserialization, not recommended for use
         /// </summary>
@@ -611,6 +614,7 @@ namespace JPP.Civils
         /// <summary>
         /// Create the plot and establish all drawing objects. Only to be called when plot is first created or to be reset from plot types
         /// MUST be called from an active transaction
+        /// <exception cref="ArgumentOutOfRangeException"> An ArugmentOutOfRageException is thrown when a matching wall segment in the plot type isnt found or is duplicated </exception>
         /// </summary>
         public void Generate()
         { 
@@ -679,61 +683,146 @@ namespace JPP.Civils
                     seg.PerimeterLine = segment.ObjectId;
                     seg.StartPoint = segment.StartPoint;
                     seg.EndPoint = segment.EndPoint;
+                    seg.Guid = master.Guid;
                     AddWallSegment(seg);
                 }
             }
 
+            //Traverse through wall segments to find external ones, starting with basepoint
+            //Find basepoint
+            WallJoint startNode = null;
+            foreach(WallJoint wj in Joints)
+            {
+                if(wj.Point.IsEqualTo(BasePoint))
+                {
+                    startNode = wj;
+                }
+            }
 
-                    /*Polyline acPline = entToAdd as Polyline;
-                    foreach (AccessPoint ap in PlotType.AccessPoints)
-                    {
-                        PlotLevel pl = new PlotLevel(false, ap.Offset, this, ap.Parameter);
-                        pl.Generate(acPline.GetPointAtParameter(ap.Parameter));
-                        Level.Add(pl);
-                    }
+            if(startNode == null)
+            {
+                throw new ArgumentOutOfRangeException("Basepoint does not lie on wall joint", (System.Exception)null);
+            }
 
-                    //Iterate over all the corners and add to the drawing
-                    int vn = acPline.NumberOfVertices;
-                    for (int i = 0; i < vn; i++)
-                    {                        
-                        Point3d pt = acPline.GetPoint3dAt(i);
-                        PlotLevel pl = new PlotLevel(false, -0.15, this, acPline.GetParameterAtPoint(pt));
-                        pl.Generate(pt);
-                        Level.Add(pl);
-                    }
+            //Recursively traverse through the segments to find the external ones
+            WallSegment startSegment = startNode.North;
+            WallJoint nextNode;
+            if (startSegment.EndPoint == startNode.Point)
+            {
+                nextNode = startSegment.StartJoint;
+            }
+            else
+            {
+                nextNode = startSegment.EndJoint;
+            }
 
-                    // Open the Block table for read
-                    BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+            PerimeterPath = new List<WallJoint>();
+            PerimeterPath.Add(startNode);
+            TraverseExternalSegment(startSegment, nextNode, startNode);
 
-                    // Open the Block table record Model space for write
-                    BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+            Polyline perimeter = new Polyline();
+            foreach (WallJoint wj in PerimeterPath)
+            {
+                perimeter.AddVertexAt(perimeter.NumberOfVertices, new Point2d(wj.Point.X, wj.Point.Y), 0, 0, 0);
+            }
+            perimeter.Closed = true;
 
-                    //Ad the FFL Label
-                    // Create a multiline text object
-                    using (MText acMText = new MText())
-                    {
-                        //Find the centre of the plot outline as an estimated point of insertion
-                        Solid3d Solid = new Solid3d();
-                        DBObjectCollection coll = new DBObjectCollection
-                        {
-                            acPline
-                        };
-                        Solid.Extrude(((Region)Region.CreateFromCurves(coll)[0]), 1, 0);
-                        Point3d centroid = new Point3d(Solid.MassProperties.Centroid.X, Solid.MassProperties.Centroid.Y, 0);
-                        Solid.Dispose();
+            BlockTable acBlkTbl;
+            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
 
-                        acMText.Location = centroid;
-                        acMText.Contents = FinishedFloorLevelText;
-                        acMText.Rotation = Rotation;
-                        acMText.Height = 7;
-                        acMText.Attachment = AttachmentPoint.MiddleCenter;
+            BlockTableRecord acBlkTblRec;
+            acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
-                        FFLLabel = acBlkTblRec.AppendEntity(acMText);
-                        acTrans.AddNewlyCreatedDBObject(acMText, true);
-                    }
+            DBObjectCollection minus = perimeter.GetOffsetCurves(-Properties.Settings.Default.P_Hatch_Offset);
+            DBObjectCollection plus = perimeter.GetOffsetCurves(Properties.Settings.Default.P_Hatch_Offset);
 
-                    GenerateHatching();*/
-                
+            foreach(DBObject db in minus)
+            {
+                acBlkTblRec.AppendEntity(db as Entity);
+                acTrans.AddNewlyCreatedDBObject(db, true);
+            }
+            foreach (DBObject db in plus)
+            {
+                acBlkTblRec.AppendEntity(db as Entity);
+                acTrans.AddNewlyCreatedDBObject(db, true);
+            }
+
+            /*Polyline acPline = entToAdd as Polyline;
+            foreach (AccessPoint ap in PlotType.AccessPoints)
+            {
+                PlotLevel pl = new PlotLevel(false, ap.Offset, this, ap.Parameter);
+                pl.Generate(acPline.GetPointAtParameter(ap.Parameter));
+                Level.Add(pl);
+            }
+
+            //Iterate over all the corners and add to the drawing
+            int vn = acPline.NumberOfVertices;
+            for (int i = 0; i < vn; i++)
+            {                        
+                Point3d pt = acPline.GetPoint3dAt(i);
+                PlotLevel pl = new PlotLevel(false, -0.15, this, acPline.GetParameterAtPoint(pt));
+                pl.Generate(pt);
+                Level.Add(pl);
+            }
+
+            // Open the Block table for read
+            BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+            // Open the Block table record Model space for write
+            BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+            //Ad the FFL Label
+            // Create a multiline text object
+            using (MText acMText = new MText())
+            {
+                //Find the centre of the plot outline as an estimated point of insertion
+                Solid3d Solid = new Solid3d();
+                DBObjectCollection coll = new DBObjectCollection
+                {
+                    acPline
+                };
+                Solid.Extrude(((Region)Region.CreateFromCurves(coll)[0]), 1, 0);
+                Point3d centroid = new Point3d(Solid.MassProperties.Centroid.X, Solid.MassProperties.Centroid.Y, 0);
+                Solid.Dispose();
+
+                acMText.Location = centroid;
+                acMText.Contents = FinishedFloorLevelText;
+                acMText.Rotation = Rotation;
+                acMText.Height = 7;
+                acMText.Attachment = AttachmentPoint.MiddleCenter;
+
+                FFLLabel = acBlkTblRec.AppendEntity(acMText);
+                acTrans.AddNewlyCreatedDBObject(acMText, true);
+            }
+
+            GenerateHatching();*/
+
+
+        }
+
+        private void TraverseExternalSegment(WallSegment currentSegment, WallJoint currentNode, WallJoint startNode)
+        {
+            currentSegment.External = true;
+            PerimeterPath.Add(currentNode);
+            //Get next
+            WallSegment nextSegment = currentNode.NextClockwise(currentSegment);
+            WallJoint nextJoint;
+            if(nextSegment.StartPoint.IsEqualTo(currentNode.Point))
+            {
+                nextJoint = nextSegment.EndJoint;
+            } else
+            {
+                nextJoint = nextSegment.StartJoint;
+            }
+            
+            if(nextJoint.Point.IsEqualTo(startNode.Point))
+            {
+                //Back to start
+                nextSegment.External = true;                
+            } else
+            {
+                TraverseExternalSegment(nextSegment, nextJoint, startNode);
+            }
             
         }
 
@@ -749,15 +838,15 @@ namespace JPP.Civils
 
             foreach(WallJoint wj in Joints)
             {
-                if(wj.Point == newSegment.StartPoint)
+                if(wj.Point.IsEqualTo(newSegment.StartPoint))
                 {
                     startFound = true;
                     newSegment.StartJoint = wj;
                     wj.AddWallSegment(newSegment);
                 }
-                if (wj.Point == newSegment.EndPoint)
+                if (wj.Point.IsEqualTo(newSegment.EndPoint))
                 {
-                    startFound = true;
+                    endFound = true;
                     newSegment.EndJoint = wj;
                     wj.AddWallSegment(newSegment);
                 }
@@ -780,6 +869,8 @@ namespace JPP.Civils
                 newWj.AddWallSegment(newSegment);
                 Joints.Add(newWj);
             }
+
+            newSegment.Generate();
         }
     }
 }

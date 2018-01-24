@@ -25,6 +25,8 @@ namespace JPP.Civils
 
         public long PerimeterLinePtr;
 
+        public bool External;
+
         [XmlIgnore]
         public ObjectId PerimeterLine
         {
@@ -38,6 +40,11 @@ namespace JPP.Civils
             {
                 PerimeterLinePtr = value.Handle.Value;
             }
+        }
+
+        public void Generate()
+        {
+
         }
     }
 }

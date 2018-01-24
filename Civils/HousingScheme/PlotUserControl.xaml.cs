@@ -126,7 +126,13 @@ namespace JPP.Civils
 
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
-                p.Generate();
+                try
+                {
+                    p.Generate();
+                    acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
+
+                    tr.Commit();                    
+                } 
 
                 /*p.Generate();
 
@@ -139,10 +145,14 @@ namespace JPP.Civils
                 //p.Generate();
                 p.Update();*/
 
-                tr.Commit();
-            }
+                
 
-            acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
+                catch (ArgumentOutOfRangeException e)
+                {
+                    acDoc.Editor.WriteMessage("\nSelected plot type corrupted. Please delete and recreate. Inner Exception:\n");
+                    acDoc.Editor.WriteMessage(e.Message);
+                }
+            }            
         }
     }
 }

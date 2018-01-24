@@ -14,6 +14,9 @@
                     <Setter Property="BorderBrush" Value="#FF333333"/>
                     <Setter Property="BorderThickness" Value="0,0,1,0"/>
                 </Style>
+                <Style BasedOn="{StaticResource {x:Type DataGridCell}}" TargetType="{x:Type DataGridCell}">
+                    <Setter Property="Foreground" Value="Black" />
+                </Style>
             </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Plot Name" Binding="{Binding PlotName, UpdateSourceTrigger=PropertyChanged}" Width="0.5*" IsReadOnly="True"/>
