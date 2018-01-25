@@ -19,6 +19,7 @@
                 <Style BasedOn="{StaticResource {x:Type DataGridCell}}" TargetType="{x:Type DataGridCell}">
                     <Setter Property="Foreground" Value="Black" />
                 </Style>
+                <local:PlotStatusConverter x:Key="statusconverter" />
             </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Plot Name" Binding="{Binding PlotName, UpdateSourceTrigger=PropertyChanged}" Width="0.5*" IsReadOnly="True"/>
@@ -37,7 +38,13 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridCheckBoxColumn Header="Locked" Binding="{Binding Locked, UpdateSourceTrigger=PropertyChanged}" Width="0.2*"/>
+                <DataGridTemplateColumn Header="Status" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Image Source="{Binding Status, Converter={StaticResource statusconverter}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
         <Button x:Name="button" HorizontalAlignment="Left" Margin="10,10,0,0" Width="21" Height="21" VerticalAlignment="Top" Click="button_Click">

@@ -1,4 +1,6 @@
-﻿using Autodesk.AutoCAD.Geometry;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,9 +22,46 @@ namespace JPP.Civils
             }
         }
 
+        public long LevelLabelPtr;
 
         [XmlIgnore]
-        private List<SegmentConnection> Segments;    
+        public ObjectId LevelLabel
+        {
+            get
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(LevelLabelPtr), 0);
+            }
+            set
+            {
+                LevelLabelPtr = value.Handle.Value;
+            }
+        }
+
+        public long LabelTextPtr;
+
+        [XmlIgnore]
+        public ObjectId LabelText
+        {
+            get
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                return acCurDb.GetObjectId(false, new Handle(LabelTextPtr), 0);
+            }
+            set
+            {
+                LabelTextPtr = value.Handle.Value;
+            }
+        }
+
+        [XmlIgnore]
+        private List<SegmentConnection> Segments;
+
+        public double ExternalLevel { get; set; }
+        public bool AbsoluteLevel { get; set; }
+        public double RelativeOffset { get; set; }
         
         public WallJoint()
         {
@@ -80,7 +119,26 @@ namespace JPP.Civils
 
             return Segments[i].Segment;
         }
-            
+
+        public void Generate(double Rotation)
+        {
+            Database acCurDb = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database;
+            Transaction trans = acCurDb.TransactionManager.TopTransaction;
+
+            this.LevelLabel = Core.Utilities.InsertBlock(Point, Rotation, "ProposedLevel");
+            BlockReference acBlkTblRec = trans.GetObject(this.LevelLabel, OpenMode.ForRead) as BlockReference;
+            foreach (ObjectId attId in acBlkTblRec.AttributeCollection)
+            {
+                AttributeReference attDef = trans.GetObject(attId, OpenMode.ForWrite) as AttributeReference;
+
+                if (attDef.Tag == "LEVEL")
+                {
+                    this.LabelText = attDef.ObjectId;
+                    //Set to level offset otherwise event handler overrides
+                    attDef.TextString = ExternalLevel.ToString("F3");
+                }
+            }
+        }
         
         struct SegmentConnection
         {

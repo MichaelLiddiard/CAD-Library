@@ -126,6 +126,9 @@ namespace JPP.Civils
         [XmlIgnore]
         public List<WallJoint> PerimeterPath;
 
+        public PlotStatus Status { get; set; }
+        public string StatusMessage;
+
         /// <summary>
         /// Create a new, empty plot. Constructor required for deserialization, not recommended for use
         /// </summary>
@@ -136,6 +139,8 @@ namespace JPP.Civils
             Joints = new List<WallJoint>();
             Level = new ObservableCollection<PlotLevel>();
             Hatches = new ObservableCollection<PlotHatch>();
+            Status = PlotStatus.Error;
+            StatusMessage = "Plot has remained as default.";
         }       
 
         /// <summary>
@@ -623,6 +628,12 @@ namespace JPP.Civils
 
             Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
 
+            BlockTable acBlkTbl;
+            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+            BlockTableRecord acBlkTblRec;
+            acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
             BlockReference newBlockRef;
 
             if (BlockRefPtr == 0)
@@ -688,6 +699,8 @@ namespace JPP.Civils
                 }
             }
 
+            //HANDLE EXTERNAL LEVELS
+
             //Traverse through wall segments to find external ones, starting with basepoint
             //Find basepoint
             WallJoint startNode = null;
@@ -721,18 +734,13 @@ namespace JPP.Civils
             TraverseExternalSegment(startSegment, nextNode, startNode);
 
             Polyline perimeter = new Polyline();
+            //Build the perimeter line
             foreach (WallJoint wj in PerimeterPath)
             {
-                perimeter.AddVertexAt(perimeter.NumberOfVertices, new Point2d(wj.Point.X, wj.Point.Y), 0, 0, 0);
+                perimeter.AddVertexAt(perimeter.NumberOfVertices, new Point2d(wj.Point.X, wj.Point.Y), 0, 0, 0);                
             }
             perimeter.Closed = true;
-
-            BlockTable acBlkTbl;
-            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-
-            BlockTableRecord acBlkTblRec;
-            acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-
+                        
             DBObjectCollection minus = perimeter.GetOffsetCurves(-Properties.Settings.Default.P_Hatch_Offset);
             DBObjectCollection plus = perimeter.GetOffsetCurves(Properties.Settings.Default.P_Hatch_Offset);
 
@@ -746,6 +754,16 @@ namespace JPP.Civils
                 acBlkTblRec.AppendEntity(db as Entity);
                 acTrans.AddNewlyCreatedDBObject(db, true);
             }
+
+            //GENERATE SUB ELEMENTS
+
+            foreach(WallJoint wj in PerimeterPath)
+            {
+                wj.Generate(Rotation);
+            }
+
+            Status = PlotStatus.ForApproval;
+            StatusMessage = "Plot generated successfully";
 
             /*Polyline acPline = entToAdd as Polyline;
             foreach (AccessPoint ap in PlotType.AccessPoints)
@@ -872,5 +890,13 @@ namespace JPP.Civils
 
             newSegment.Generate();
         }
+    }
+
+    public enum PlotStatus
+    {
+        Approved,
+        ForApproval,
+        Warning,
+        Error
     }
 }
