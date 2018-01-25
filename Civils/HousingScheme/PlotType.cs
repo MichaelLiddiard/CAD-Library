@@ -200,10 +200,7 @@ namespace JPP.Civils
                 tr.AddNewlyCreatedDBObject(bp, true);
 
                 tr.Commit();
-            }
-
-            
-            Autodesk.AutoCAD.ApplicationServices.Application.Idle += OnIdle;
+            }       
 
             /*
             JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
@@ -281,17 +278,7 @@ namespace JPP.Civils
             }*/
         }
 
-        private static void OnIdle(object sender, EventArgs e)
-        {
-            //Start create plot workflow by showing the context menu
-            RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
-            RibbonTab PlotTypeTab = rc.FindTab("JPPCIVIL_PLOT_TYPE");
-            rc.ShowContextualTab(PlotTypeTab, false, true);
-
-            PlotTypeTab.IsActive = true;
-
-            Autodesk.AutoCAD.ApplicationServices.Application.Idle -= OnIdle;
-        }
+        
 
         [CommandMethod("PT_CreateWS")]
         public static void CreateWallSegments()

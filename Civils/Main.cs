@@ -225,24 +225,6 @@ namespace JPP.Civils
             //Throws exception
             //JPPCommandsInitialisation.JPPCommandsInitialise();
 
-            //Add all contextual menus          
-            //TODO: Figure out how to change the color if needed
-            RibbonTab ctxPlotType = new RibbonTab();
-            ctxPlotType.Name = "Plot Type";
-            ctxPlotType.Id = "JPPCIVIL_PLOT_TYPE";
-            ctxPlotType.IsVisible = false;
-            ctxPlotType.Title = ctxPlotType.Name;
-            ctxPlotType.IsContextualTab = true;
-            rc.Tabs.Add(ctxPlotType);
-
-            RibbonPanel ctxPanel = new RibbonPanel();
-            RibbonPanelSource ctxsource = new RibbonPanelSource();
-            RibbonRowPanel ctxStack = new RibbonRowPanel();
-
-            ctxsource.Items.Add(ctxStack);
-            ctxPanel.Source = ctxsource;
-            ctxPlotType.Panels.Add(ctxPanel);
-
             //Check if running under Civil3D by trying to load dll
             try
             {
