@@ -41,6 +41,11 @@ namespace JPP.Core
         /// Ribon toggle button for displaying settings window
         /// </summary>
         private static RibbonToggleButton settingsButton;
+
+        /// <summary>
+        /// Keep a reference to handler to prevent GC
+        /// </summary>
+        private static ClickOverride ClickOverride;
         #endregion
 
         #region Autocad Extension Lifecycle
@@ -117,6 +122,9 @@ namespace JPP.Core
             settingsWindowHost.Child = new SettingsUserControl();
             settingsWindow.Add("Settings", settingsWindowHost);
             settingsWindow.KeepFocus = false;
+
+            //Load click handler;
+            ClickOverride = ClickOverride.Current;
 
             //Check for registry key for autoload
             if (!RegistryHelper.IsAutoload())

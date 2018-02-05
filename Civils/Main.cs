@@ -33,7 +33,7 @@ namespace JPP.Civils
 
         RibbonToggleButton plotButton;
 
-        public static bool C3DActive;
+        public static bool C3DActive;        
 
         /// <summary>
         /// Implement the Autocad extension api to load the additional libraries we need
@@ -238,6 +238,10 @@ namespace JPP.Civils
 
             //Added registered simble for XData
             AddRegAppTableRecord();
+
+            //Load click overrides
+            //TODO: Fix and re-enable
+            //ClickOverride.Current.Add(new LevelClickHandler());
         }
 
         private static void AttemptC3DLoad()

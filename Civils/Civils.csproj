@@ -138,6 +138,7 @@
     <Compile Include="HousingScheme\WallSegmentold.cs" />
     <Compile Include="Drainage\Node.cs" />
     <Compile Include="HousingScheme\PlotStatusConverter.cs" />
+    <Compile Include="LevelClickHandler.cs" />
     <Compile Include="PolylineUtilities.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Pipe.cs" />
