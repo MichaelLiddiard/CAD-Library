@@ -87,9 +87,13 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CivilStructureDocumentStore.cs" />
+    <Compile Include="CSConstants.cs" />
     <Compile Include="Foundation.cs" />
     <Compile Include="Main.cs" />
+    <Compile Include="NHBCTree.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SiteFoundations.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Civils\Civils.csproj">
