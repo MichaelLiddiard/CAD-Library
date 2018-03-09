@@ -204,6 +204,7 @@ namespace JPP.Civils
 
                                 FeatureLine perim = acTrans.GetObject(perimId, OpenMode.ForWrite) as FeatureLine;
                                 perim.AssignElevationsFromSurface(oSurface.Id, false);
+                                var points = perim.GetPoints(Autodesk.Civil.FeatureLinePointType.PIPoint);
 
                                 double FinishedFloorLevel = Math.Round(perim.MaxElevation * 1000) / 1000 + 0.15;
 
@@ -221,11 +222,26 @@ namespace JPP.Civils
                                     acMText.Location = centroid;
                                     acMText.Contents = FinishedFloorLevel.ToString("F3");
                                     //acMText.Rotation = Rotation;
-                                    acMText.Height = 7;
+                                    acMText.Height = 8;
                                     acMText.Attachment = AttachmentPoint.MiddleCenter;
 
                                     acBlkTblRec.AppendEntity(acMText);
                                     acTrans.AddNewlyCreatedDBObject(acMText, true);
+                                }
+
+                                foreach(Point3d p in points)
+                                {
+                                    using(MText acMText = new MText())
+                                {
+                                        Point3d insert = new Point3d(p.X, p.Y, 0);
+                                        acMText.Location = insert;
+                                        acMText.Contents = p.Z.ToString("F3");                                        
+                                        acMText.Height = 4;
+                                        acMText.Attachment = AttachmentPoint.TopRight;
+
+                                        acBlkTblRec.AppendEntity(acMText);
+                                        acTrans.AddNewlyCreatedDBObject(acMText, true);
+                                    }
                                 }
 
                                 //perim.Erase();
