@@ -183,10 +183,14 @@ namespace JPP.Civils
                         {
                             oSurface = temp;
                         }
+                    }
 
-                        int plotCount = 0;
+                    int plotCount = 0;
 
+                    
                         foreach (SelectedObject so in psr.Value)
+                        {
+                        try
                         {
                             DBObject obj = acTrans.GetObject(so.ObjectId, OpenMode.ForWrite);
 
@@ -253,10 +257,15 @@ namespace JPP.Civils
                             }
 
                         }
-                        
-                        
+                        catch (Autodesk.AutoCAD.Runtime.Exception e)
+                        {
+                            acDoc.Editor.WriteMessage(e.Message + "\n");
+                        }
+                        catch (System.Exception e)
+                        {
+                            acDoc.Editor.WriteMessage(e.Message + "\n");
+                        }
                     }
-
                     acTrans.Commit();
                 }
             }
