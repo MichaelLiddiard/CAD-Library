@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace JPP.CivilStructures
 {
-    class NHBCTree
+    public class NHBCTree
     {
-        public int Height;
+        public float Height;
         public string Species;
         public WaterDemand WaterDemand;
         public TreeType TreeType;
@@ -52,16 +52,15 @@ namespace JPP.CivilStructures
 
                 if (radius > 0)
                 {
-                    using (Circle acCirc = new Circle())
-                    {
-                        acCirc.Center = new Point3d(Location.X, Location.Y, 0);
-                        acCirc.Radius = radius;
+                    Circle acCirc = new Circle();
+                    acCirc.Center = new Point3d(Location.X, Location.Y, 0);
+                    acCirc.Radius = radius;
 
-                        // Add the new object to the block table record and the transaction
-                        acBlkTblRec.AppendEntity(acCirc);
-                        acTrans.AddNewlyCreatedDBObject(acCirc, true);
-                        collection.Add(acCirc);
-                    }
+                    // Add the new object to the block table record and the transaction
+                    /*acBlkTblRec.AppendEntity(acCirc);
+                    acTrans.AddNewlyCreatedDBObject(acCirc, true);*/
+                    collection.Add(acCirc);
+
                 } else
                 {
                     next = false;
@@ -69,9 +68,6 @@ namespace JPP.CivilStructures
 
                 currentDepth = currentDepth + Step;
             }
-
-            // Save the new object to the database
-            acTrans.Commit();
 
             return collection;
         }
