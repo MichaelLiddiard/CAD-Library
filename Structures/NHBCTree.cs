@@ -55,11 +55,16 @@ namespace JPP.CivilStructures
                     Circle acCirc = new Circle();
                     acCirc.Center = new Point3d(Location.X, Location.Y, 0);
                     acCirc.Radius = radius;
-
-                    // Add the new object to the block table record and the transaction
-                    /*acBlkTblRec.AppendEntity(acCirc);
-                    acTrans.AddNewlyCreatedDBObject(acCirc, true);*/
+                                        
                     collection.Add(acCirc);
+
+                    //Draw Trunk
+                    acCirc = new Circle();
+                    acCirc.Center = new Point3d(Location.X, Location.Y, 0);
+                    acCirc.Radius = 0.25;
+                    // Add the new object to the block table record and the transaction
+                    acBlkTblRec.AppendEntity(acCirc);
+                    acTrans.AddNewlyCreatedDBObject(acCirc, true);
 
                 } else
                 {

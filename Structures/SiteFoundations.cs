@@ -1,4 +1,5 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.BoundaryRepresentation;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -41,7 +42,7 @@ namespace JPP.CivilStructures
         }
 
         private void GenerateTreeRings()
-        {
+        {           
             StartDepth = 1;
             Step = 0.3f;
             int maxSteps = 0;
@@ -52,13 +53,22 @@ namespace JPP.CivilStructures
 
             Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
 
-            List<DBObjectCollection> rings = new List<DBObjectCollection>();            
+            //Add the merged ring to the drawing
+            // Open the Block table for read
+            BlockTable acBlkTbl;
+            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+            // Open the Block table record Model space for write
+            BlockTableRecord acBlkTblRec;
+            acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+            List<DBObjectCollection> rings = new List<DBObjectCollection>();
 
             //Generate the rings for each tree
             foreach (NHBCTree tree in Trees)
             {
                 DBObjectCollection collection = tree.DrawRings(SoilShrinkage, StartDepth, Step);
-                if(collection.Count > maxSteps)
+                if (collection.Count > maxSteps)
                 {
                     maxSteps = collection.Count;
                 }
@@ -66,73 +76,145 @@ namespace JPP.CivilStructures
                 rings.Add(collection);
             }
             
-            //Combine the rings, one stepping at a time
-            for(int i = 0; i < maxSteps; i++)
+            //Determine overlaps
+            List<Curve> currentStep = new List<Curve>();
+            DBObjectCollection splitCurves = new DBObjectCollection();
+
+            //Build a collection of the outer rings only
+            foreach (DBObjectCollection col in rings)
             {
-                List<Curve> currentStep = new List<Curve>();
-                DBObjectCollection splitCurves = new DBObjectCollection();
-
-                foreach (DBObjectCollection col in rings)
+                //Check not stepping beyond
+                if (col.Count > 0)
                 {
-                    //Check not stepping beyond
-                    if(col.Count > i)
+                    if (col[0] is Curve)
                     {
-                        if(col[i] is Curve)
-                        {
-                            currentStep.Add(col[i] as Curve);
-                        }                        
+                        currentStep.Add(col[0] as Curve);
                     }
-                }
-
-                for(int currentCurveIndex = 0; currentCurveIndex < currentStep.Count; currentCurveIndex++)
-                {
-                    Point3dCollection intersections = new Point3dCollection();                    
-                    for (int targetIndex = 0; targetIndex < currentStep.Count; targetIndex++)
-                    {
-                        //Make sure not testing against itself
-                        if(currentCurveIndex != targetIndex)
-                        {
-                            Point3dCollection temp = new Point3dCollection();
-                            currentStep[currentCurveIndex].IntersectWith(currentStep[targetIndex], Intersect.OnBothOperands, intersections, new IntPtr(0), new IntPtr(0));
-                            foreach (Point3d p in temp)
-                            {
-                                intersections.Add(p);
-                            }                            
-                        }
-                    }
-
-                    if (intersections.Count > 0)
-                    {
-                        var result = currentStep[currentCurveIndex].GetSplitCurves(intersections);                        
-                        foreach (Curve c in result)
-                        {
-                            splitCurves.Add(c);
-                        }
-                    } else
-                    {
-                        splitCurves.Add(currentStep[currentCurveIndex]);
-                    }
-
-                    intersections = new Point3dCollection();
-                }
-
-                //Now go over and merge
-
-                //Add the merged ring to the drawing
-                // Open the Block table for read
-                BlockTable acBlkTbl;
-                acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-
-                // Open the Block table record Model space for write
-                BlockTableRecord acBlkTblRec;
-                acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-
-                foreach (Curve c in splitCurves)
-                {
-                    acBlkTblRec.AppendEntity(c);
-                    acTrans.AddNewlyCreatedDBObject(c, true);
                 }
             }
+
+            int nextGroup = 0;
+            int[] groupings = new int[currentStep.Count];
+
+            for (int currentCurveIndex = 0; currentCurveIndex < currentStep.Count; currentCurveIndex++)
+            {
+                List<int> intersectionIndices = new List<int>();
+                for (int targetIndex = 0; targetIndex < currentStep.Count; targetIndex++)
+                {
+                    //Make sure not testing against itself
+                    if (currentCurveIndex != targetIndex)
+                    {
+                        Point3dCollection temp = new Point3dCollection();                        
+                        currentStep[currentCurveIndex].IntersectWith(currentStep[targetIndex], Intersect.OnBothOperands, temp, new IntPtr(0), new IntPtr(0));
+                        foreach (Point3d p in temp)
+                        {
+                            intersectionIndices.Add(targetIndex);
+                        }
+                    }
+                }
+
+                if (intersectionIndices.Count > 0)
+                {
+                    int currentGroupId = groupings[intersectionIndices[0]];
+                    for(int w = 1; w < intersectionIndices.Count; w++)
+                    {
+                        if(groupings[intersectionIndices[w]] != currentGroupId)
+                        {
+                            groupings[intersectionIndices[w]] = currentGroupId;
+                        }
+                    }
+                    groupings[currentCurveIndex] = currentGroupId;                    
+                } else
+                {
+                    //No intersections found so stick in own group
+                    groupings[currentCurveIndex] = nextGroup;
+                    nextGroup++;
+                }
+            }
+
+            Dictionary<int, DBObjectCollection> curveGroups = new Dictionary<int, DBObjectCollection>();
+
+            //Split groupings into collections
+            for(int w = 0; w < groupings.Length; w++)
+            {
+                int groupId = groupings[w];
+
+                if(!curveGroups.ContainsKey(groupId))
+                {
+                    curveGroups.Add(groupId, new DBObjectCollection());
+                }
+
+                curveGroups[groupId].Add(currentStep[w]);
+            }
+
+            //Iterate over groups
+            foreach (DBObjectCollection currentGroup in curveGroups.Values)
+            {
+                List<Region> createdRegions = new List<Region>();
+
+                //Create regions
+                foreach (Curve c in currentGroup)
+                {
+                    DBObjectCollection temp = new DBObjectCollection();
+                    temp.Add(c);
+                    DBObjectCollection regions = Region.CreateFromCurves(temp);
+                    foreach(Region r in regions)
+                    {
+                        createdRegions.Add(r);
+                    }
+                }
+
+                Region enclosed = createdRegions[0];
+                for(int i = 1; i < createdRegions.Count; i++)
+                {
+                    enclosed.BooleanOperation(BooleanOperationType.BoolUnite, createdRegions[i]);
+                }
+
+                Brep boundaryRep = new Brep(enclosed);
+                /*Point2dCollection boundaryLinePoints = new Point2dCollection();
+                foreach(var l in boundaryRep.Faces.First().Loops)
+                {
+                    if(l.LoopType == LoopType.LoopExterior)
+                    {
+                        foreach (var vertex in l.Vertices)
+                        {
+                            boundaryLinePoints.Add(new Point2d(vertex.Point.X, vertex.Point.Y));
+                        }
+                    }
+                }
+
+                Polyline boundaryLine = new Polyline();
+                for(int p = 0; p < boundaryLinePoints.Count; p++)
+                {
+                    boundaryLine.AddVertexAt(p, boundaryLinePoints[p], 0, 0, 0);
+                }
+
+                boundaryLine.Closed = true;
+
+                acBlkTblRec.AppendEntity(boundaryLine);
+                acTrans.AddNewlyCreatedDBObject(boundaryLine, true);*/
+                foreach (var e in boundaryRep.Edges)
+                {
+                    Curve3d curve = ((ExternalCurve3d)e.Curve).NativeCurve;
+
+                    /*acBlkTblRec.AppendEntity(boundaryLine);
+                    acTrans.AddNewlyCreatedDBObject(, true); */
+                }
+
+            }                    
+
+            /*
+
+            foreach (Curve c in splitCurves)
+            {
+                acBlkTblRec.AppendEntity(c);
+                acTrans.AddNewlyCreatedDBObject(c, true);
+            }
+
+            //Combine the rings, one stepping at a time
+            for (int i = 0; i < maxSteps; i++)
+            {
+            }*/
         }
 
 
