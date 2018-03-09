@@ -75,133 +75,159 @@ namespace JPP.CivilStructures
 
                 rings.Add(collection);
             }
-            
-            //Determine overlaps
-            List<Curve> currentStep = new List<Curve>();
-            DBObjectCollection splitCurves = new DBObjectCollection();
 
-            //Build a collection of the outer rings only
-            foreach (DBObjectCollection col in rings)
+            for (int ringIndex = 0; ringIndex < maxSteps; ringIndex++)
             {
-                //Check not stepping beyond
-                if (col.Count > 0)
-                {
-                    if (col[0] is Curve)
-                    {
-                        currentStep.Add(col[0] as Curve);
-                    }
-                }
-            }
+                //Determine overlaps
+                List<Curve> currentStep = new List<Curve>();
+                DBObjectCollection splitCurves = new DBObjectCollection();
 
-            int nextGroup = 0;
-            int[] groupings = new int[currentStep.Count];
-
-            for (int currentCurveIndex = 0; currentCurveIndex < currentStep.Count; currentCurveIndex++)
-            {
-                List<int> intersectionIndices = new List<int>();
-                for (int targetIndex = 0; targetIndex < currentStep.Count; targetIndex++)
+                //Build a collection of the outer rings only
+                foreach (DBObjectCollection col in rings)
                 {
-                    //Make sure not testing against itself
-                    if (currentCurveIndex != targetIndex)
+                    //Check not stepping beyond
+                    if (col.Count > ringIndex)
                     {
-                        Point3dCollection temp = new Point3dCollection();                        
-                        currentStep[currentCurveIndex].IntersectWith(currentStep[targetIndex], Intersect.OnBothOperands, temp, new IntPtr(0), new IntPtr(0));
-                        foreach (Point3d p in temp)
+                        if (col[ringIndex] is Curve)
                         {
-                            intersectionIndices.Add(targetIndex);
+                            currentStep.Add(col[ringIndex] as Curve);
                         }
                     }
                 }
 
-                if (intersectionIndices.Count > 0)
+                int nextGroup = 0;
+                int[] groupings = new int[currentStep.Count];
+
+                for (int currentCurveIndex = 0; currentCurveIndex < currentStep.Count; currentCurveIndex++)
                 {
-                    int currentGroupId = groupings[intersectionIndices[0]];
-                    for(int w = 1; w < intersectionIndices.Count; w++)
+                    List<int> intersectionIndices = new List<int>();
+                    for (int targetIndex = 0; targetIndex < currentStep.Count; targetIndex++)
                     {
-                        if(groupings[intersectionIndices[w]] != currentGroupId)
+                        //Make sure not testing against itself
+                        if (currentCurveIndex != targetIndex)
                         {
-                            groupings[intersectionIndices[w]] = currentGroupId;
+                            Point3dCollection temp = new Point3dCollection();
+                            currentStep[currentCurveIndex].IntersectWith(currentStep[targetIndex], Intersect.OnBothOperands, temp, new IntPtr(0), new IntPtr(0));
+                            foreach (Point3d p in temp)
+                            {
+                                intersectionIndices.Add(targetIndex);
+                            }
                         }
                     }
-                    groupings[currentCurveIndex] = currentGroupId;                    
-                } else
-                {
-                    //No intersections found so stick in own group
-                    groupings[currentCurveIndex] = nextGroup;
-                    nextGroup++;
-                }
-            }
 
-            Dictionary<int, DBObjectCollection> curveGroups = new Dictionary<int, DBObjectCollection>();
-
-            //Split groupings into collections
-            for(int w = 0; w < groupings.Length; w++)
-            {
-                int groupId = groupings[w];
-
-                if(!curveGroups.ContainsKey(groupId))
-                {
-                    curveGroups.Add(groupId, new DBObjectCollection());
-                }
-
-                curveGroups[groupId].Add(currentStep[w]);
-            }
-
-            //Iterate over groups
-            foreach (DBObjectCollection currentGroup in curveGroups.Values)
-            {
-                List<Region> createdRegions = new List<Region>();
-
-                //Create regions
-                foreach (Curve c in currentGroup)
-                {
-                    DBObjectCollection temp = new DBObjectCollection();
-                    temp.Add(c);
-                    DBObjectCollection regions = Region.CreateFromCurves(temp);
-                    foreach(Region r in regions)
+                    if (intersectionIndices.Count > 0)
                     {
-                        createdRegions.Add(r);
+                        int currentGroupId = groupings[intersectionIndices[0]];
+                        for (int w = 1; w < intersectionIndices.Count; w++)
+                        {
+                            if (groupings[intersectionIndices[w]] != currentGroupId)
+                            {
+                                groupings[intersectionIndices[w]] = currentGroupId;
+                            }
+                        }
+                        groupings[currentCurveIndex] = currentGroupId;
+                    }
+                    else
+                    {
+                        //No intersections found so stick in own group
+                        groupings[currentCurveIndex] = nextGroup;
+                        nextGroup++;
                     }
                 }
 
-                Region enclosed = createdRegions[0];
-                for(int i = 1; i < createdRegions.Count; i++)
+                Dictionary<int, DBObjectCollection> curveGroups = new Dictionary<int, DBObjectCollection>();
+
+                //Split groupings into collections
+                for (int w = 0; w < groupings.Length; w++)
                 {
-                    enclosed.BooleanOperation(BooleanOperationType.BoolUnite, createdRegions[i]);
+                    int groupId = groupings[w];
+
+                    if (!curveGroups.ContainsKey(groupId))
+                    {
+                        curveGroups.Add(groupId, new DBObjectCollection());
+                    }
+
+                    curveGroups[groupId].Add(currentStep[w]);
                 }
 
-                Brep boundaryRep = new Brep(enclosed);
-                /*Point2dCollection boundaryLinePoints = new Point2dCollection();
-                foreach(var l in boundaryRep.Faces.First().Loops)
+                //Iterate over groups
+                foreach (DBObjectCollection currentGroup in curveGroups.Values)
                 {
-                    if(l.LoopType == LoopType.LoopExterior)
+                    List<Region> createdRegions = new List<Region>();
+
+                    //Create regions
+                    foreach (Curve c in currentGroup)
                     {
-                        foreach (var vertex in l.Vertices)
+                        DBObjectCollection temp = new DBObjectCollection();
+                        temp.Add(c);
+                        DBObjectCollection regions = Region.CreateFromCurves(temp);
+                        foreach (Region r in regions)
                         {
-                            boundaryLinePoints.Add(new Point2d(vertex.Point.X, vertex.Point.Y));
+                            createdRegions.Add(r);
                         }
                     }
+
+                    Region enclosed = createdRegions[0];
+
+                    for (int i = 1; i < createdRegions.Count; i++)
+                    {
+                        enclosed.BooleanOperation(BooleanOperationType.BoolUnite, createdRegions[i]);
+                    }
+
+                    ObjectId regionId = acBlkTblRec.AppendEntity(enclosed);
+                    acTrans.AddNewlyCreatedDBObject(enclosed, true);
+
+                    Brep boundaryRep = new Brep(enclosed);
+                    /*Point2dCollection boundaryLinePoints = new Point2dCollection();
+                    foreach(var l in boundaryRep.Faces.First().Loops)
+                    {
+                        if(l.LoopType == LoopType.LoopExterior)
+                        {
+                            foreach (var vertex in l.Vertices)
+                            {
+                                boundaryLinePoints.Add(new Point2d(vertex.Point.X, vertex.Point.Y));
+                            }
+                        }
+                    }
+
+                    Polyline boundaryLine = new Polyline();
+                    for(int p = 0; p < boundaryLinePoints.Count; p++)
+                    {
+                        boundaryLine.AddVertexAt(p, boundaryLinePoints[p], 0, 0, 0);
+                    }
+
+                    boundaryLine.Closed = true;
+
+                    acBlkTblRec.AppendEntity(boundaryLine);
+                    acTrans.AddNewlyCreatedDBObject(boundaryLine, true);*/
+                    /*foreach (var e in boundaryRep.Edges)
+                    {
+                        CircularArc3d curve = (CircularArc3d)((ExternalCurve3d)e.Curve).NativeCurve;
+
+                        Arc a = curve.GetArc();
+
+                        acBlkTblRec.AppendEntity(a);
+                        acTrans.AddNewlyCreatedDBObject(a, true); 
+                    }*/
+                    ObjectIdCollection temp2 = new ObjectIdCollection();
+                    temp2.Add(regionId);
+
+                    /*using (Hatch acHatch = new Hatch())
+                    {
+                        acBlkTblRec.AppendEntity(acHatch);
+                        acTrans.AddNewlyCreatedDBObject(acHatch, true);
+
+                        // Set the properties of the hatch object
+                        // Associative must be set after the hatch object is appended to the 
+                        // block table record and before AppendLoop
+                        acHatch.SetHatchPattern(HatchPatternType.PreDefined, "ANSI31");
+                        acHatch.Associative = false;
+                        acHatch.AppendLoop(HatchLoopTypes.Outermost, temp2);
+                        acHatch.EvaluateHatch(true);
+                    }*/
+
                 }
-
-                Polyline boundaryLine = new Polyline();
-                for(int p = 0; p < boundaryLinePoints.Count; p++)
-                {
-                    boundaryLine.AddVertexAt(p, boundaryLinePoints[p], 0, 0, 0);
-                }
-
-                boundaryLine.Closed = true;
-
-                acBlkTblRec.AppendEntity(boundaryLine);
-                acTrans.AddNewlyCreatedDBObject(boundaryLine, true);*/
-                foreach (var e in boundaryRep.Edges)
-                {
-                    Curve3d curve = ((ExternalCurve3d)e.Curve).NativeCurve;
-
-                    /*acBlkTblRec.AppendEntity(boundaryLine);
-                    acTrans.AddNewlyCreatedDBObject(, true); */
-                }
-
-            }                    
+            }
 
             /*
 
