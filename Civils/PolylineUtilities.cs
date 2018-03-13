@@ -239,12 +239,19 @@ namespace JPP.Civils
                                 {
                                         Point3d insert = new Point3d(p.X, p.Y, 0);
                                         acMText.Location = insert;
-                                        acMText.Contents = p.Z.ToString("F3");                                        
-                                        acMText.Height = 4;
-                                        acMText.Attachment = AttachmentPoint.TopRight;
+                                        //Number of course
+                                        int courses = (int) Math.Ceiling((double) (((FinishedFloorLevel - 0.15f - p.Z) / 0.075f)));
 
-                                        acBlkTblRec.AppendEntity(acMText);
-                                        acTrans.AddNewlyCreatedDBObject(acMText, true);
+                                        if(courses > 0)
+                                        {
+                                            acMText.Contents = courses + " Courses";
+                                            acMText.Height = 4;
+                                            acMText.Attachment = AttachmentPoint.TopRight;
+
+                                            acBlkTblRec.AppendEntity(acMText);
+                                            acTrans.AddNewlyCreatedDBObject(acMText, true);
+                                        }
+                                        
                                     }
                                 }
 
