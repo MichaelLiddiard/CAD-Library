@@ -210,7 +210,7 @@ namespace JPP.Civils
                                 perim.AssignElevationsFromSurface(oSurface.Id, false);
                                 var points = perim.GetPoints(Autodesk.Civil.FeatureLinePointType.PIPoint);
 
-                                double FinishedFloorLevel = Math.Round(perim.MaxElevation * 1000) / 1000 + 0.15;
+                                double FinishedFloorLevel = Math.Ceiling(perim.MaxElevation * 20) / 20 + 0.15;                                
 
                                 //Ad the FFL Label
                                 // Create a multiline text object
@@ -224,7 +224,7 @@ namespace JPP.Civils
                                     Solid.Dispose();
 
                                     acMText.Location = centroid;
-                                    acMText.Contents = FinishedFloorLevel.ToString("F3");
+                                    acMText.Contents = "FFL = " + FinishedFloorLevel.ToString("F3");
                                     //acMText.Rotation = Rotation;
                                     acMText.Height = 8;
                                     acMText.Attachment = AttachmentPoint.MiddleCenter;
