@@ -1,6 +1,7 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using JPP.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,19 +10,38 @@ using System.Threading.Tasks;
 
 namespace JPP.CivilStructures
 {
-    public class NHBCTree
+    public class NHBCTree : CircleObject
     {
         public float Height;
         public string Species;
         public WaterDemand WaterDemand;
         public TreeType TreeType;
-        public Point2d Location;
 
         public Shrinkage Shrinkage;
 
-        public NHBCTree()
+        public NHBCTree() : base()
         {
+            // Get the current document and database
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
 
+            Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
+
+            // Open the Block table for read
+            BlockTable acBlkTbl;
+            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+            // Open the Block table record Model space for write
+            BlockTableRecord acBlkTblRec;
+            acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+            //Draw Trunk
+            Circle trunk = new Circle();
+            trunk.Center = new Point3d(0, 0, 0);
+            trunk.Radius = 0.25;
+            // Add the new object to the block table record and the transaction
+            this.BaseObject = acBlkTblRec.AppendEntity(trunk);
+            acTrans.AddNewlyCreatedDBObject(trunk, true);
         }
         
         public DBObjectCollection DrawRings(Shrinkage shrinkage, float StartDepth, float Step)
@@ -56,15 +76,7 @@ namespace JPP.CivilStructures
                     acCirc.Center = new Point3d(Location.X, Location.Y, 0);
                     acCirc.Radius = radius;
                                         
-                    collection.Add(acCirc);
-
-                    //Draw Trunk
-                    acCirc = new Circle();
-                    acCirc.Center = new Point3d(Location.X, Location.Y, 0);
-                    acCirc.Radius = 0.25;
-                    // Add the new object to the block table record and the transaction
-                    acBlkTblRec.AppendEntity(acCirc);
-                    acTrans.AddNewlyCreatedDBObject(acCirc, true);
+                    collection.Add(acCirc);                   
 
                 } else
                 {
@@ -286,6 +298,12 @@ namespace JPP.CivilStructures
             float dh = M() * foundationDepth + C();
 
             return dh * Height;
+        }
+
+        public override void ActiveObject_Modified(object sender, EventArgs e)
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            acDoc.SendStringToExecute("CS_GenerateRings ", false, false, false);
         }
     }
 
