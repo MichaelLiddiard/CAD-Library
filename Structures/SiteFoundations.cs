@@ -108,92 +108,34 @@ namespace JPP.CivilStructures
                             }
                         }
                     }
+                    
+                    List<Region> createdRegions = new List<Region>();
 
-                    int nextGroup = 0;
-                    int[] groupings = new int[currentStep.Count];
-
-                    for (int currentCurveIndex = 0; currentCurveIndex < currentStep.Count; currentCurveIndex++)
+                    //Create regions
+                    foreach (Curve c in currentStep)
                     {
-                        List<int> intersectionIndices = new List<int>();
-                        for (int targetIndex = 0; targetIndex < currentStep.Count; targetIndex++)
+                        DBObjectCollection temp = new DBObjectCollection();
+                        temp.Add(c);
+                        DBObjectCollection regions = Region.CreateFromCurves(temp);
+                        foreach (Region r in regions)
                         {
-                            //Make sure not testing against itself
-                            if (currentCurveIndex != targetIndex)
-                            {
-                                Point3dCollection temp = new Point3dCollection();
-                                currentStep[currentCurveIndex].IntersectWith(currentStep[targetIndex], Intersect.OnBothOperands, temp, new IntPtr(0), new IntPtr(0));
-                                foreach (Point3d p in temp)
-                                {
-                                    intersectionIndices.Add(targetIndex);
-                                }
-                            }
-                        }
-
-                        if (intersectionIndices.Count > 0)
-                        {
-                            int currentGroupId = groupings[intersectionIndices[0]];
-                            for (int w = 1; w < intersectionIndices.Count; w++)
-                            {
-                                if (groupings[intersectionIndices[w]] != currentGroupId)
-                                {
-                                    groupings[intersectionIndices[w]] = currentGroupId;
-                                }
-                            }
-                            groupings[currentCurveIndex] = currentGroupId;
-                        }
-                        else
-                        {
-                            //No intersections found so stick in own group
-                            groupings[currentCurveIndex] = nextGroup;
-                            nextGroup++;
+                            createdRegions.Add(r);
                         }
                     }
 
-                    Dictionary<int, DBObjectCollection> curveGroups = new Dictionary<int, DBObjectCollection>();
+                    Region enclosed = createdRegions[0];
+                    enclosed.ColorIndex = ringColors[ringIndex];
 
-                    //Split groupings into collections
-                    for (int w = 0; w < groupings.Length; w++)
+                    for (int i = 1; i < createdRegions.Count; i++)
                     {
-                        int groupId = groupings[w];
-
-                        if (!curveGroups.ContainsKey(groupId))
-                        {
-                            curveGroups.Add(groupId, new DBObjectCollection());
-                        }
-
-                        curveGroups[groupId].Add(currentStep[w]);
+                        enclosed.BooleanOperation(BooleanOperationType.BoolUnite, createdRegions[i]);
                     }
 
-                    //Iterate over groups
-                    foreach (DBObjectCollection currentGroup in curveGroups.Values)
-                    {
-                        List<Region> createdRegions = new List<Region>();
+                    enclosed.ColorIndex = ringColors[ringIndex];
 
-                        //Create regions
-                        foreach (Curve c in currentGroup)
-                        {
-                            DBObjectCollection temp = new DBObjectCollection();
-                            temp.Add(c);
-                            DBObjectCollection regions = Region.CreateFromCurves(temp);
-                            foreach (Region r in regions)
-                            {
-                                createdRegions.Add(r);
-                            }
-                        }
+                    RingsCollection.Add(acBlkTblRec.AppendEntity(enclosed));
+                    acTrans.AddNewlyCreatedDBObject(enclosed, true);
 
-                        Region enclosed = createdRegions[0];
-                        enclosed.ColorIndex = ringColors[ringIndex];
-
-                        for (int i = 1; i < createdRegions.Count; i++)
-                        {
-                            enclosed.BooleanOperation(BooleanOperationType.BoolUnite, createdRegions[i]);
-                        }
-
-                        enclosed.ColorIndex = ringColors[ringIndex];
-
-                        RingsCollection.Add(acBlkTblRec.AppendEntity(enclosed));
-                        acTrans.AddNewlyCreatedDBObject(enclosed, true);
-                    }
                 }
 
                 acTrans.Commit();
