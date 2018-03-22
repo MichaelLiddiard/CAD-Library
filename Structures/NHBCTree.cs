@@ -13,13 +13,21 @@ namespace JPP.CivilStructures
     public class NHBCTree : CircleObject
     {
         public float Height;
+
         public string Species;
+
         public WaterDemand WaterDemand;
+
         public TreeType TreeType;
 
         public Shrinkage Shrinkage;
 
         public NHBCTree() : base()
+        {
+            
+        }
+
+        public override void Generate()
         {
             // Get the current document and database
             Document acDoc = Application.DocumentManager.MdiActiveDocument;

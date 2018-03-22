@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.ApplicationServices;
+using System.Xml.Serialization;
 
 namespace JPP.Core
 {
     public abstract class CircleObject : DrawingObject
     {
+        [XmlIgnore]
         public override Point3d Location
         {
             get
@@ -28,8 +30,9 @@ namespace JPP.Core
                 Transaction acTrans = Application.DocumentManager.MdiActiveDocument.TransactionManager.TopTransaction;
                 (acTrans.GetObject(BaseObject, OpenMode.ForWrite) as Circle).Center = value;
             }
-        }        
+        }
 
+        [XmlIgnore]
         public override double Rotation
         {
             get

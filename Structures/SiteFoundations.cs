@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 [assembly: CommandClass(typeof(JPP.CivilStructures.SiteFoundations))]
 
@@ -39,9 +40,11 @@ namespace JPP.CivilStructures
         {
             Trees = new List<NHBCTree>();
             SoilShrinkage = Shrinkage.High;
+            RingsCollection = new PersistentObjectIdCollection();
         }
 
-        ObjectIdCollection RingsCollection = new ObjectIdCollection();        
+        //public ObjectIdCollection RingsCollection = new ObjectIdCollection();        
+        public PersistentObjectIdCollection RingsCollection { get; set; }
 
         public void GenerateTreeRings()
         {
@@ -59,7 +62,7 @@ namespace JPP.CivilStructures
             {
 
                 //Delete existing rings
-                foreach (ObjectId obj in RingsCollection)
+                foreach (ObjectId obj in RingsCollection.Collection)
                 {
                     if (!obj.IsErased)
                     {
@@ -142,6 +145,14 @@ namespace JPP.CivilStructures
             }
         }
 
+        public void UpdateDrawingObjects()
+        {
+            foreach(NHBCTree t in Trees)
+            {
+                t.CreateActiveObject();
+            }
+        }
+
 
         [CommandMethod("CS_NewTree")]
         public static void NewTree()
@@ -152,6 +163,7 @@ namespace JPP.CivilStructures
             using (Transaction acTrans = acDoc.TransactionManager.StartTransaction())
             {
                 NHBCTree newTree = new NHBCTree();
+                newTree.Generate();
 
                 //TODO: Add tree determination in here
                 PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter tree height: ") { AllowSpaces = false };
@@ -163,7 +175,7 @@ namespace JPP.CivilStructures
 
                 PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
                 PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
-                newTree.Location = new Autodesk.AutoCAD.Geometry.Point3d(pPtRes.Value.X, pPtRes.Value.Y, 0);
+                newTree.Location = new Autodesk.AutoCAD.Geometry.Point3d(pPtRes.Value.X, pPtRes.Value.Y, 0);                
 
                 SiteFoundations sf = acDoc.GetDocumentStore<CivilStructureDocumentStore>().SiteFoundations;
                 

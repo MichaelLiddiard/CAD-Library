@@ -38,11 +38,8 @@ namespace JPP.CivilStructures
             {
                 SiteFoundations = new SiteFoundations();
             }
-
-            /*foreach (Plot p in Plots)
-            {
-                p.Update();
-            }*/
+                        
+            SiteFoundations.UpdateDrawingObjects();
 
             base.Load();
         }
