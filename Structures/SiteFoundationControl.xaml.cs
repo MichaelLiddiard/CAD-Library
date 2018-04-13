@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using JPP.Core;
 
 namespace JPP.CivilStructures
 {
@@ -23,6 +24,10 @@ namespace JPP.CivilStructures
         public SiteFoundationControl()
         {
             InitializeComponent();
+
+            PlasticitySelect.ItemsSource = Enum.GetValues(typeof(Shrinkage)).Cast<Shrinkage>();
+
+            this.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilStructureDocumentStore>().SiteFoundations;
         }
     }
 }

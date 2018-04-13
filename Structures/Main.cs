@@ -122,7 +122,7 @@ namespace JPP.CivilStructures
 
             Dictionary<string, UserControl> ucs = new Dictionary<string, UserControl>();
             ucs.Add("Site Settings", new SiteFoundationControl());
-            foundationUI = new UIPanelToggle(StructureRow, JPP.CivilStructures.Properties.Resources.spade, "Foundations", new Guid("6735aef0-a297-4a39-830b-8971a452a83d"), ucs);
+            foundationUI = new UIPanelToggle(StructureRow, JPP.CivilStructures.Properties.Resources.spade, "Foundations", new Guid("4bcb33a2-0771-4d96-a2f0-9a96229ff393"), ucs);
 
             //Build the UI hierarchy
             source.Items.Add(StructureRow);

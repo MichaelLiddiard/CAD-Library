@@ -313,6 +313,92 @@ namespace JPP.CivilStructures
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             acDoc.SendStringToExecute("CS_GenerateRings ", false, false, false);
         }
+
+        #region Tree Data
+        public static Dictionary<string, int> DeciduousHigh = new Dictionary<string, int>()
+        {
+            { "EnglishElm",24 },
+            { "WheatleyElm",22 },
+            { "WhychElm",18 },
+            { "Eucalyptus",18 },
+            { "Hawthorn",10 },
+            { "EnglishOak",20 },
+            { "HolmOak",16 },
+            { "RedOak",24 },
+            { "TurkeyOak",24 },
+            { "HybridBlackPoplar",28 },
+            { "LombardyPoplar",25 },
+            { "WhitePoplar",15 },
+            { "CrackWillow",24 },
+            { "WeepingWillow",16 },
+            { "WhiteWillow",24 },
+        };
+
+        public static Dictionary<string, int> DeciduousMedium = new Dictionary<string, int>()
+        {
+            { "Acacia",18 },
+            { "Alder",18 },
+            { "Apple",10 },
+            { "Ash",23 },
+            { "BayLaurel",10 },
+            { "Beech",20 },
+            { "Blackthorn",8 },
+            { "JapaneseCherry",9 },
+            { "LaurelCherry",8 },
+            { "OrchardCherry",12 },
+            { "WildCherry",17 },
+            { "HorseChestnut",20 },
+            { "SweetChestnut",24 },
+            { "Lime",22 },
+            { "JapaneseMaple",8 },
+            { "NorwayMaple",18 },
+            { "MountainAsh",11 },
+            { "Pear",12 },
+            { "Plane",26 },
+            { "Plum",10 },
+            { "Sycamore",22 },
+            { "TreeOfHeaven",20 },
+            { "Walnut",18 },
+            { "Whitebeam",12 },
+        };
+
+        public static Dictionary<string, int> DeciduousLow = new Dictionary<string, int>()
+        {
+            { "Birch",14 },
+            { "Elder",10 },
+            { "Fig",8 },
+            { "Hazel",8 },
+            { "Holly",12 },
+            { "HoneyLocust",14 },
+            { "Hornbeam",17 },
+            { "Laburnum",12 },
+            { "Magnolia",9 },
+            { "Mulberry",9 },
+            { "TulipTree",20 },
+
+        };
+
+        public static Dictionary<string, int> ConiferousHigh = new Dictionary<string, int>()
+        {
+            { "LawsonsCypress",18 },
+            { "LeylandCypress",20 },
+            { "MontereyCypress",20 },
+        };
+
+        public static Dictionary<string, int> ConiferousMedium = new Dictionary<string, int>()
+        {
+            { "Cedar",20 },
+            { "DouglasFir",20 },
+            { "Larch",20 },
+            { "MonkeyPuzzle",18 },
+            { "Pine",20 },
+            { "Spruce",18 },
+            { "Wellingtonia",30 },
+            { "Yew",12 },
+        };
+
+        #endregion
+
     }
 
     public enum WaterDemand

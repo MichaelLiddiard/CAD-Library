@@ -6,7 +6,8 @@
              xmlns:local="clr-namespace:JPP.CivilStructures"
              mc:Ignorable="d" Height="50" Width="430">
     <Grid>
-        <ComboBox x:Name="PlasticitySelect" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="200"/>
+        <ComboBox x:Name="PlasticitySelect" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="200" SelectedItem="{Binding Path=SoilShrinkage}"/>
+        <TextBox x:Name="Step" HorizontalAlignment="Left" Height="23" Margin="215,10,0,0" TextWrapping="Wrap" Text="{Binding Path=Step}" VerticalAlignment="Top" Width="205"/>
 
     </Grid>
 </UserControl>

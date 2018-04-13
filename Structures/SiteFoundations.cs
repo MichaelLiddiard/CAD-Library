@@ -32,14 +32,13 @@ namespace JPP.CivilStructures
 
         public float StartDepth;
 
-        public float Step;
+        public float Step { get; set;  }
 
-        public Shrinkage SoilShrinkage;
+        public Shrinkage SoilShrinkage { get; set; }
 
         public SiteFoundations()
         {
-            Trees = new List<NHBCTree>();
-            SoilShrinkage = Shrinkage.High;
+            Trees = new List<NHBCTree>();            
             RingsCollection = new PersistentObjectIdCollection();
         }
 
@@ -50,8 +49,21 @@ namespace JPP.CivilStructures
         {
             int[] ringColors = new int[] { 10,200,40,180,60,160,80,140,100,120 };
 
-            StartDepth = 1;
-            Step = 0.3f;
+            //Determine start depth
+            switch (SoilShrinkage)
+            {
+                case Shrinkage.High:
+                    StartDepth = 1;
+                    break;
+
+                case Shrinkage.Medium:
+                    StartDepth = 0.9f;
+                    break;
+
+                case Shrinkage.Low:
+                    StartDepth = 0.75f;
+                    break;
+            }
             int maxSteps = 0;
 
             // Get the current document and database
@@ -166,14 +178,97 @@ namespace JPP.CivilStructures
                 newTree.Generate();
 
                 //TODO: Add tree determination in here
+                PromptKeywordOptions pKeyOpts = new PromptKeywordOptions("");
+                pKeyOpts.Message = "\nTree Type ";
+                pKeyOpts.Keywords.Add("Deciduous");
+                pKeyOpts.Keywords.Add("Coniferous");                
+                pKeyOpts.AllowNone = false;
+
+                PromptResult pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
+                if(pKeyRes.StringResult == "Deciduous")
+                {
+                    newTree.TreeType = TreeType.Deciduous;
+                } else
+                {
+                    newTree.TreeType = TreeType.Coniferous;
+                }
+
+                pKeyOpts = new PromptKeywordOptions("");
+                pKeyOpts.Message = "\nWater deamnd ";
+                pKeyOpts.Keywords.Add("High");
+                pKeyOpts.Keywords.Add("Medium");
+                if (newTree.TreeType == TreeType.Deciduous)
+                {
+                    pKeyOpts.Keywords.Add("Low");
+                }
+                pKeyOpts.AllowNone = false;
+
+                pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
+                Dictionary<string, int> speciesList = NHBCTree.DeciduousHigh;
+                switch (pKeyRes.StringResult)
+                {
+                    case "High":
+                        newTree.WaterDemand = WaterDemand.High;
+                        if (newTree.TreeType == TreeType.Deciduous)
+                        {
+                            speciesList = NHBCTree.DeciduousHigh;
+                        } else
+                        {
+                            speciesList = NHBCTree.ConiferousHigh;
+                        }
+                        break;
+
+                    case "Medium":
+                        newTree.WaterDemand = WaterDemand.Medium;
+                        if (newTree.TreeType == TreeType.Deciduous)
+                        {
+                            speciesList = NHBCTree.DeciduousMedium;
+                        }
+                        else
+                        {
+                            speciesList = NHBCTree.ConiferousMedium;
+                        }
+                        break;
+
+                    case "Low":
+                        newTree.WaterDemand = WaterDemand.Low;
+                        if (newTree.TreeType == TreeType.Deciduous)
+                        {
+                            speciesList = NHBCTree.DeciduousLow;
+                        }
+                        else
+                        {
+                            throw new ArgumentException(); //Doesnt exist!!
+                        }
+                        break;
+                }
+
+                pKeyOpts = new PromptKeywordOptions("");
+                pKeyOpts.Message = "\nSpecies ";
+                foreach (string s in speciesList.Keys)
+                {
+                    pKeyOpts.Keywords.Add(s);
+                }
+                                
+                pKeyOpts.AllowNone = false;                
+                pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
+                newTree.Species = pKeyRes.StringResult;
+
                 PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter tree height: ") { AllowSpaces = false };
                 PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
 
-                newTree.Height = float.Parse(pStrResPlot.StringResult);
-                newTree.WaterDemand = WaterDemand.High;
-                newTree.TreeType = TreeType.Deciduous;
+                float actualHeight = float.Parse(pStrResPlot.StringResult);
+                float maxHeight = (float)speciesList[newTree.Species];
 
-                PromptPointOptions pPtOpts = new PromptPointOptions("\nEnter base point of the plot: ");
+                if (actualHeight < maxHeight / 2)
+                {
+                    newTree.Height = actualHeight;
+                } else
+                {
+                    newTree.Height = maxHeight;
+                }
+
+                PromptPointOptions pPtOpts = new PromptPointOptions("\nClick to enter location: ");
                 PromptPointResult pPtRes = acDoc.Editor.GetPoint(pPtOpts);
                 newTree.Location = new Autodesk.AutoCAD.Geometry.Point3d(pPtRes.Value.X, pPtRes.Value.Y, 0);                
 

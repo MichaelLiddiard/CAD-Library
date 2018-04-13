@@ -62,6 +62,15 @@ namespace JPP.Core
             paletteSet.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
                         
             paletteSet.KeepFocus = false;
+            paletteSet.StateChanged += PaletteSet_StateChanged;
+        }
+
+        private void PaletteSet_StateChanged(object sender, PaletteSetStateEventArgs e)
+        {
+            if(e.NewState == StateEventIndex.Hide)
+            {
+                toggleButton.CheckState = false;
+            }
         }
 
         private void toggleButton_CheckStateChanged(object sender, EventArgs e)
