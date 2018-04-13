@@ -122,13 +122,13 @@ namespace JPP.CivilStructures
                             switch (WaterDemand)
                             {
                                 case WaterDemand.High:
-                                    return 0f;
+                                    return -0.2869f;
 
                                 case WaterDemand.Medium:
-                                    return 0f;
+                                    return -0.3107f;
 
                                 case WaterDemand.Low:
-                                    return 0f;
+                                    throw new NotImplementedException();
                             }
                             break;
 
@@ -136,13 +136,13 @@ namespace JPP.CivilStructures
                             switch (WaterDemand)
                             {
                                 case WaterDemand.High:
-                                    return 0f;
+                                    return -0.3432f;
 
                                 case WaterDemand.Medium:
-                                    return 0f;
+                                    return -0.4127f;
 
                                 case WaterDemand.Low:
-                                    return 0f;
+                                    throw new NotImplementedException();
                             }
                             break;
                     }
@@ -169,13 +169,13 @@ namespace JPP.CivilStructures
                             switch (WaterDemand)
                             {
                                 case WaterDemand.High:
-                                    return 0f;
+                                    return -0.5907f;
 
                                 case WaterDemand.Medium:
-                                    return 0f;
+                                    return -0.6837f;
 
                                 case WaterDemand.Low:
-                                    return 0f;
+                                    return -0.8333f;
                             }
                             break;
 
@@ -183,13 +183,13 @@ namespace JPP.CivilStructures
                             switch (WaterDemand)
                             {
                                 case WaterDemand.High:
-                                    return 0f;
+                                    return -0.7204f;
 
                                 case WaterDemand.Medium:
-                                    return 0f;
+                                    return -0.8625f;
 
                                 case WaterDemand.Low:
-                                    return 0f;
+                                    return -1.1111f;
                             }
                             break;
                     }
@@ -224,13 +224,13 @@ namespace JPP.CivilStructures
                             switch (WaterDemand)
                             {
                                 case WaterDemand.High:
-                                    return 0f;
+                                    return 0.8586f;
 
                                 case WaterDemand.Medium:
-                                    return 0f;
+                                    return 0.6401f;
 
                                 case WaterDemand.Low:
-                                    return 0f;
+                                    throw new NotImplementedException();
                             }
                             break;
 
@@ -238,13 +238,13 @@ namespace JPP.CivilStructures
                             switch (WaterDemand)
                             {
                                 case WaterDemand.High:
-                                    return 0f;
+                                    return 0.8601f;
 
                                 case WaterDemand.Medium:
-                                    return 0f;
+                                    return 0.6608f;
 
                                 case WaterDemand.Low:
-                                    return 0f;
+                                    throw new NotImplementedException();
                             }
                             break;
                     }
@@ -271,13 +271,13 @@ namespace JPP.CivilStructures
                             switch (WaterDemand)
                             {
                                 case WaterDemand.High:
-                                    return 0f;
+                                    return 1.7783f;
 
                                 case WaterDemand.Medium:
-                                    return 0f;
+                                    return 1.3643f;
 
                                 case WaterDemand.Low:
-                                    return 0f;
+                                    return 1.25f;
                             }
                             break;
 
@@ -285,13 +285,13 @@ namespace JPP.CivilStructures
                             switch (WaterDemand)
                             {
                                 case WaterDemand.High:
-                                    return 0f;
+                                    return 1.7912f;
 
                                 case WaterDemand.Medium:
-                                    return 0f;
+                                    return 1.4109f;
 
                                 case WaterDemand.Low:
-                                    return 0f;
+                                    return 1.3333f;
                             }
                             break;
                     }
