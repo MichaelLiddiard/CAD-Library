@@ -141,6 +141,7 @@
     <Compile Include="SettingsUserControl.xaml.cs">
       <DependentUpon>SettingsUserControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIPanelToggle.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
