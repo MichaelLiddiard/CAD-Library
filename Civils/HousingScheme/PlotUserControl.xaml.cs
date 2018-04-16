@@ -102,6 +102,8 @@ namespace JPP.Civils
             //Switch here for civil3d
             if (!Civils.Main.C3DActive)
             {
+                //TODO: Remove requirement for Civil3d later
+                throw new NotImplementedException();
                 //Civil 3d not available so prompt for level
                 PromptDoubleResult promptFFLDouble = acDoc.Editor.GetDouble("\nEnter the FFL: ");
                 p.FinishedFloorLevel = promptFFLDouble.Value;

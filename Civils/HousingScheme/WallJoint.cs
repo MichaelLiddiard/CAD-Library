@@ -60,9 +60,10 @@ namespace JPP.Civils
         private List<SegmentConnection> Segments;
 
         public double ExternalLevel { get; set; }
-        public bool AbsoluteLevel { get; set; }
+        public bool IsAbsoluteLevel { get; set; }
         public double RelativeOffset { get; set; }
-        
+        public double AbsoluteLevel { get; set; }
+
         public WallJoint()
         {
             Segments = new List<SegmentConnection>();            
@@ -138,6 +139,25 @@ namespace JPP.Civils
                     attDef.TextString = ExternalLevel.ToString("F3");
                 }
             }
+        }
+
+        public void Update(double FFL)
+        {
+            Database acCurDb = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database;
+            Transaction trans = acCurDb.TransactionManager.TopTransaction;
+
+            AttributeReference attDef = trans.GetObject(LabelText, OpenMode.ForWrite) as AttributeReference;
+
+            //Set to level offset otherwise event handler overrides
+            double level;
+            if(this.IsAbsoluteLevel)
+            {
+                level = this.AbsoluteLevel;
+            } else
+            {
+                level = FFL + this.RelativeOffset;
+            }
+            attDef.TextString = level.ToString("F3");
         }
         
         struct SegmentConnection

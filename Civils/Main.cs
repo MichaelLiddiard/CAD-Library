@@ -105,6 +105,7 @@ namespace JPP.Civils
             plotButton.Size = RibbonItemSize.Large;
             plotButton.Orientation = System.Windows.Controls.Orientation.Vertical;
             plotStack.Items.Add(plotButton);
+            SetHousingSchemeRequirements();
 
             //Add button to import xref
             RibbonButton importXrefButton = new RibbonButton();
@@ -242,6 +243,14 @@ namespace JPP.Civils
             //Load click overrides
             //TODO: Fix and re-enable
             //ClickOverride.Current.Add(new LevelClickHandler());
+        }
+
+        /// <summary>
+        /// Create required layers and surfaces
+        /// </summary>
+        private void SetHousingSchemeRequirements()
+        {
+            
         }
 
         private static void AttemptC3DLoad()

@@ -126,6 +126,8 @@ namespace JPP.Civils
         [XmlIgnore]
         public List<WallJoint> PerimeterPath;
 
+        Dictionary<Point3d, AccessPoint> AccessLookup;
+
         public PlotStatus Status { get; set; }
         public string StatusMessage;
 
@@ -139,37 +141,10 @@ namespace JPP.Civils
             Joints = new List<WallJoint>();
             Level = new ObservableCollection<PlotLevel>();
             Hatches = new ObservableCollection<PlotHatch>();
+            AccessLookup = new Dictionary<Point3d, AccessPoint>();
             Status = PlotStatus.Error;
             StatusMessage = "Plot has remained as default.";
-        }       
-
-        /// <summary>
-        /// Update all drawing elements
-        /// </summary>
-        public void Update()
-        {
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
-
-            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
-            {
-                //Update all plot level annotations
-                foreach (PlotLevel pl in Level)
-                {
-                    pl.Update();
-                }
-
-                //Update FFL annotation
-                MText text = tr.GetObject(FFLLabel, OpenMode.ForWrite) as MText;
-                text.Contents = FinishedFloorLevelText;
-
-                //Generate all hatching for tanking/retaining etc
-                this.GenerateHatching();                
-
-                //Commit the changes
-                tr.Commit();
-            }
-        }        
+        }              
 
         /// <summary>
         /// Removes all existing hatching and regenerates it based on current  applied levels.
@@ -356,51 +331,31 @@ namespace JPP.Civils
             DBObjectCollection explodedBlock = new DBObjectCollection();
             newBlockRef.Explode(explodedBlock);
 
-            foreach (Entity entToAdd in explodedBlock)
+            ObjectIdCollection SurfaceIds = CivilApplication.ActiveDocument.GetSurfaceIds();
+            CivSurface proposedGround = null;
+            foreach (ObjectId surfaceId in SurfaceIds)
             {
-                if (entToAdd is Polyline)
+                CivSurface oSurface = surfaceId.GetObject(OpenMode.ForRead) as CivSurface;
+                if (oSurface.Name == Civils.Constants.ProposedGroundName)
                 {
-                    Polyline acPline = entToAdd as Polyline;
-
-                    ObjectIdCollection SurfaceIds = CivilApplication.ActiveDocument.GetSurfaceIds();
-                    foreach (ObjectId surfaceId in SurfaceIds)
-                    {
-                        CivSurface oSurface = surfaceId.GetObject(OpenMode.ForRead) as CivSurface;
-                        if (oSurface.Name == Civils.Constants.ProposedGroundName)
-                        {
-                            //Need to add the temp line to create feature line from it
-                            BlockTable acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-                            BlockTableRecord acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                            ObjectId obj1 = acBlkTblRec.AppendEntity(acPline);
-                            acTrans.AddNewlyCreatedDBObject(acPline, true);
-
-                            ObjectId perimId = FeatureLine.Create("tempLine", obj1);
-
-                            FeatureLine perim = acTrans.GetObject(perimId, OpenMode.ForWrite) as FeatureLine;
-                            perim.AssignElevationsFromSurface(oSurface.Id, false);
-
-                            this.FinishedFloorLevel = Math.Round(perim.MaxElevation * 1000)/ 1000 + 0.15;
-                            this.Update();
-                            for (int i = 0; i < this.Level.Count; i++)
-                            {
-                                var points = perim.GetPoints(Autodesk.Civil.FeatureLinePointType.AllPoints);
-                                AttributeReference levelText = acTrans.GetObject(this.Level[i].Text, OpenMode.ForWrite) as AttributeReference;
-                                if(Level[i].LevelAccess)
-                                {
-                                    levelText.TextString = (Math.Round(perim.MaxElevation * 1000) / 1000 + 0.15).ToString();
-                                } else
-                                {
-                                    levelText.TextString = "@" + Math.Round(points[i].Z * 1000) / 1000;
-                                }                                
-                            }
-
-                            perim.Erase();
-                            acPline.Erase();
-                        }
-
-                    }
+                    proposedGround = oSurface;
                 }
             }
+
+            double maxLevel = double.NegativeInfinity;
+            foreach (WallJoint wj in Joints)
+            {
+                if (proposedGround != null)
+                {
+                    wj.ExternalLevel = proposedGround.FindElevationAtXY(wj.Point.X, wj.Point.Y);
+                    if(wj.ExternalLevel > maxLevel)
+                    {
+                        maxLevel = wj.ExternalLevel;
+                    }
+                }                        
+            }
+
+            this.FinishedFloorLevel = Math.Round(maxLevel * 1000) / 1000 + 0.15;
         }
 
         #region Plot commands        
@@ -655,8 +610,54 @@ namespace JPP.Civils
             //TODO: Move releveant blocks here
             Main.LoadBlocks();
 
+            AccessLookup = new Dictionary<Point3d, AccessPoint>();
             foreach (Entity entToAdd in explodedBlock)
             {
+                //Pull the circles that id access points out
+                if (entToAdd is Circle)
+                {
+                    Circle c = entToAdd as Circle;
+                    if (c.Layer == Civils.Constants.JPP_HS_PlotPerimiter)
+                    {
+                        var rb = c.XData;
+                        string target = "";
+                        foreach (var tv in rb)
+                        {
+                            target = tv.Value as string;
+                        }
+
+                        Point3d? master = null;
+                        AccessPoint? typeAP = null;
+
+                        foreach (AccessPoint ap in this.PlotType.AccessPoints)
+                        {
+                            //TODO: Add code to match to PlotType WS by comparing start and end points
+                            if (ap.Guid == target)
+                            {
+                                if (master == null)
+                                {
+                                    master = c.Center;
+                                    typeAP = ap;
+                                }
+                                else
+                                {
+                                    throw new ArgumentOutOfRangeException("Wall segment match already found", (System.Exception)null);
+                                }
+                            }
+                        }
+
+                        if (master == null)
+                        {
+                            throw new ArgumentOutOfRangeException("No matching wall segment found", (System.Exception)null);
+                        }
+
+                        AccessLookup.Add(master.Value, typeAP.Value);
+                    }
+                }
+            }
+            foreach (Entity entToAdd in explodedBlock)
+            {
+                
                 //Identify the lines as these indicate wall segments
                 //TODO: Add handling here for when a line is NOT a wall segmen
                 if (entToAdd is Line)
@@ -767,6 +768,14 @@ namespace JPP.Civils
                 wj.Generate(Rotation);
             }
 
+            //Check to see if FFL needs to be set
+            if (UpdateLevelsFromSurface)
+            {                
+                GetFFLfromSurface();                
+            }
+
+            Update();
+
             Status = PlotStatus.ForApproval;
             StatusMessage = "Plot generated successfully";
 
@@ -821,6 +830,38 @@ namespace JPP.Civils
             GenerateHatching();*/
 
 
+        }
+
+        /// <summary>
+        /// Update all drawing elements
+        /// </summary>
+        public void Update()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                foreach(WallJoint wj in Joints)
+                {
+                    wj.Update();
+                }
+                /*//Update all plot level annotations
+                foreach (PlotLevel pl in Level)
+                {
+                    pl.Update();
+                }
+
+                //Update FFL annotation
+                MText text = tr.GetObject(FFLLabel, OpenMode.ForWrite) as MText;
+                text.Contents = FinishedFloorLevelText;
+
+                //Generate all hatching for tanking/retaining etc
+                this.GenerateHatching();*/
+
+                //Commit the changes
+                tr.Commit();
+            }
         }
 
         private void TraverseExternalSegment(WallSegment currentSegment, WallJoint currentNode, WallJoint startNode)
@@ -881,6 +922,12 @@ namespace JPP.Civils
                 newWj.Point = newSegment.StartPoint;
                 newSegment.StartJoint = newWj;
                 newWj.AddWallSegment(newSegment);
+
+                if(AccessLookup.ContainsKey(newWj.Point))
+                {
+                    newWj.RelativeOffset = AccessLookup[newWj.Point].Offset;
+                }
+
                 Joints.Add(newWj);
             }
 
@@ -890,6 +937,12 @@ namespace JPP.Civils
                 newWj.Point = newSegment.EndPoint;
                 newSegment.EndJoint = newWj;
                 newWj.AddWallSegment(newSegment);
+
+                if (AccessLookup.ContainsKey(newWj.Point))
+                {
+                    newWj.RelativeOffset = AccessLookup[newWj.Point].Offset;
+                }
+
                 Joints.Add(newWj);
             }
 

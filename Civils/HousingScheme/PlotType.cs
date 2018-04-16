@@ -95,6 +95,8 @@ namespace JPP.Civils
             }
         }
 
+        public PersistentObjectIdCollection AccessPointLocations;
+
         public Point3d BasePoint;
 
         public List<WallSegment> Segments;
@@ -102,6 +104,7 @@ namespace JPP.Civils
         public PlotType()
         {
             AccessPoints = new List<AccessPoint>();
+            AccessPointLocations = new PersistentObjectIdCollection();
             Segments = new List<WallSegment>();
         }
 
@@ -470,21 +473,14 @@ namespace JPP.Civils
                     accessPointCircle.Radius = 0.25f;
 
                     // Open the Block table record Model space for write
-                    BlockTableRecord acBlkTblRec = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                    plotObjects.Add(acBlkTblRec.AppendEntity(accessPointCircle));
+                    BlockTableRecord acBlkTblRec = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;                    
+                    ObjectId temp = acBlkTblRec.AppendEntity(accessPointCircle);
+                    PlotType.CurrentOpen.AccessPointLocations.Add(temp);
                     tr.AddNewlyCreatedDBObject(accessPointCircle, true);
 
-                    // Copy the entities to the block using deepclone
-                    IdMapping acMapping = new IdMapping();
-                    acCurDb.DeepCloneObjects(plotObjects, newBlockId, acMapping, false);
-
-                    foreach (ObjectId oid in plotObjects)
-                    {
-                        DBObject e = tr.GetObject(oid, OpenMode.ForWrite);
-                        e.Erase();
-                    }
-
-                    PlotType.CurrentOpen.AccessPoints.Add(new AccessPoint() { Location = pPtRes.Value, Offset = float.Parse(pStrRes.StringResult) });
+                    string id = System.Guid.NewGuid().ToString();
+                    accessPointCircle.XData = new ResultBuffer(new TypedValue(1001, "JPP"), new TypedValue(1000, id));                    
+                    PlotType.CurrentOpen.AccessPoints.Add(new AccessPoint() { Location = pPtRes.Value, Offset = float.Parse(pStrRes.StringResult), Guid = id });                  
 
                     tr.Commit();
                 } else
@@ -529,6 +525,11 @@ namespace JPP.Civils
                     plotObjects.Add(ws.PerimeterLine);
                 }
 
+                foreach (ObjectId c in PlotType.CurrentOpen.AccessPointLocations.Collection)
+                {
+                    plotObjects.Add(c);
+                }
+
                 btr.AssumeOwnershipOf(plotObjects);
 
                 tr.Commit();
@@ -550,5 +551,6 @@ namespace JPP.Civils
     {
         public Point3d Location;
         public double Offset;
+        public string Guid;
     }
 }
