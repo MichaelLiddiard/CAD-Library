@@ -844,7 +844,7 @@ namespace JPP.Civils
             {
                 foreach(WallJoint wj in Joints)
                 {
-                    wj.Update();
+                    wj.Update(this.FinishedFloorLevel);
                 }
                 /*//Update all plot level annotations
                 foreach (PlotLevel pl in Level)
