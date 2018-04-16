@@ -1,19 +1,27 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Runtime;
+using Autodesk.Windows;
+using JPP.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+
+[assembly: ExtensionApplication(typeof(JPP.CivilStructures.Main))]
 
 namespace JPP.CivilStructures
 {
-    class Main
+    class Main : IExtensionApplication
     {
         public const string FoundationLayer = "JPP_Foundations";
         public const string FoundationTextLayer = "JPP_FoundationText";
+
+        UIPanelToggle foundationUI;
 
         public static void LoadBlocks()
         {
@@ -95,6 +103,38 @@ namespace JPP.CivilStructures
                 // Save the changes and dispose of the transaction
                 acTrans.Commit();
             }
+        }
+
+        public void Initialize()
+        {
+            RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
+            RibbonTab JPPTab = rc.FindTab("JPPCORE_JPP_TAB");
+            if (JPPTab == null)
+            {
+                JPPTab = JPP.Core.JPPMain.CreateTab();
+            }
+
+            RibbonPanel Panel = new RibbonPanel();
+            RibbonPanelSource source = new RibbonPanelSource();
+            RibbonRowPanel StructureRow = new RibbonRowPanel();            
+
+            source.Title = "Civil Structures";
+
+            Dictionary<string, UserControl> ucs = new Dictionary<string, UserControl>();
+            ucs.Add("Site Settings", new SiteFoundationControl());
+            foundationUI = new UIPanelToggle(StructureRow, JPP.CivilStructures.Properties.Resources.spade, "Foundations", new Guid("4bcb33a2-0771-4d96-a2f0-9a96229ff393"), ucs);
+
+            //Build the UI hierarchy
+            source.Items.Add(StructureRow);
+            Panel.Source = source;
+
+            JPPTab.Panels.Add(Panel);
+                        
+        }
+
+        public void Terminate()
+        {
+            
         }
     }
 }

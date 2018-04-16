@@ -1,4 +1,6 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,6 +44,11 @@ namespace JPP.Core
             {
                 Stores.Remove(s);
             }
+        }
+
+        public static Arc GetArc(this CircularArc3d curve)
+        {
+            return new Arc(curve.Center, curve.Radius, curve.StartAngle, curve.EndAngle);
         }
     }
 }

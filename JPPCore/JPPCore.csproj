@@ -113,13 +113,17 @@
   <ItemGroup>
     <Compile Include="Authentication.cs" />
     <Compile Include="AuthToken.cs" />
+    <Compile Include="CircleObject.cs" />
     <Compile Include="ClickHandler\ClickOverride.cs" />
     <Compile Include="ClickHandler\ClickOverrideEditorExtension.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DocumentStore.cs" />
+    <Compile Include="DrawingObject.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="ClickHandler\IClickOverrideInstance.cs" />
+    <Compile Include="IDrawingObject.cs" />
     <Compile Include="JPPMain.cs" />
+    <Compile Include="PersistentObjectIdCollection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -137,6 +141,7 @@
     <Compile Include="SettingsUserControl.xaml.cs">
       <DependentUpon>SettingsUserControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIPanelToggle.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>

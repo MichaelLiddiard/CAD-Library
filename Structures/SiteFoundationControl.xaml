@@ -1,0 +1,13 @@
+﻿<UserControl x:Class="JPP.CivilStructures.SiteFoundationControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:JPP.CivilStructures"
+             mc:Ignorable="d" Height="50" Width="430">
+    <Grid>
+        <ComboBox x:Name="PlasticitySelect" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="200" SelectedItem="{Binding Path=SoilShrinkage}"/>
+        <TextBox x:Name="Step" HorizontalAlignment="Left" Height="23" Margin="215,10,0,0" TextWrapping="Wrap" Text="{Binding Path=Step}" VerticalAlignment="Top" Width="205"/>
+
+    </Grid>
+</UserControl>
