@@ -636,6 +636,7 @@ namespace JPP.Civils
 
             BlockReference newBlockRef;
 
+            //Link the block reference
             if (BlockRefPtr == 0)
             {
                 BlockRef = Core.Utilities.InsertBlock(BasePoint, Rotation, PlotType.BlockID);
@@ -643,6 +644,7 @@ namespace JPP.Civils
             }
             else
             {
+                //TODO: Add regeneration code.
                 throw new NotImplementedException();
             }
 
@@ -655,6 +657,8 @@ namespace JPP.Civils
 
             foreach (Entity entToAdd in explodedBlock)
             {
+                //Identify the lines as these indicate wall segments
+                //TODO: Add handling here for when a line is NOT a wall segmen
                 if (entToAdd is Line)
                 {
                     Line segment = entToAdd as Line;
@@ -691,6 +695,7 @@ namespace JPP.Civils
                         throw new ArgumentOutOfRangeException("No matching wall segment found", (System.Exception)null);
                     }
 
+                    //TODO: Check, think object is not part of database
                     seg.PerimeterLine = segment.ObjectId;
                     seg.StartPoint = segment.StartPoint;
                     seg.EndPoint = segment.EndPoint;

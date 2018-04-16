@@ -419,12 +419,83 @@ namespace JPP.Civils
         public static void AddAccessPointd()
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
+
+            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter the access point level realtive to ground: ");
+            pStrOpts.AllowSpaces = true;
+            PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
+
+            // Prompt for the start point
+            PromptPointResult pPtRes;
+            PromptPointOptions pPtOpts = new PromptPointOptions("");
+            pPtOpts.Message = "\nEnter the access point. Access point to fall on wall segment: ";
+            pPtRes = acDoc.Editor.GetPoint(pPtOpts);                       
+
             Database acCurDb = acDoc.Database;
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
-                //TODO: Add this stuff
-                throw new NotImplementedException();                
-            }            
+                //Split the matching wall segment
+                int deletionIndex = 0;
+                bool found = false;
+                for(int i = 0; i < PlotType.CurrentOpen.Segments.Count; i++)
+                {
+                    Line segment = tr.GetObject(PlotType.CurrentOpen.Segments[i].PerimeterLine, OpenMode.ForRead) as Line;
+                    if(segment.GetGeCurve().IsOn(pPtRes.Value))
+                    {
+                        deletionIndex = i;
+                        found = true;
+                    }                    
+                }
+
+                if (found)
+                {
+                    var result = PlotType.CurrentOpen.Segments[deletionIndex].Split(pPtRes.Value);
+                    PlotType.CurrentOpen.Segments.AddRange(result);
+                    PlotType.CurrentOpen.Segments[deletionIndex].Erase();
+                    PlotType.CurrentOpen.Segments.RemoveAt(deletionIndex);
+
+                    //Add the access point
+                    BlockTable bt = (BlockTable)tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead);
+                    BlockTableRecord btr;
+                    ObjectId newBlockId;
+
+                    newBlockId = bt[PlotType.CurrentOpen.PlotTypeName + "Background"];
+                    btr = tr.GetObject(newBlockId, OpenMode.ForWrite) as BlockTableRecord;
+
+                    ObjectIdCollection plotObjects = new ObjectIdCollection();
+
+                    //Add basepoint
+                    Circle accessPointCircle = new Circle();
+                    accessPointCircle.Layer = Constants.JPP_HS_PlotPerimiter; //TODO: move to another layer??
+                    accessPointCircle.Center = pPtRes.Value;
+                    accessPointCircle.Radius = 0.25f;
+
+                    // Open the Block table record Model space for write
+                    BlockTableRecord acBlkTblRec = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+                    plotObjects.Add(acBlkTblRec.AppendEntity(accessPointCircle));
+                    tr.AddNewlyCreatedDBObject(accessPointCircle, true);
+
+                    // Copy the entities to the block using deepclone
+                    IdMapping acMapping = new IdMapping();
+                    acCurDb.DeepCloneObjects(plotObjects, newBlockId, acMapping, false);
+
+                    foreach (ObjectId oid in plotObjects)
+                    {
+                        DBObject e = tr.GetObject(oid, OpenMode.ForWrite);
+                        e.Erase();
+                    }
+
+                    PlotType.CurrentOpen.AccessPoints.Add(new AccessPoint() { Location = pPtRes.Value, Offset = float.Parse(pStrRes.StringResult) });
+
+                    tr.Commit();
+                } else
+                {
+                    //TODO: say why failed.
+                }
+            }
+
+            //Triggeer regen to update blocks display
+            //alternatively http://adndevblog.typepad.com/autocad/2012/05/redefining-a-block.html
+            Application.DocumentManager.CurrentDocument.Editor.Regen();
         }
 
         [CommandMethod("PT_Finalise")]
@@ -477,7 +548,7 @@ namespace JPP.Civils
 
     public struct AccessPoint
     {
-        public double Parameter;
+        public Point3d Location;
         public double Offset;
     }
 }
