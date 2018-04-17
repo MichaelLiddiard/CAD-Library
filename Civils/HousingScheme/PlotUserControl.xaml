@@ -6,19 +6,16 @@
              xmlns:local="clr-namespace:JPP.Civils"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
-    <Grid Background="#FF5C5C5C">
-        <DataGrid x:Name="dataGrid" Margin="10,36,10,10" ItemsSource="{Binding}" AutoGenerateColumns="False" CanUserAddRows="False" RowEditEnding="dataGrid_RowEditEnding" Background="#FF5C5C5C" BorderBrush="#FF333333" Foreground="White">
-            <DataGrid.Resources>
-                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
-                    <Setter Property="Background" Value="#FF525252" />
-                    <Setter Property="BorderBrush" Value="#FF333333"/>
-                    <Setter Property="BorderThickness" Value="1,0,0,0"/>
-                    <Setter Property="VerticalContentAlignment" Value="Center" />
-                    <Setter Property="Padding" Value="6,0,0,0"/>
-                </Style>
-                <Style BasedOn="{StaticResource {x:Type DataGridCell}}" TargetType="{x:Type DataGridCell}">
-                    <Setter Property="Foreground" Value="Black" />
-                </Style>
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/JPPCore;component/AutocadStyleResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <DataGrid x:Name="dataGrid" Margin="10,36,10,10" ItemsSource="{Binding}" AutoGenerateColumns="False" CanUserAddRows="False" RowEditEnding="dataGrid_RowEditEnding">
+            <DataGrid.Resources>                
                 <local:PlotStatusConverter x:Key="statusconverter" />
             </DataGrid.Resources>
             <DataGrid.Columns>
@@ -47,38 +44,12 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <Button x:Name="button" HorizontalAlignment="Left" Margin="10,10,0,0" Width="21" Height="21" VerticalAlignment="Top" Click="button_Click">
-            <Image Source="/Civils;component/Resources/add.png"/>
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="border" BorderThickness="1" SnapsToDevicePixels="True" Padding="2">
-                        <ContentPresenter x:Name="contentPresenter" Content="{TemplateBinding Content}" Focusable="False"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="BorderBrush" TargetName="border" Value="#333333"/>
-                            <Setter Property="Background" TargetName="border" Value="#787878"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Button.Template>
+        <Button x:Name="button" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Click="button_Click">
+            <Image Source="/Civils;component/Resources/add.png"/>            
         </Button>
 
-        <Button x:Name="deletebutton" HorizontalAlignment="Left" Margin="31,10,0,0" Width="21" Height="21" VerticalAlignment="Top" Click="deletebutton_Click">
-            <Image Source="/Civils;component/Resources/delete.png"/>
-            <Button.Template>
-                <ControlTemplate TargetType="Button">                    
-                    <Border x:Name="border" BorderThickness="1" SnapsToDevicePixels="True" Padding="2">
-                        <ContentPresenter x:Name="contentPresenter" Content="{TemplateBinding Content}" Focusable="False"/>    
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="BorderBrush" TargetName="border" Value="#333333"/>
-                            <Setter Property="Background" TargetName="border" Value="#787878"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>                
-            </Button.Template>
+        <Button x:Name="deletebutton" HorizontalAlignment="Left" Margin="31,10,0,0" VerticalAlignment="Top" Click="deletebutton_Click">
+            <Image Source="/Civils;component/Resources/delete.png"/>            
         </Button>
     </Grid>
 </UserControl>
