@@ -162,14 +162,18 @@ namespace JPP.Civils
 
         public void Update(double FFL)
         {
-            Database acCurDb = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database;
-            Transaction trans = acCurDb.TransactionManager.TopTransaction;
+            //Not all joints have labels, confirm
+            if (LabelTextPtr != 0)
+            {
+                Database acCurDb = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database;
+                Transaction trans = acCurDb.TransactionManager.TopTransaction;
 
-            AttributeReference attDef = trans.GetObject(LabelText, OpenMode.ForWrite) as AttributeReference;
+                AttributeReference attDef = trans.GetObject(LabelText, OpenMode.ForWrite) as AttributeReference;
 
-            //Set to level offset otherwise event handler overrides
-            parentFFL = FFL;
-            attDef.TextString = Level.ToString("F3");
+                //Set to level offset otherwise event handler overrides
+                parentFFL = FFL;
+                attDef.TextString = Level.ToString("F3");
+            }
         }
 
         struct SegmentConnection

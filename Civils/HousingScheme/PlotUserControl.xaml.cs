@@ -149,7 +149,7 @@ namespace JPP.Civils
 
                 
 
-                catch (ArgumentOutOfRangeException e)
+                catch (NullReferenceException e)//(ArgumentOutOfRangeException e)
                 {
                     acDoc.Editor.WriteMessage("\nSelected plot type corrupted. Please delete and recreate. Inner Exception:\n");
                     acDoc.Editor.WriteMessage(e.Message);

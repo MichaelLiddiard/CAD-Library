@@ -18,8 +18,8 @@ namespace JPP.Civils
                 string path; 
                 switch (value)
                 {
-                    case PlotStatus.Approved:
-                        path = "/Civils;component/Resources/_checked.png";
+                   case PlotStatus.Approved:                        
+                        path = "/Civils;component/Resources/checked.png";
                         break;
 
                     case PlotStatus.Error:
@@ -35,7 +35,7 @@ namespace JPP.Civils
                         break;
 
                     default:
-                        throw new NotImplementedException();
+                        path = "/Civils;component/Resources/add.png";
                         break;
                 }
 

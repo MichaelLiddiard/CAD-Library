@@ -23,7 +23,7 @@
             </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Plot Name" Binding="{Binding PlotName, UpdateSourceTrigger=PropertyChanged}" Width="0.5*" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Plot Type" Binding="{Binding PlotTypeId, UpdateSourceTrigger=PropertyChanged}" Width="0.4*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Plot Type" Binding="{Binding PlotTypeId, UpdateSourceTrigger=PropertyChanged}" Width="0.3*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="FFL" Width="0.3*" >
                     <DataGridTextColumn.EditingElementStyle>
                         <Style TargetType="{x:Type TextBox}">
@@ -38,10 +38,10 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTemplateColumn Header="Status" IsReadOnly="True">
+                <DataGridTemplateColumn Header="Status" IsReadOnly="True" Width="0.3*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Image Source="{Binding Status, Converter={StaticResource statusconverter}}" />
+                            <Image Source="{Binding Status, Converter={StaticResource statusconverter}}" Width="16" Height="16" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

@@ -423,7 +423,7 @@ namespace JPP.Civils
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
 
-            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter the access point level realtive to ground: ");
+            PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter the access point level realtive to floor level: ");
             pStrOpts.AllowSpaces = true;
             PromptResult pStrRes = acDoc.Editor.GetString(pStrOpts);
 

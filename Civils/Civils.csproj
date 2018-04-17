@@ -171,10 +171,10 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="Resources\approval.png" />
-    <None Include="Resources\checked.png" />
-    <None Include="Resources\error.png" />
-    <None Include="Resources\warning.png" />
+    <Resource Include="Resources\approval.png" />
+    <Resource Include="Resources\checked.png" />
+    <Resource Include="Resources\error.png" />
+    <Resource Include="Resources\warning.png" />
     <Content Include="Templates.dwg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
