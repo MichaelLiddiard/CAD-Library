@@ -133,7 +133,7 @@ namespace JPP.Civils
                     p.Generate();
                     acDoc.GetDocumentStore<CivilDocumentStore>().Plots.Add(p);
 
-                    tr.Commit();                    
+                    tr.Commit();
                 } 
 
                 /*p.Generate();
@@ -149,11 +149,11 @@ namespace JPP.Civils
 
                 
 
-                catch (NullReferenceException e)//(ArgumentOutOfRangeException e)
+                catch (ArgumentOutOfRangeException e)//(ArgumentOutOfRangeException e)
                 {
                     acDoc.Editor.WriteMessage("\nSelected plot type corrupted. Please delete and recreate. Inner Exception:\n");
                     acDoc.Editor.WriteMessage(e.Message);
-                }
+                }                
             }            
         }
     }

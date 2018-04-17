@@ -176,17 +176,13 @@ namespace JPP.Civils
             Polyline tankOffset = perimeter.GetOffsetCurves(-Properties.Settings.Default.P_Hatch_Offset)[0] as Polyline;
             Polyline exposedOffset = perimeter.GetOffsetCurves(Properties.Settings.Default.P_Hatch_Offset)[0] as Polyline;
 
-            /*foreach(DBObject db in minus)
-            {
-                acBlkTblRec.AppendEntity(db as Entity);
-                acTrans.AddNewlyCreatedDBObject(db, true);
-            }
-            foreach (DBObject db in plus)
-            {
-                acBlkTblRec.AppendEntity(db as Entity);
-                acTrans.AddNewlyCreatedDBObject(db, true);
-            }*/
-
+            /*BlockTable acBlkTbl;
+            acBlkTbl = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+            BlockTableRecord acBlkTblRec;
+            acBlkTblRec = acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+            acBlkTblRec.AppendEntity(tankOffset);
+            acTrans.AddNewlyCreatedDBObject(tankOffset, true); */           
+            
             //Calculate first point not at ground level
             int startIndex = 0;
             for(int i = 0; i < PerimeterPath.Count; i++)

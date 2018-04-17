@@ -362,13 +362,16 @@ namespace JPP.Civils
 
                 foreach (DBObject dbobj in lineSegments)
                 {
-                    Entity e = dbobj as Entity;                                       
+                    Line e = dbobj as Line;                                       
 
                     WallSegment ws = new WallSegment() { PerimeterLine = acBlkTblRec.AppendEntity(e), Guid = Guid.NewGuid().ToString() };
                     e.XData = new ResultBuffer(new TypedValue(1001, "JPP"), new TypedValue(1000, ws.Guid));
                     tr.AddNewlyCreatedDBObject(e, true);
 
-                    PlotType.CurrentOpen.Segments.Add(ws);
+                    PlotType.CurrentOpen.WSIntersect(e.StartPoint);
+                    PlotType.CurrentOpen.WSIntersect(e.EndPoint);
+
+                    PlotType.CurrentOpen.Segments.Add(ws);                                       
                 }
 
                 tr.Commit();                
@@ -436,25 +439,8 @@ namespace JPP.Civils
             Database acCurDb = acDoc.Database;
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
-                //Split the matching wall segment
-                int deletionIndex = 0;
-                bool found = false;
-                for(int i = 0; i < PlotType.CurrentOpen.Segments.Count; i++)
+                if (PlotType.CurrentOpen.WSIntersect(pPtRes.Value))
                 {
-                    Line segment = tr.GetObject(PlotType.CurrentOpen.Segments[i].PerimeterLine, OpenMode.ForRead) as Line;
-                    if(segment.GetGeCurve().IsOn(pPtRes.Value))
-                    {
-                        deletionIndex = i;
-                        found = true;
-                    }                    
-                }
-
-                if (found)
-                {
-                    var result = PlotType.CurrentOpen.Segments[deletionIndex].Split(pPtRes.Value);
-                    PlotType.CurrentOpen.Segments.AddRange(result);
-                    PlotType.CurrentOpen.Segments[deletionIndex].Erase();
-                    PlotType.CurrentOpen.Segments.RemoveAt(deletionIndex);
 
                     //Add the access point
                     BlockTable bt = (BlockTable)tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead);
@@ -544,6 +530,34 @@ namespace JPP.Civils
             cds.PlotTypes.Add(PlotType.CurrentOpen);
 
             PlotType.CurrentOpen = null;
+        }
+
+        private bool WSIntersect(Point3d point)
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Transaction tr = acDoc.TransactionManager.TopTransaction;
+            //Split the matching wall segment
+            int deletionIndex = 0;
+            bool found = false;
+            for (int i = 0; i < Segments.Count; i++)
+            {
+                Line segment = tr.GetObject(Segments[i].PerimeterLine, OpenMode.ForRead) as Line;
+                if (segment.GetGeCurve().IsOn(point))
+                {
+                    deletionIndex = i;
+                    found = true;
+                }
+            }
+
+            if (found)
+            {
+                var result = Segments[deletionIndex].Split(point);
+                Segments.AddRange(result);
+                Segments[deletionIndex].Erase();
+                Segments.RemoveAt(deletionIndex);
+            }
+
+            return found;
         }
     }
 
