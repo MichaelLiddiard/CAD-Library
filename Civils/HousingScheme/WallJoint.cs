@@ -57,6 +57,24 @@ namespace JPP.Civils
         }
 
         [XmlIgnore]
+        public double Level
+        {
+            get
+            {
+                if (this.IsAbsoluteLevel)
+                {
+                    return AbsoluteLevel;
+                }
+                else
+                {
+                    return parentFFL + RelativeOffset;
+                }
+            }
+        }
+
+        private double parentFFL;
+
+        [XmlIgnore]
         private List<SegmentConnection> Segments;
 
         public double ExternalLevel { get; set; }
@@ -66,7 +84,7 @@ namespace JPP.Civils
 
         public WallJoint()
         {
-            Segments = new List<SegmentConnection>();            
+            Segments = new List<SegmentConnection>();
         }
 
         public void Sort()
@@ -81,11 +99,12 @@ namespace JPP.Civils
             if (ws.StartPoint == Point)
             {
                 sc.Angle = Point.GetVectorTo(ws.EndPoint).GetAngleTo(Vector3d.YAxis, Vector3d.ZAxis) * 180d / Math.PI;
-            } else
+            }
+            else
             {
                 sc.Angle = Point.GetVectorTo(ws.StartPoint).GetAngleTo(Vector3d.YAxis, Vector3d.ZAxis) * 180d / Math.PI;
             }
-            
+
             Segments.Add(sc);
             Sort();
         }
@@ -93,9 +112,9 @@ namespace JPP.Civils
         public WallSegment NextClockwise(WallSegment currentSegment)
         {
             double currentAngle = 0;
-            foreach(SegmentConnection ws in Segments)
+            foreach (SegmentConnection ws in Segments)
             {
-                if(ws.Segment.Guid == currentSegment.Guid)
+                if (ws.Segment.Guid == currentSegment.Guid)
                 {
                     currentAngle = ws.Angle;
                 }
@@ -103,16 +122,16 @@ namespace JPP.Civils
 
             bool found = false;
             int i = 0;
-            while(!found)
+            while (!found)
             {
-                if(currentAngle <= Segments[i].Angle)
+                if (currentAngle <= Segments[i].Angle)
                 {
                     found = true;
                 }
                 i++;
             }
 
-            if(i > Segments.Count - 1)
+            if (i > Segments.Count - 1)
             {
                 //TODO: Make sure this works
                 i = i - Segments.Count;
@@ -149,21 +168,14 @@ namespace JPP.Civils
             AttributeReference attDef = trans.GetObject(LabelText, OpenMode.ForWrite) as AttributeReference;
 
             //Set to level offset otherwise event handler overrides
-            double level;
-            if(this.IsAbsoluteLevel)
-            {
-                level = this.AbsoluteLevel;
-            } else
-            {
-                level = FFL + this.RelativeOffset;
-            }
-            attDef.TextString = level.ToString("F3");
+            parentFFL = FFL;
+            attDef.TextString = Level.ToString("F3");
         }
-        
+
         struct SegmentConnection
         {
             public WallSegment Segment;
-            public double Angle;          
+            public double Angle;
             public double FromNorth
             {
                 get
@@ -176,6 +188,25 @@ namespace JPP.Civils
                     {
                         return 360d - Angle;
                     }
+                }
+            }
+        }
+
+        public int Courses()
+        {
+            if (Level - ExternalLevel <= 0.15 && Level - ExternalLevel >= 0)
+            {
+                return 0;
+            }
+            else
+            {
+                double courses = (Level - ExternalLevel - 0.15) / 75;
+                if(courses > 0)
+                {
+                    return (int) Math.Ceiling(courses);
+                } else
+                {
+                    return (int)Math.Floor(courses);
                 }
             }
         }

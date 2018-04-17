@@ -164,7 +164,97 @@ namespace JPP.Civils
             //Set to only work for exposed brickwork
             Transaction acTrans = acCurDb.TransactionManager.TopTransaction;
 
-            BlockReference newBlockRef = (BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
+            //TODO: Optimise by cahcing 
+            Polyline perimeter = new Polyline();
+            //Build the perimeter line
+            foreach (WallJoint wj in PerimeterPath)
+            {
+                perimeter.AddVertexAt(perimeter.NumberOfVertices, new Point2d(wj.Point.X, wj.Point.Y), 0, 0, 0);
+            }
+            perimeter.Closed = true;
+
+            Polyline tankOffset = perimeter.GetOffsetCurves(-Properties.Settings.Default.P_Hatch_Offset)[0] as Polyline;
+            Polyline exposedOffset = perimeter.GetOffsetCurves(Properties.Settings.Default.P_Hatch_Offset)[0] as Polyline;
+
+            /*foreach(DBObject db in minus)
+            {
+                acBlkTblRec.AppendEntity(db as Entity);
+                acTrans.AddNewlyCreatedDBObject(db, true);
+            }
+            foreach (DBObject db in plus)
+            {
+                acBlkTblRec.AppendEntity(db as Entity);
+                acTrans.AddNewlyCreatedDBObject(db, true);
+            }*/
+
+            //Calculate first point not at ground level
+            int startIndex = 0;
+            for(int i = 0; i < PerimeterPath.Count; i++)
+            {
+                if(PerimeterPath[i].Courses() == 0)
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+
+            Point3dCollection hatchBoundaryPoints = new Point3dCollection();
+            Point3dCollection hatchOffsetPoints = new Point3dCollection();
+            bool hatchActive = false;
+
+            //Iterate around perimeter
+            for (int i = startIndex; i < PerimeterPath.Count + startIndex; i++)
+            {
+                int index;
+                if(i >= PerimeterPath.Count)
+                {
+                    index = i - PerimeterPath.Count;
+                }
+                else
+                {
+                    index = i;
+                }
+
+                if(PerimeterPath[index].Courses() != 0)
+                {
+                    if(!hatchActive)
+                    {                                                  
+                        hatchActive = true;
+                        hatchBoundaryPoints.Add(PerimeterPath[index - 1].Point);
+                    }
+                    hatchBoundaryPoints.Add(PerimeterPath[index].Point);
+                    if (PerimeterPath[index].Courses() > 0)
+                    {
+                        hatchOffsetPoints.Add(exposedOffset.GetPoint3dAt(index));
+                    }
+                    else
+                    {
+                        hatchOffsetPoints.Add(tankOffset.GetPoint3dAt(index));
+                    }
+                } else //End potentially found
+                {
+                    if(hatchActive)
+                    {
+                        hatchActive = false;
+                        hatchBoundaryPoints.Add(PerimeterPath[index].Point);
+                        for(int y = hatchOffsetPoints.Count - 1; y >= 0; y--)
+                        {
+                            hatchBoundaryPoints.Add(hatchOffsetPoints[y]);
+                        }
+
+                        //Create hatch
+                        PlotHatch ph = new PlotHatch();
+                        ph.Generate(hatchBoundaryPoints);
+
+                        hatchBoundaryPoints.Clear();
+                        hatchOffsetPoints.Clear();
+
+                        Hatches.Add(ph);
+                    }
+                }
+            }
+
+            /*BlockReference newBlockRef = (BlockReference)BlockRef.GetObject(OpenMode.ForWrite);
             DBObjectCollection explodedBlock = new DBObjectCollection();
             newBlockRef.Explode(explodedBlock);
 
@@ -301,7 +391,7 @@ namespace JPP.Civils
                         hatchOffsetPoints.Clear();
                     }
                 }
-            }
+            }*/
         }
 
         /// <summary>
@@ -353,6 +443,13 @@ namespace JPP.Civils
                         maxLevel = wj.ExternalLevel;
                     }
                 }                        
+            }
+
+            if(maxLevel == double.NegativeInfinity)
+            {
+                maxLevel = -0.15;
+                this.Status = PlotStatus.Error;
+                this.StatusMessage = "Plot not on proposed ground model or ground model not found";
             }
 
             this.FinishedFloorLevel = Math.Round(maxLevel * 1000) / 1000 + 0.15;
@@ -721,7 +818,7 @@ namespace JPP.Civils
             if(startNode == null)
             {
                 throw new ArgumentOutOfRangeException("Basepoint does not lie on wall joint", (System.Exception)null);
-            }
+            }                       
 
             //Recursively traverse through the segments to find the external ones
             WallSegment startSegment = startNode.North;
@@ -737,29 +834,7 @@ namespace JPP.Civils
 
             PerimeterPath = new List<WallJoint>();
             PerimeterPath.Add(startNode);
-            TraverseExternalSegment(startSegment, nextNode, startNode);
-
-            Polyline perimeter = new Polyline();
-            //Build the perimeter line
-            foreach (WallJoint wj in PerimeterPath)
-            {
-                perimeter.AddVertexAt(perimeter.NumberOfVertices, new Point2d(wj.Point.X, wj.Point.Y), 0, 0, 0);                
-            }
-            perimeter.Closed = true;
-                        
-            DBObjectCollection minus = perimeter.GetOffsetCurves(-Properties.Settings.Default.P_Hatch_Offset);
-            DBObjectCollection plus = perimeter.GetOffsetCurves(Properties.Settings.Default.P_Hatch_Offset);
-
-            foreach(DBObject db in minus)
-            {
-                acBlkTblRec.AppendEntity(db as Entity);
-                acTrans.AddNewlyCreatedDBObject(db, true);
-            }
-            foreach (DBObject db in plus)
-            {
-                acBlkTblRec.AppendEntity(db as Entity);
-                acTrans.AddNewlyCreatedDBObject(db, true);
-            }
+            TraverseExternalSegment(startSegment, nextNode, startNode);            
 
             //GENERATE SUB ELEMENTS
 
@@ -846,6 +921,8 @@ namespace JPP.Civils
                 {
                     wj.Update(this.FinishedFloorLevel);
                 }
+
+                GenerateHatching();
                 /*//Update all plot level annotations
                 foreach (PlotLevel pl in Level)
                 {

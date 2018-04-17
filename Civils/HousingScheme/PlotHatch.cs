@@ -81,7 +81,7 @@ namespace JPP.Civils
                 hatchBoundary.Layer = StyleNames.JPP_App_Exposed_Brick_Layer;
             else
                 hatchBoundary.Layer = StyleNames.JPP_App_Tanking_Layer;*/
-            hatchBoundary.Layer = StyleNames.JPP_App_Tanking_Layer;
+            hatchBoundary.Layer = Civils.Constants.JPP_HS_PlotPerimiter;
 
             // Add the hatch boundary to modelspace
 
@@ -110,7 +110,7 @@ namespace JPP.Civils
                     exposedHatch.Layer = StyleNames.JPP_App_Tanking_Layer;
                     exposedHatch.BackgroundColor = Color.FromColorIndex(ColorMethod.ByAci, 130);
                 }*/
-                exposedHatch.Layer = StyleNames.JPP_App_Exposed_Brick_Layer;
+                exposedHatch.Layer = Civils.Constants.JPP_HS_PlotPerimiter;
                 exposedHatch.BackgroundColor = Color.FromColorIndex(ColorMethod.ByAci, 80);
                 exposedHatch.PatternScale = 0.1;
                 exposedHatch.PatternSpace = 0.1;
