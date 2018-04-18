@@ -31,6 +31,8 @@ namespace JPP.Civils
         PlotUserControl uc2;
         PlotTypeUserControl uc3;
 
+        public static Library<PlotType> ptLibrary;
+
         RibbonToggleButton plotButton;
 
         public static bool C3DActive;        
@@ -40,6 +42,8 @@ namespace JPP.Civils
         /// </summary>
         public void Initialize()
         {
+            ptLibrary = new Library<PlotType>("M:\\ML\\CAD-Library\\Library\\PlotTypes");
+
             //Add the menu options
             RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
             RibbonTab JPPTab = rc.FindTab("JPPCORE_JPP_TAB");
@@ -238,7 +242,7 @@ namespace JPP.Civils
             }
 
             //Added registered simble for XData
-            AddRegAppTableRecord();
+            AddRegAppTableRecord();            
 
             //Load click overrides
             //TODO: Fix and re-enable

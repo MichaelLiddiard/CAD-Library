@@ -1,4 +1,5 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using JPP.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,7 @@ namespace JPP.Civils
         {
             InitializeComponent();
             PlotType.OnCurrentOpenChanged += PlotType_OnCurrentOpenChanged;
+            libraryTree.ItemsSource = Civils.Main.ptLibrary.Tree;            
         }
 
         private void PlotType_OnCurrentOpenChanged()
@@ -69,6 +71,22 @@ namespace JPP.Civils
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             acDoc.SendStringToExecute("PT_Finalise ", false, false, false);
+        }
+
+        private void loadButton_Click(object sender, RoutedEventArgs e)
+        {
+            if(libraryTree.SelectedItem is Leaf)
+            {
+                Leaf selected = libraryTree.SelectedItem as Leaf;
+                
+            }
+
+            
+        }
+
+        private void saveButton_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

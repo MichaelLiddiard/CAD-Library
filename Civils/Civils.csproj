@@ -165,7 +165,6 @@
     <ProjectReference Include="..\JPPCore\JPPCore.csproj">
       <Project>{265173e9-d3f3-4c37-9b29-071d4a7453b0}</Project>
       <Name>JPPCore</Name>
-      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -178,6 +177,9 @@
     <Resource Include="Resources\door.png" />
     <Resource Include="Resources\wall.png" />
     <Resource Include="Resources\finalise.png" />
+    <Resource Include="Resources\download.png" />
+    <Resource Include="Resources\folder.png" />
+    <Resource Include="Resources\upload.png" />
     <Content Include="Templates.dwg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -205,7 +207,7 @@
     <None Include="Resources\importXref.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\housingscheme.png" />
+    <Resource Include="Resources\housingscheme.png" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="Drainage\DrainageControl.xaml">
