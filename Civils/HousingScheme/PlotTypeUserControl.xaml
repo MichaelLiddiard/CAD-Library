@@ -6,36 +6,40 @@
              xmlns:local="clr-namespace:JPP.Civils"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
-    <UserControl.Resources>        
+    <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/JPPCore;component/AutocadStyleResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>        
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <DataGrid x:Name="dataGrid" Margin="10,31,10,10" ItemsSource="{Binding}" AutoGenerateColumns="False" CanUserAddRows="False">
+        <DataGrid x:Name="plotTypeGrid" Margin="10,89,10,10" AutoGenerateColumns="False" CanUserAddRows="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Plot Type Name" Binding="{Binding PlotTypeName}" Width="*"/>                
+                <DataGridTextColumn Header="Plot Type" Binding="{Binding PlotTypeName}" Width="*" IsReadOnly="True" />
             </DataGrid.Columns>
         </DataGrid>
-        <Button x:Name="button" HorizontalAlignment="Left" Margin="10,10,0,0" Width="16" Height="16" VerticalAlignment="Top" Click="button_Click">
+        <Button x:Name="button" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Click="button_Click">
             <Image Source="/Civils;component/Resources/add.png"/>
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <ContentPresenter Content="{TemplateBinding Content}"/>
-                </ControlTemplate>
-            </Button.Template>
         </Button>
 
-        <Button x:Name="deletebutton" HorizontalAlignment="Left" Margin="31,10,0,0" Width="16" Height="16" VerticalAlignment="Top" Click="deletebutton_Click">
+        <Button x:Name="deletebutton" HorizontalAlignment="Left" Margin="31,10,0,0" VerticalAlignment="Top" Click="deletebutton_Click">
             <Image Source="/Civils;component/Resources/delete.png"/>
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <ContentPresenter Content="{TemplateBinding Content}"/>
-                </ControlTemplate>
-            </Button.Template>
         </Button>
-
+        <GroupBox x:Name="PlotCommands" Header="Plot Commands" Height="41" Margin="10,36,10,0" VerticalAlignment="Top" IsEnabled="False">
+            <Grid>
+            <Button x:Name="wallbutton" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Click="wallbutton_Click">
+                <Image Source="/Civils;component/Resources/wall.png"/>
+            </Button>
+            <Button x:Name="doorbutton" HorizontalAlignment="Left" Margin="36,0,0,0" VerticalAlignment="Top" Click="doorbutton_Click" >
+                <Image Source="/Civils;component/Resources/door.png"/>
+            </Button>
+                <Button x:Name="finalisebutton" HorizontalAlignment="Left" Margin="62,0,0,0" VerticalAlignment="Top" Click="finalisebutton_Click"  >
+                    <Image Source="/Civils;component/Resources/finalise.png"/>
+                </Button>
+            </Grid>
+        </GroupBox>
+        <Label Content="Current Plot:" HorizontalAlignment="Left" Margin="57,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.588,0.038" Width="99"/>
+        <Label Content="{Binding PlotTypeName}" HorizontalAlignment="Left" Margin="161,13,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.588,0.038" Width="99"/>
     </Grid>
 </UserControl>

@@ -22,6 +22,8 @@ namespace JPP.Civils
     public class PlotType
     {
         public static PlotType CurrentOpen;
+        public delegate void CurrentOpenDelegate();
+        public static event CurrentOpenDelegate OnCurrentOpenChanged;
 
         public string PlotTypeName { get; set; }
 
@@ -203,7 +205,9 @@ namespace JPP.Civils
                 tr.AddNewlyCreatedDBObject(bp, true);
 
                 tr.Commit();
-            }       
+            }
+
+            OnCurrentOpenChanged();
 
             /*
             JPPCommands.JPPCommandsInitialisation.JPPCommandsInitialise();
@@ -530,6 +534,7 @@ namespace JPP.Civils
             cds.PlotTypes.Add(PlotType.CurrentOpen);
 
             PlotType.CurrentOpen = null;
+            OnCurrentOpenChanged();
         }
 
         private bool WSIntersect(Point3d point)

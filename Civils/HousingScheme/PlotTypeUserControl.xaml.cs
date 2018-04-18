@@ -24,18 +24,51 @@ namespace JPP.Civils
         public PlotTypeUserControl()
         {
             InitializeComponent();
+            PlotType.OnCurrentOpenChanged += PlotType_OnCurrentOpenChanged;
+        }
+
+        private void PlotType_OnCurrentOpenChanged()
+        {
+            if (PlotType.CurrentOpen != null)
+            {
+                this.DataContext = PlotType.CurrentOpen;
+                PlotCommands.IsEnabled = true;
+            }
+            else
+            {
+                this.DataContext = null;
+                PlotCommands.IsEnabled = false;
+            }
         }
 
         private void button_Click(object sender, RoutedEventArgs e)
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            acDoc.SendStringToExecute("CreatePlotType ", false, false, false);
+            acDoc.SendStringToExecute("PT_Create ", false, false, false);
         }
 
         private void deletebutton_Click(object sender, RoutedEventArgs e)
         {
             Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             //acDoc.SendStringToExecute("NewFFL ", false, false, false);
+        }
+
+        private void wallbutton_Click(object sender, RoutedEventArgs e)
+        {
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            acDoc.SendStringToExecute("PT_CreateWS ", false, false, false);
+        }
+
+        private void doorbutton_Click(object sender, RoutedEventArgs e)
+        {
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            acDoc.SendStringToExecute("PT_AddAccess ", false, false, false);
+        }
+
+        private void finalisebutton_Click(object sender, RoutedEventArgs e)
+        {
+            Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            acDoc.SendStringToExecute("PT_Finalise ", false, false, false);
         }
     }
 }

@@ -175,6 +175,9 @@
     <Resource Include="Resources\checked.png" />
     <Resource Include="Resources\error.png" />
     <Resource Include="Resources\warning.png" />
+    <Resource Include="Resources\door.png" />
+    <Resource Include="Resources\wall.png" />
+    <Resource Include="Resources\finalise.png" />
     <Content Include="Templates.dwg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -12,17 +12,103 @@
                             <Setter Property="BorderBrush" TargetName="border" Value="#333333"/>
                             <Setter Property="Background" TargetName="border" Value="#787878"/>
                         </Trigger>
-                    </ControlTemplate.Triggers>
+                    </ControlTemplate.Triggers>                    
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
         <Setter Property="Width" Value="21" />
         <Setter Property="Height" Value="21" />
     </Style>
+
+    <!--<FormatConvertedBitmap x:Key="convertFormatImage" DestinationFormat="Gray32Float" />-->
+    <!-- Image -->
+    <Style TargetType="Image">
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <!--<Setter Property="Source" Value="{StaticResource convertFormatImage}" />-->
+                <Setter Property="Opacity" Value="0.25"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
     
     <!-- Grid -->
     <Style TargetType="Grid">
         <Setter Property="Background" Value="#FF5C5C5C"/>
+    </Style>
+
+    <!-- Label -->
+    <Style TargetType="Label">
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+
+    <!-- GroupBox -->
+    <BorderGapMaskConverter x:Key="BorderGapMaskConverter"/>
+    <Style TargetType="GroupBox">
+        <Setter Property="Background" Value="#FF5C5C5C"/>
+        <Setter Property="BorderBrush" Value="#6666"/>
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GroupBox">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="4"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="4"/>
+                        </Grid.RowDefinitions>
+                        <Border CornerRadius="4"
+                  Grid.Row="1"
+                  Grid.RowSpan="3"
+                  Grid.Column="0"
+                  Grid.ColumnSpan="4"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  BorderBrush="Transparent"
+                  Background="{TemplateBinding Background}"/>
+                        <!-- ContentPresenter for the header -->
+                        <Border x:Name="Header"
+                  Padding="6,0,6,0"
+                  Grid.Row="0"
+                  Grid.RowSpan="2"
+                  Grid.Column="1">
+                            <ContentPresenter ContentSource="Header" 
+                              RecognizesAccessKey="True" />
+                        </Border>
+                        <!-- Primary content for GroupBox -->
+                        <ContentPresenter Grid.Row="2"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2"
+                            Margin="{TemplateBinding Padding}"/>
+                        <Border CornerRadius="0"
+                  Grid.Row="1"
+                  Grid.RowSpan="3"
+                  Grid.ColumnSpan="4"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  BorderBrush="{TemplateBinding BorderBrush}">
+                            <Border.OpacityMask>
+                                <MultiBinding Converter=
+                            "{StaticResource BorderGapMaskConverter}"
+                            ConverterParameter="6">
+                                    <Binding ElementName="Header"
+                         Path="ActualWidth"/>
+                                    <Binding RelativeSource="{RelativeSource Self}"
+                         Path="ActualWidth"/>
+                                    <Binding RelativeSource="{RelativeSource Self}"
+                         Path="ActualHeight"/>
+                                </MultiBinding>
+                            </Border.OpacityMask>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
     </Style>
 
     <!-- DataGrid -->
