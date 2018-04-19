@@ -40,6 +40,7 @@ namespace JPP.CivilStructures
         {
             Trees = new List<NHBCTree>();            
             RingsCollection = new PersistentObjectIdCollection();
+            Step = 0.1f; //Default to a sensible value otherwise its infinite
         }
 
         //public ObjectIdCollection RingsCollection = new ObjectIdCollection();        
@@ -47,7 +48,7 @@ namespace JPP.CivilStructures
 
         public void GenerateTreeRings()
         {
-            int[] ringColors = new int[] { 10,200,40,180,60,160,80,140,100,120 };
+            int[] ringColors = new int[] { 10,200,20,180,40,160,60,140,80,120,100 };
 
             //Determine start depth
             switch (SoilShrinkage)
@@ -137,16 +138,23 @@ namespace JPP.CivilStructures
                             createdRegions.Add(r);
                         }
                     }
-
-                    Region enclosed = createdRegions[0];
-                    enclosed.ColorIndex = ringColors[ringIndex];
+                                        
+                    Region enclosed = createdRegions[0];                    
 
                     for (int i = 1; i < createdRegions.Count; i++)
                     {
                         enclosed.BooleanOperation(BooleanOperationType.BoolUnite, createdRegions[i]);
                     }
 
-                    enclosed.ColorIndex = ringColors[ringIndex];
+                    //Protection for color overflow, loop around
+                    if (ringIndex >= ringColors.Length)
+                    {
+                        int multiple = (int)Math.Floor((double)(ringIndex / ringColors.Length));
+                        enclosed.ColorIndex = ringColors[ringIndex - multiple * ringColors.Length];
+                    } else
+                    {
+                        enclosed.ColorIndex = ringColors[ringIndex];
+                    }
 
                     RingsCollection.Add(acBlkTblRec.AppendEntity(enclosed));
                     acTrans.AddNewlyCreatedDBObject(enclosed, true);
@@ -254,11 +262,12 @@ namespace JPP.CivilStructures
                 pKeyRes = acDoc.Editor.GetKeywords(pKeyOpts);
                 newTree.Species = pKeyRes.StringResult;
 
-                PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter tree height: ") { AllowSpaces = false };
+                float maxHeight = (float)speciesList[newTree.Species];
+
+                PromptStringOptions pStrOptsPlot = new PromptStringOptions("\nEnter tree height: ") { AllowSpaces = false, DefaultValue=maxHeight.ToString() };
                 PromptResult pStrResPlot = acDoc.Editor.GetString(pStrOptsPlot);
 
-                float actualHeight = float.Parse(pStrResPlot.StringResult);
-                float maxHeight = (float)speciesList[newTree.Species];
+                float actualHeight = float.Parse(pStrResPlot.StringResult);                
 
                 if (actualHeight < maxHeight / 2)
                 {
