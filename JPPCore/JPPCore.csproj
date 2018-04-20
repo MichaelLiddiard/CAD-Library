@@ -123,6 +123,7 @@
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="ClickHandler\IClickOverrideInstance.cs" />
     <Compile Include="IDrawingObject.cs" />
+    <Compile Include="ILibraryItem.cs" />
     <Compile Include="JPPMain.cs" />
     <Compile Include="Leaf.cs" />
     <Compile Include="Library.cs" />

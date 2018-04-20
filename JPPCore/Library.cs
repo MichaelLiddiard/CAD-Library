@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace JPP.Core
 {
-    public class Library<T>
+    public class Library<T> where T : ILibraryItem, new()
     {
         string root;
         public List<Branch> Tree { get; set; }
@@ -48,6 +50,18 @@ namespace JPP.Core
             }            
 
             return result;
+        }
+        
+        public T GetLeafEntity(Leaf leaf)
+        {
+            T t = new T();
+            t.LoadFrom(leaf.Name, leaf.GetDatabase());
+            return t;
+        }
+
+        public void SaveLeafEntity(string Name, T leafEntity)
+        {
+            
         }
     }        
 }

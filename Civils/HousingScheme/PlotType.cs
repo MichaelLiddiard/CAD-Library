@@ -19,7 +19,7 @@ using System.Xml.Serialization;
 namespace JPP.Civils
 {
     //TODO: Add code to check if a plot type is not currently open, and gracefully handle prompts being cancelled
-    public class PlotType
+    public class PlotType : ILibraryItem
     {
         public static PlotType CurrentOpen;
         public delegate void CurrentOpenDelegate();
@@ -563,6 +563,16 @@ namespace JPP.Civils
             }
 
             return found;
+        }
+
+        public void LoadFrom(string Name, Database from)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SaveTo(string Name, Database to)
+        {
+            throw new NotImplementedException();
         }
     }
 

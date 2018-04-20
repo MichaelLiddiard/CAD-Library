@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.DatabaseServices;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,5 +17,12 @@ namespace JPP.Core
             Path = path;
             Name = path.Split('\\').Last().Replace(".dwg", "");
         }
+
+        public Database GetDatabase()
+        {
+            Database d = new Database(false, true);
+            d.ReadDwgFile(Path, FileOpenMode.OpenForReadAndReadShare, false, null);
+            return d;
+        }                
     }
 }

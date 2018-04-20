@@ -1,4 +1,5 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
 using JPP.Core;
 using System;
 using System.Collections.Generic;
@@ -78,15 +79,21 @@ namespace JPP.Civils
             if(libraryTree.SelectedItem is Leaf)
             {
                 Leaf selected = libraryTree.SelectedItem as Leaf;
-                
+                using (Database source = selected.GetDatabase())
+                {
+                    Database target = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.CurrentDocument.Database;
+                    //PlotType.Transfer(selected.Name, target, source);
+                    PlotType sourceType = Civils.Main.ptLibrary.GetLeafEntity(selected);
+                    sourceType.SaveTo(selected.Name, target);
+                }
             }
-
-            
+            MessageBox.Show("Please select a valid item to load");
         }
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-
+            PlotType instance = plotTypeGrid.SelectedItem as PlotType;
+            Civils.Main.ptLibrary.SaveLeafEntity(instance.PlotTypeName, instance);            
         }
     }
 }
