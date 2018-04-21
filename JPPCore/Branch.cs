@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,8 +11,8 @@ namespace JPP.Core
     {
         public string Path { get; set; }
         public string Name { get; set; }
-        public List<Branch> ChildBranches { get; set; }
-        public List<Leaf> Children { get; set; }
+        public ObservableCollection<Branch> ChildBranches { get; set; }
+        public ObservableCollection<Leaf> Children { get; set; }
 
         public List<object> Combined
         {
@@ -29,8 +30,8 @@ namespace JPP.Core
             Path = path;
             Name = path.Split('\\').Last(); ;
 
-            ChildBranches = new List<Branch>();
-            Children = new List<Leaf>();
+            ChildBranches = new ObservableCollection<Branch>();
+            Children = new ObservableCollection<Leaf>();
         }
     }
 }

@@ -27,7 +27,7 @@ namespace JPP.Civils
         {
             InitializeComponent();
             PlotType.OnCurrentOpenChanged += PlotType_OnCurrentOpenChanged;
-            libraryTree.ItemsSource = Civils.Main.ptLibrary.Tree;            
+            libraryTree.ItemsSource = Civils.Main.ptLibrary.Tree;                     
         }
 
         private void PlotType_OnCurrentOpenChanged()
@@ -94,6 +94,25 @@ namespace JPP.Civils
         {
             PlotType instance = plotTypeGrid.SelectedItem as PlotType;
             Civils.Main.ptLibrary.SaveLeafEntity(instance.PlotTypeName, instance);            
+        }
+
+        private void plotTypeGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(Civils.Main.ptLibrary.Tree.Count > 0)
+            {
+                saveButton.IsEnabled = true;
+            }
+        }
+
+        private void libraryTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (libraryTree.SelectedItem is Leaf)
+            {
+                loadButton.IsEnabled = true;
+            } else
+            {
+                loadButton.IsEnabled = false;
+            }
         }
     }
 }

@@ -12,7 +12,7 @@
                             <Setter Property="BorderBrush" TargetName="border" Value="#333333"/>
                             <Setter Property="Background" TargetName="border" Value="#787878"/>
                         </Trigger>
-                    </ControlTemplate.Triggers>                    
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -30,7 +30,7 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-    
+
     <!-- Grid -->
     <Style TargetType="Grid">
         <Setter Property="Background" Value="#FF5C5C5C"/>
@@ -115,14 +115,14 @@
     <Style TargetType="DataGrid">
         <Setter Property="Background" Value="#FF5C5C5C" />
         <Setter Property="BorderBrush" Value="#FF333333" />
-        <Setter Property="Foreground" Value="White" />        
+        <Setter Property="Foreground" Value="White" />
     </Style>
 
     <!-- StackPanel -->
     <Style TargetType="StackPanel">
         <Setter Property="Background" Value="#FF5C5C5C" />
     </Style>
-    
+
     <!-- DataGridColumnHeader -->
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="Background" Value="#FF525252" />
@@ -135,9 +135,23 @@
     <!-- DataGridCell -->
     <Style TargetType="DataGridCell">
         <Setter Property="Foreground" Value="Black" />
-    </Style>
+    </Style>   
 
+    <!--TreeView-->
     <Style TargetType="TreeView">
         <Setter Property="Background" Value="#FF5C5C5C" />
+        <Setter Property="BorderBrush" Value="#FF333333" />
+        <Style.Triggers>
+            <Trigger Property="HasItems" Value="False">
+                <Setter Property="Background" Value="White" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TreeView">
+                            <TextBlock Text="Library is currently unavailable. If this issue persists please contact your administrator" VerticalAlignment="Center" HorizontalAlignment="Center" Width="225" TextWrapping="Wrap" TextAlignment="Center"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 </ResourceDictionary>

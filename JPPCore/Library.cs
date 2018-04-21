@@ -2,6 +2,7 @@
 using Autodesk.AutoCAD.DatabaseServices;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ namespace JPP.Core
     public class Library<T> where T : ILibraryItem, new()
     {
         string root;
-        public List<Branch> Tree { get; set; }
+        public ObservableCollection<Branch> Tree { get; set; }
 
         public Library(string basePath)
         {
@@ -21,17 +22,17 @@ namespace JPP.Core
         }
 
         public void Update()
-        {
-            if (!Directory.Exists(root))
+        {            
+            if (Directory.Exists(root))
             {
-                Directory.CreateDirectory(root);
-            }
-            Tree = Recurse(root);
+                //Directory.CreateDirectory(root);
+                Tree = Recurse(root);
+            }            
         }
 
-        private List<Branch> Recurse(string directory)
+        private ObservableCollection<Branch> Recurse(string directory)
         {
-            List<Branch> result = new List<Branch>();
+            ObservableCollection<Branch> result = new ObservableCollection<Branch>();
 
             var dir = Directory.EnumerateDirectories(directory);
             foreach(string s in dir)
