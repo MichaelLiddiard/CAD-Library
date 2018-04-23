@@ -971,6 +971,7 @@ namespace JPP.Civils
             {
                 //Back to start
                 nextSegment.External = true;
+                nextJoint.Type = JointType.ExternalCorner;
             }
             else
             {
@@ -985,7 +986,7 @@ namespace JPP.Civils
 
             Area = 0.5d * (one.X * (two.Y - three.Y) + two.X * (three.Y - one.Y) + three.X * (one.Y - two.Y));
 
-            return Area == 0;
+            return Math.Abs(Area) < 0.01;
         }
 
         /// <summary>

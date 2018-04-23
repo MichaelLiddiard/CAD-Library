@@ -28,7 +28,7 @@
         <StackPanel>
             <!--Additional content here for fill-->
             <Label Content="Finished Floor Level:"/>
-            <TextBox Height="23" TextWrapping="Wrap" Text="{Binding FFL, StringFormat=N3}" Width="120" HorizontalAlignment="Left" Margin="5,0,0,0"/>
+            <TextBox Height="23" TextWrapping="Wrap" Text="{Binding FinishedFloorLevel, StringFormat=N3}" Width="120" HorizontalAlignment="Left" Margin="5,0,0,0"/>
             <Label Content="Estimated Cut and Fill Volume:"/>
             <TextBox Height="23" TextWrapping="Wrap" Text="" Width="120" HorizontalAlignment="Left" Margin="5,0,0,0" IsReadOnly="True"/>
         </StackPanel>
