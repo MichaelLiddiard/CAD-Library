@@ -139,6 +139,9 @@
     <Compile Include="Drainage\Node.cs" />
     <Compile Include="HousingScheme\PlotStatusConverter.cs" />
     <Compile Include="LevelClickHandler.cs" />
+    <Compile Include="HousingScheme\PlotDetailWindow.xaml.cs">
+      <DependentUpon>PlotDetailWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="PolylineUtilities.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Pipe.cs" />
@@ -225,6 +228,10 @@
     <Page Include="HousingScheme\PlotUserControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="HousingScheme\PlotDetailWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>

@@ -70,6 +70,16 @@ namespace JPP.Civils
             }
         }
 
+        private void resultDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender != null)
+            {                
+                PlotDetailWindow plotDetailWindow = new PlotDetailWindow();
+                plotDetailWindow.DataContext = dataGrid.SelectedItem;
+                plotDetailWindow.Show();
+            }
+        }
+
         [CommandMethod("NewPlot")]
         public static void NewPlot()
         {          

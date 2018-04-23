@@ -31,6 +31,11 @@
         </Style.Triggers>
     </Style>
 
+    <!-- DockPanel -->
+    <Style TargetType="DockPanel">
+        <Setter Property="Background" Value="#FF5C5C5C"/>
+    </Style>
+    
     <!-- Grid -->
     <Style TargetType="Grid">
         <Setter Property="Background" Value="#FF5C5C5C"/>

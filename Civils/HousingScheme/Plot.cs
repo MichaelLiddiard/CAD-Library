@@ -129,7 +129,7 @@ namespace JPP.Civils
         Dictionary<Point3d, AccessPoint> AccessLookup;
 
         public PlotStatus Status { get; set; }
-        public string StatusMessage;
+        public string StatusMessage { get; set; }
 
         /// <summary>
         /// Create a new, empty plot. Constructor required for deserialization, not recommended for use

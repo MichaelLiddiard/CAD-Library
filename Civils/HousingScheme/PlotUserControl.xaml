@@ -14,10 +14,15 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <DataGrid x:Name="dataGrid" Margin="10,36,10,10" ItemsSource="{Binding}" AutoGenerateColumns="False" CanUserAddRows="False" RowEditEnding="dataGrid_RowEditEnding">
+        <DataGrid x:Name="dataGrid" Margin="10,36,10,10" AutoGenerateColumns="False" CanUserAddRows="False" RowEditEnding="dataGrid_RowEditEnding">
             <DataGrid.Resources>                
                 <local:PlotStatusConverter x:Key="statusconverter" />
             </DataGrid.Resources>
+            <DataGrid.RowStyle>
+                <Style TargetType="{x:Type DataGridRow}">
+                    <EventSetter Event="MouseDoubleClick" Handler="resultDataGrid_MouseDoubleClick"/>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Plot Name" Binding="{Binding PlotName, UpdateSourceTrigger=PropertyChanged}" Width="0.5*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Plot Type" Binding="{Binding PlotTypeId, UpdateSourceTrigger=PropertyChanged}" Width="0.3*" IsReadOnly="True"/>
