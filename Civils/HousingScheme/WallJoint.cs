@@ -203,20 +203,28 @@ namespace JPP.Civils
 
         public int Courses()
         {
-            if (Level - ExternalLevel <= 0.15 && Level - ExternalLevel >= 0)
+            if (Type != JointType.AccessPoint)
+            {
+                //TODO: Increased by 1mm to remove aread. Check if actually ok to do so
+                if (Level - ExternalLevel <= 0.151f)// && Level - ExternalLevel >= 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    double courses = (Level - ExternalLevel - 0.15d) / 0.075d;
+                    if (courses > 0)
+                    {
+                        return (int)Math.Ceiling(courses);
+                    }
+                    else
+                    {
+                        return (int)Math.Floor(courses);
+                    }
+                }
+            } else
             {
                 return 0;
-            }
-            else
-            {
-                double courses = (Level - ExternalLevel - 0.15) / 75;
-                if(courses > 0)
-                {
-                    return (int) Math.Ceiling(courses);
-                } else
-                {
-                    return (int)Math.Floor(courses);
-                }
             }
         }        
     }

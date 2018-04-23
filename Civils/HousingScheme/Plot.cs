@@ -19,6 +19,7 @@ using System.Xml.Serialization;
 using CivSurface = Autodesk.Civil.DatabaseServices.Surface;
 using Entity = Autodesk.AutoCAD.DatabaseServices.Entity;
 using DBObject = Autodesk.AutoCAD.DatabaseServices.DBObject;
+using Autodesk.Civil;
 
 namespace JPP.Civils
 {
@@ -199,7 +200,7 @@ namespace JPP.Civils
             bool hatchActive = false;
 
             //Iterate around perimeter
-            for (int i = startIndex; i < PerimeterPath.Count + startIndex; i++)
+            for (int i = startIndex; i <= PerimeterPath.Count + startIndex; i++)
             {
                 int index;
                 if(i >= PerimeterPath.Count)
@@ -216,7 +217,14 @@ namespace JPP.Civils
                     if(!hatchActive)
                     {                                                  
                         hatchActive = true;
-                        hatchBoundaryPoints.Add(PerimeterPath[index - 1].Point);
+                        if (index == 0)
+                        {
+                            hatchBoundaryPoints.Add(PerimeterPath[PerimeterPath.Count - 1].Point);
+                        }
+                        else
+                        {
+                            hatchBoundaryPoints.Add(PerimeterPath[index - 1].Point);
+                        }
                     }
                     hatchBoundaryPoints.Add(PerimeterPath[index].Point);
                     if (PerimeterPath[index].Courses() > 0)
@@ -429,23 +437,37 @@ namespace JPP.Civils
             }
 
             double maxLevel = double.NegativeInfinity;
-            foreach (WallJoint wj in Joints)
+            if (proposedGround != null)
             {
-                if (proposedGround != null)
+                try
                 {
-                    wj.ExternalLevel = proposedGround.FindElevationAtXY(wj.Point.X, wj.Point.Y);
-                    if(wj.ExternalLevel > maxLevel)
+                    foreach (WallJoint wj in Joints)
                     {
-                        maxLevel = wj.ExternalLevel;
+                        wj.ExternalLevel = Math.Round(proposedGround.FindElevationAtXY(wj.Point.X, wj.Point.Y) * 1000) / 1000;
+                        if (wj.ExternalLevel > maxLevel)
+                        {
+                            maxLevel = wj.ExternalLevel;
+                        }
                     }
-                }                        
-            }
+                }
+                catch (PointNotOnEntityException e)
+                {
+                    maxLevel = -0.15;
+                    this.Status = PlotStatus.Error;
+                    this.StatusMessage = "Plot has points not on proposed ground model";
+                }
 
-            if(maxLevel == double.NegativeInfinity)
+                if (maxLevel == double.NegativeInfinity)
+                {
+                    maxLevel = -0.15;
+                    this.Status = PlotStatus.Error;
+                    this.StatusMessage = "Surface elevations not found correctly";
+                }
+            } else
             {
                 maxLevel = -0.15;
                 this.Status = PlotStatus.Error;
-                this.StatusMessage = "Plot not on proposed ground model or ground model not found";
+                this.StatusMessage = "Proposed Ground model not found";
             }
 
             this.FinishedFloorLevel = Math.Round(maxLevel * 1000) / 1000 + 0.15;
@@ -670,7 +692,10 @@ namespace JPP.Civils
         /// <exception cref="ArgumentOutOfRangeException"> An ArugmentOutOfRageException is thrown when a matching wall segment in the plot type isnt found or is duplicated </exception>
         /// </summary>
         public void Generate()
-        { 
+        {
+            Status = PlotStatus.ForApproval;
+            StatusMessage = "Plot generated successfully";
+
             Database acCurDb;
             acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
 
@@ -830,7 +855,9 @@ namespace JPP.Civils
 
             PerimeterPath = new List<WallJoint>();
             PerimeterPath.Add(startNode);
-            TraverseExternalSegment(startSegment, nextNode, startNode);            
+            TraverseExternalSegment(startSegment, nextNode, startNode);
+            //Remove the last point
+            PerimeterPath.RemoveAt(PerimeterPath.Count - 1);
 
             //GENERATE SUB ELEMENTS
 
@@ -845,10 +872,7 @@ namespace JPP.Civils
                 GetFFLfromSurface();                
             }
 
-            Update();
-
-            Status = PlotStatus.ForApproval;
-            StatusMessage = "Plot generated successfully";
+            Update();            
 
             /*Polyline acPline = entToAdd as Polyline;
             foreach (AccessPoint ap in PlotType.AccessPoints)
