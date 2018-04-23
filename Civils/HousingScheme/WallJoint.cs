@@ -77,6 +77,8 @@ namespace JPP.Civils
         [XmlIgnore]
         private List<SegmentConnection> Segments;
 
+        public JointType Type { get; set; }
+
         public double ExternalLevel { get; set; }
         public bool IsAbsoluteLevel { get; set; }
         public double RelativeOffset { get; set; }
@@ -142,20 +144,23 @@ namespace JPP.Civils
 
         public void Generate(double Rotation)
         {
-            Database acCurDb = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database;
-            Transaction trans = acCurDb.TransactionManager.TopTransaction;
-
-            this.LevelLabel = Core.Utilities.InsertBlock(Point, Rotation, "ProposedLevel");
-            BlockReference acBlkTblRec = trans.GetObject(this.LevelLabel, OpenMode.ForRead) as BlockReference;
-            foreach (ObjectId attId in acBlkTblRec.AttributeCollection)
+            if (Type == JointType.ExternalCorner || Type == JointType.AccessPoint)
             {
-                AttributeReference attDef = trans.GetObject(attId, OpenMode.ForWrite) as AttributeReference;
+                Database acCurDb = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database;
+                Transaction trans = acCurDb.TransactionManager.TopTransaction;
 
-                if (attDef.Tag == "LEVEL")
+                this.LevelLabel = Core.Utilities.InsertBlock(Point, Rotation, "ProposedLevel");
+                BlockReference acBlkTblRec = trans.GetObject(this.LevelLabel, OpenMode.ForRead) as BlockReference;
+                foreach (ObjectId attId in acBlkTblRec.AttributeCollection)
                 {
-                    this.LabelText = attDef.ObjectId;
-                    //Set to level offset otherwise event handler overrides
-                    attDef.TextString = ExternalLevel.ToString("F3");
+                    AttributeReference attDef = trans.GetObject(attId, OpenMode.ForWrite) as AttributeReference;
+
+                    if (attDef.Tag == "LEVEL")
+                    {
+                        this.LabelText = attDef.ObjectId;
+                        //Set to level offset otherwise event handler overrides
+                        attDef.TextString = ExternalLevel.ToString("F3");
+                    }
                 }
             }
         }
@@ -213,6 +218,14 @@ namespace JPP.Civils
                     return (int)Math.Floor(courses);
                 }
             }
-        }
+        }        
+    }
+
+    public enum JointType
+    {
+        Internal,
+        ExternalCorner,
+        ExternalIntermediate,
+        AccessPoint
     }
 }

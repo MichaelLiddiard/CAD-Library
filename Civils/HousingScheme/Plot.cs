@@ -939,10 +939,11 @@ namespace JPP.Civils
 
         private void TraverseExternalSegment(WallSegment currentSegment, WallJoint currentNode, WallJoint startNode)
         {
-            currentSegment.External = true;
+            currentSegment.External = true;            
             PerimeterPath.Add(currentNode);
             //Get next
-            WallSegment nextSegment = currentNode.NextClockwise(currentSegment);
+            WallSegment nextSegment = currentNode.NextClockwise(currentSegment);                       
+
             WallJoint nextJoint;
             if(nextSegment.StartPoint.IsEqualTo(currentNode.Point))
             {
@@ -951,16 +952,40 @@ namespace JPP.Civils
             {
                 nextJoint = nextSegment.StartJoint;
             }
-            
-            if(nextJoint.Point.IsEqualTo(startNode.Point))
+
+            if (currentNode.Type == JointType.Internal)
+            {
+                if (Collinear(currentSegment.StartPoint, currentSegment.EndPoint, nextJoint.Point))
+                {
+                    //Check if on line    
+                    currentNode.Type = JointType.ExternalIntermediate;
+
+                }
+                else
+                {
+                    currentNode.Type = JointType.ExternalCorner;
+                }
+            }
+
+            if (nextJoint.Point.IsEqualTo(startNode.Point))
             {
                 //Back to start
-                nextSegment.External = true;                
-            } else
+                nextSegment.External = true;
+            }
+            else
             {
                 TraverseExternalSegment(nextSegment, nextJoint, startNode);
             }
             
+        }
+
+        private bool Collinear(Point3d one, Point3d two, Point3d three)
+        {
+            double Area = 0;
+
+            Area = 0.5d * (one.X * (two.Y - three.Y) + two.X * (three.Y - one.Y) + three.X * (one.Y - two.Y));
+
+            return Area == 0;
         }
 
         /// <summary>
@@ -995,10 +1020,12 @@ namespace JPP.Civils
                 newWj.Point = newSegment.StartPoint;
                 newSegment.StartJoint = newWj;
                 newWj.AddWallSegment(newSegment);
+                newWj.Type = JointType.Internal;
 
                 if(AccessLookup.ContainsKey(newWj.Point))
                 {
                     newWj.RelativeOffset = AccessLookup[newWj.Point].Offset;
+                    newWj.Type = JointType.AccessPoint;
                 }
 
                 Joints.Add(newWj);
@@ -1010,10 +1037,12 @@ namespace JPP.Civils
                 newWj.Point = newSegment.EndPoint;
                 newSegment.EndJoint = newWj;
                 newWj.AddWallSegment(newSegment);
+                newWj.Type = JointType.Internal;
 
                 if (AccessLookup.ContainsKey(newWj.Point))
                 {
                     newWj.RelativeOffset = AccessLookup[newWj.Point].Offset;
+                    newWj.Type = JointType.AccessPoint;
                 }
 
                 Joints.Add(newWj);
