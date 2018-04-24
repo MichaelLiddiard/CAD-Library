@@ -60,9 +60,11 @@ namespace JPP.Core
             return t;
         }
 
-        public void SaveLeafEntity(string Name, T leafEntity)
+        public void SaveLeafEntity(string Name, T leafEntity, Branch parent)
         {
-            
+            Database target = new Database(true, false);
+            leafEntity.SaveTo(Name, target);
+            target.SaveAs(parent.Path + Name + ".dwg", DwgVersion.Newest);
         }
     }        
 }

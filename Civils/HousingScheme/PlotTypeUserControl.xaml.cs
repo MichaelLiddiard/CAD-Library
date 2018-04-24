@@ -93,7 +93,7 @@ namespace JPP.Civils
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
             PlotType instance = plotTypeGrid.SelectedItem as PlotType;
-            Civils.Main.ptLibrary.SaveLeafEntity(instance.PlotTypeName, instance);            
+            Civils.Main.ptLibrary.SaveLeafEntity(instance.PlotTypeName, instance, (libraryTree.SelectedItem as Branch));            
         }
 
         private void plotTypeGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -109,9 +109,14 @@ namespace JPP.Civils
             if (libraryTree.SelectedItem is Leaf)
             {
                 loadButton.IsEnabled = true;
+                saveButton.IsEnabled = false;
             } else
             {
                 loadButton.IsEnabled = false;
+                if(Civils.Main.ptLibrary.Tree.Count > 0)
+                {
+                    saveButton.IsEnabled = true;
+                }
             }
         }
     }
