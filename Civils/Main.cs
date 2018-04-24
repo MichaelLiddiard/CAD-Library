@@ -42,6 +42,7 @@ namespace JPP.Civils
         /// </summary>
         public void Initialize()
         {
+            Logger.Log("Loading Civil module...");
             ptLibrary = new Library<PlotType>("M:\\ML\\CAD-Library\\Library\\PlotTypes");
 
             //Add the menu options
@@ -192,6 +193,7 @@ namespace JPP.Civils
 
             JPPTab.Panels.Add(Panel);
             JPPTab.Panels.Add(utilitiesPanel);
+            Logger.Log("UI created\n", Logger.Severity.Debug);
             //JPPTab.Panels.Add(fflPanel);
 
             _ps = new PaletteSet("JPP", new Guid("8bc0c89e-3be0-4e30-975e-1a4e09cb0524"));
@@ -225,7 +227,7 @@ namespace JPP.Civils
 
             //Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.DocumentActivationChanged += DocumentManager_DocumentActivationChanged;
             Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.DocumentActivated += PlotButton_CheckStateChanged;
-
+            Logger.Log("Dock created\n", Logger.Severity.Debug);
 
             //Throws exception
             //JPPCommandsInitialisation.JPPCommandsInitialise();
@@ -240,13 +242,23 @@ namespace JPP.Civils
             {
                 C3DActive = false;
             }
+            Logger.Log("Civil 3d checked\n", Logger.Severity.Debug);
 
-            //Added registered simble for XData
-            AddRegAppTableRecord();            
+
+            Autodesk.AutoCAD.ApplicationServices.Application.Idle += Application_Idle;
 
             //Load click overrides
             //TODO: Fix and re-enable
             //ClickOverride.Current.Add(new LevelClickHandler());
+            Logger.Log("Civil module loaded.\n");
+        }
+
+        private void Application_Idle(object sender, EventArgs e)
+        {
+            Autodesk.AutoCAD.ApplicationServices.Application.Idle -= Application_Idle;
+            //Added registered simble for XData
+            AddRegAppTableRecord();
+            Logger.Log("Registered civil symbols\n", Logger.Severity.Debug);
         }
 
         /// <summary>
@@ -369,26 +381,38 @@ namespace JPP.Civils
 
         static void AddRegAppTableRecord()
         {
-
-            Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            Editor ed = doc.Editor;
-
-            Database db = doc.Database;
-
-            using (Transaction tr = doc.TransactionManager.StartTransaction())
+            try
             {
+                Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+                Editor ed = doc.Editor;
 
-                RegAppTable rat = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead, false);
+                Database db = doc.Database;
 
-                if (!rat.Has("JPP"))
+                using (var Lock = doc.LockDocument())
                 {
-                    rat.UpgradeOpen();
-                    RegAppTableRecord ratr = new RegAppTableRecord();
-                    ratr.Name = "JPP";
-                    rat.Add(ratr);
-                    tr.AddNewlyCreatedDBObject(ratr, true);
+                    using (Transaction tr = doc.TransactionManager.StartTransaction())
+                    {
+
+                        RegAppTable rat = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead, false);
+
+                        if (!rat.Has("JPP"))
+                        {
+                            rat.UpgradeOpen();
+                            RegAppTableRecord ratr = new RegAppTableRecord();
+                            ratr.Name = "JPP";
+                            rat.Add(ratr);
+                            tr.AddNewlyCreatedDBObject(ratr, true);
+                        }
+                        tr.Commit();
+                    }
                 }
-                tr.Commit();
+            } catch (Autodesk.AutoCAD.Runtime.Exception e)
+            {
+                Logger.Log("Error in registering AppTableRecord - " + e.Message + "\n");
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log("Error in registering AppTableRecord - " + e.Message + "\n");
             }
         }
     }

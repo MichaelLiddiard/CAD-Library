@@ -98,7 +98,8 @@ namespace JPP.Core
         /// Init JPP command loads all essential elements of the program, including the helper DLL files.
         /// </summary>
         public static void InitJPP()
-        {          
+        {
+            Logger.Log("Loading JPP Core...\n");
             //Create the main UI
             RibbonTab JPPTab = CreateTab();
             CreateCoreMenu(JPPTab);
@@ -155,6 +156,8 @@ namespace JPP.Core
                 };
                 autoloadPrompt.Show(Application.MainWindow.Handle);
             }
+
+            Logger.Log("JPP Core loaded.\n");
         }
 
         /// <summary>
@@ -187,9 +190,9 @@ namespace JPP.Core
 
             RibbonRowPanel stack = new RibbonRowPanel();
 
-            RibbonButton finaliseButton = Utilities.CreateButton("Finalise Drawing", Properties.Resources.package, RibbonItemSize.Standard, "Finalise");
+            /*RibbonButton finaliseButton = Utilities.CreateButton("Finalise Drawing", Properties.Resources.package, RibbonItemSize.Standard, "Finalise");
             stack.Items.Add(finaliseButton);
-            stack.Items.Add(new RibbonRowBreak());
+            stack.Items.Add(new RibbonRowBreak());*/
 
             /*RibbonButton authenticateButton = Utilities.CreateButton("Authenticate", Properties.Resources.Locked, RibbonItemSize.Standard, "");
             stack.Items.Add(authenticateButton);
