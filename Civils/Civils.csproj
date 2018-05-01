@@ -126,6 +126,7 @@
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="HousingScheme\Plot.cs" />
+    <Compile Include="HousingScheme\DrainedAreaPlotHatch.cs" />
     <Compile Include="HousingScheme\PlotHatch.cs" />
     <Compile Include="HousingScheme\PlotLevel.cs" />
     <Compile Include="HousingScheme\PlotType.cs" />

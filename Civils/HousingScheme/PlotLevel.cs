@@ -156,7 +156,7 @@ namespace JPP.Civils
                     attRef.Modified -= AttDef_Modified;
                     attRef.TextString = TextValue;
 
-                    Parent.GenerateHatching();
+                    Parent.GenerateTankingExposedHatching();
 
                     trans.Commit();
 

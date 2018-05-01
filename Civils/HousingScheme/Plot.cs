@@ -1,4 +1,5 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
+﻿
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -115,6 +116,8 @@ namespace JPP.Civils
         public ObservableCollection<PlotLevel> Level;
         public ObservableCollection<PlotHatch> Hatches;
 
+        public DrainedAreaPlotHatch DrainedAreaHatch { get; set; }
+
         public double FormationLevel { get; set; }
 
         public double FinishedFloorLevel { get; set; }
@@ -150,7 +153,7 @@ namespace JPP.Civils
         /// <summary>
         /// Removes all existing hatching and regenerates it based on current  applied levels.
         /// </summary>
-        public void GenerateHatching()
+        public void GenerateTankingExposedHatching()
         {            
             //Remove all existing hatches
             foreach(PlotHatch ph in Hatches)
@@ -942,7 +945,7 @@ namespace JPP.Civils
                     wj.Update(this.FinishedFloorLevel);
                 }
 
-                GenerateHatching();
+                GenerateTankingExposedHatching();
                 /*//Update all plot level annotations
                 foreach (PlotLevel pl in Level)
                 {
@@ -956,9 +959,31 @@ namespace JPP.Civils
                 //Generate all hatching for tanking/retaining etc
                 this.GenerateHatching();*/
 
+                //Create drained area hatch
+                GenerateDrainedAreaHatch();
+
                 //Commit the changes
                 tr.Commit();
             }
+        }
+
+        private void GenerateDrainedAreaHatch()
+        {
+            if (DrainedAreaHatch != null)
+            {
+                DrainedAreaHatch.Erase();
+            }
+            DrainedAreaHatch = new DrainedAreaPlotHatch();
+
+            Point3dCollection points = new Point3dCollection();
+
+            foreach(WallJoint wj in PerimeterPath)
+            {
+                points.Add(wj.Point);
+            }
+
+            DrainedAreaHatch.Generate(points);
+            
         }
 
         private void TraverseExternalSegment(WallSegment currentSegment, WallJoint currentNode, WallJoint startNode)

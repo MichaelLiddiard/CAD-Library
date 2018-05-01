@@ -5,5 +5,14 @@
     <Setting Name="P_Hatch_Offset" Type="System.Single" Scope="User">
       <Value Profile="(Default)">0.2</Value>
     </Setting>
+    <Setting Name="Plot_Drained_Area_Layer" Type="System.String" Scope="User">
+      <Value Profile="(Default)">JPP_Plot_Drained_Areas</Value>
+    </Setting>
+    <Setting Name="Plot_Drained_Area_Color" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">256</Value>
+    </Setting>
+    <Setting Name="Plot_Drained_Area_Pattern" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ANSI31</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
