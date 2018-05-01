@@ -165,6 +165,10 @@
     <None Include="Resources\Locked.png" />
     <None Include="Resources\settings.png" />
     <None Include="Resources\package.png" />
+    <Content Include="JPPCore.ExternalAnnotations.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="StructuralBlocks.dwg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

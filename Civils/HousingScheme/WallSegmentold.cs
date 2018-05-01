@@ -113,7 +113,7 @@ namespace JPP.Civils
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
 
-            FoundationWidth = acDoc.GetDocumentStore<CivilDocumentStore>().DefaultWidth;
+            //FoundationWidth = acDoc.GetDocumentStore<CivilDocumentStore>().DefaultWidth;
 
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {

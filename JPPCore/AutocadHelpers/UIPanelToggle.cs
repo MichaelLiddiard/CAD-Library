@@ -12,25 +12,26 @@ namespace JPP.Core
 {
     public class UIPanelToggle
     {
-        RibbonToggleButton toggleButton;
-        PaletteSet paletteSet;
+        readonly RibbonToggleButton _toggleButton;
+        readonly PaletteSet _paletteSet;
 
         public UIPanelToggle(Autodesk.Windows.RibbonRowPanel parent, Bitmap buttonImage, string buttonText, Guid panelID, Dictionary<string,UserControl> controls)
         {
-            
-            toggleButton = new RibbonToggleButton();
-            
-            toggleButton.ShowText = true;
-            toggleButton.ShowImage = true;
-            toggleButton.Text = buttonText;
-            //toggleButton.Name = "Import As Xref";
-            toggleButton.CheckStateChanged += toggleButton_CheckStateChanged;
-            toggleButton.LargeImage = Core.Utilities.LoadImage(buttonImage);
-            toggleButton.Size = RibbonItemSize.Large;
-            toggleButton.Orientation = System.Windows.Controls.Orientation.Vertical;
-            parent.Items.Add(toggleButton);
 
-            paletteSet = new PaletteSet(buttonText, panelID);
+            _toggleButton = new RibbonToggleButton
+            {
+                ShowText = true,
+                ShowImage = true,
+                Text = buttonText
+            };
+            //toggleButton.Name = "Import As Xref";
+            _toggleButton.CheckStateChanged += toggleButton_CheckStateChanged;
+            _toggleButton.LargeImage = Core.Utilities.LoadImage(buttonImage);
+            _toggleButton.Size = RibbonItemSize.Large;
+            _toggleButton.Orientation = System.Windows.Controls.Orientation.Vertical;
+            parent.Items.Add(_toggleButton);
+
+            _paletteSet = new PaletteSet(buttonText, panelID);
 
             double maxWidth = 0;
             double maxHeight = 0;
@@ -49,40 +50,40 @@ namespace JPP.Core
                 host.Dock = DockStyle.Fill;
                 host.Child = uc;
 
-                paletteSet.Add(kv.Key, host);
+                _paletteSet.Add(kv.Key, host);
             }
 
-            paletteSet.Size = new Size((int)maxWidth, (int)maxHeight);
-            paletteSet.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
-            paletteSet.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
+            _paletteSet.Size = new Size((int)maxWidth, (int)maxHeight);
+            _paletteSet.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
+            _paletteSet.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
                         
-            paletteSet.KeepFocus = false;
-            paletteSet.StateChanged += PaletteSet_StateChanged;
+            _paletteSet.KeepFocus = false;
+            _paletteSet.StateChanged += PaletteSet_StateChanged;
         }
 
         private void PaletteSet_StateChanged(object sender, PaletteSetStateEventArgs e)
         {
             if(e.NewState == StateEventIndex.Hide)
             {
-                toggleButton.CheckState = false;
+                _toggleButton.CheckState = false;
             }
         }
 
         private void toggleButton_CheckStateChanged(object sender, EventArgs e)
         {
             
-            if (toggleButton.CheckState == true)
+            if (_toggleButton.CheckState == true)
             {
                 /*if (Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument != null)
                 {
                     uc2.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().Plots;
                     uc3.DataContext = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes;
                 }*/
-                paletteSet.Visible = true;
+                _paletteSet.Visible = true;
             }
             else
             {
-                paletteSet.Visible = false;
+                _paletteSet.Visible = false;
                 /*uc2.DataContext = null;
                 uc3.DataContext = null;*/
             }

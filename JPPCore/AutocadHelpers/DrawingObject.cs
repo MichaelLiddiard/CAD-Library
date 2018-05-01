@@ -1,17 +1,18 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
+﻿using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using System;
 using System.Xml.Serialization;
+using Autodesk.AutoCAD.ApplicationServices;
+using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 
 namespace JPP.Core
 {
     public abstract class DrawingObject : IDrawingObject
     {
         [XmlIgnore]
-        DBObject activeObject;
+        DBObject _activeObject;
 
-        public long BaseObjectPtr { get; set; }
+        long BaseObjectPtr { get; set; }
 
         [XmlIgnore]
         public ObjectId BaseObject
@@ -39,27 +40,19 @@ namespace JPP.Core
         public void CreateActiveObject()
         {
             Transaction acTrans = Application.DocumentManager.MdiActiveDocument.TransactionManager.TopTransaction;
-            activeObject = acTrans.GetObject(BaseObject, OpenMode.ForWrite);
-            activeObject.Erased += ActiveObject_Erased;
-            activeObject.Modified += ActiveObject_Modified;
+            _activeObject = acTrans.GetObject(BaseObject, OpenMode.ForWrite);
+            _activeObject.Erased += ActiveObject_Erased;
+            _activeObject.Modified += ActiveObject_Modified;
         }
 
-        public abstract void ActiveObject_Modified(object sender, EventArgs e);
+        protected abstract void ActiveObject_Modified(object sender, EventArgs e);
 
-        public void ActiveObject_Erased(object sender, ObjectErasedEventArgs e)
+        void ActiveObject_Erased(object sender, ObjectErasedEventArgs e)
         {
-            _Erased = true;
+            Erased = true;
         }
 
-        bool _Erased = false;
-
-        public bool Erased
-        {
-            get
-            {
-                return _Erased;
-            }
-        }
+        public bool Erased { get; private set; }
 
         [XmlIgnore]
         public abstract Point3d Location { get; set; }
@@ -68,10 +61,5 @@ namespace JPP.Core
 
         [XmlIgnore]
         public abstract double Rotation { get; set; }
-
-        public DrawingObject()
-        {
-
-        }
     }
 }

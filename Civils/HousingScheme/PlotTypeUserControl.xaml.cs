@@ -27,7 +27,7 @@ namespace JPP.Civils
         {
             InitializeComponent();
             PlotType.OnCurrentOpenChanged += PlotType_OnCurrentOpenChanged;
-            libraryTree.ItemsSource = Civils.Main.ptLibrary.Tree;                     
+            libraryTree.ItemsSource = Civils.Main.PtLibrary.Tree;                     
         }
 
         private void PlotType_OnCurrentOpenChanged()
@@ -83,7 +83,7 @@ namespace JPP.Civils
                 {
                     Database target = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.CurrentDocument.Database;
                     //PlotType.Transfer(selected.Name, target, source);
-                    PlotType sourceType = Civils.Main.ptLibrary.GetLeafEntity(selected);
+                    PlotType sourceType = Civils.Main.PtLibrary.GetLeafEntity(selected);
                     sourceType.SaveTo(selected.Name, target);
                 }
             }
@@ -93,12 +93,12 @@ namespace JPP.Civils
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
             PlotType instance = plotTypeGrid.SelectedItem as PlotType;
-            Civils.Main.ptLibrary.SaveLeafEntity(instance.PlotTypeName, instance, (libraryTree.SelectedItem as Branch));            
+            Civils.Main.PtLibrary.SaveLeafEntity(instance.PlotTypeName, instance, (libraryTree.SelectedItem as Branch));            
         }
 
         private void plotTypeGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if(Civils.Main.ptLibrary.Tree.Count > 0)
+            if(Civils.Main.PtLibrary.Tree.Count > 0)
             {
                 saveButton.IsEnabled = true;
             }
@@ -113,7 +113,7 @@ namespace JPP.Civils
             } else
             {
                 loadButton.IsEnabled = false;
-                if(Civils.Main.ptLibrary.Tree.Count > 0)
+                if(Civils.Main.PtLibrary.Tree.Count > 0)
                 {
                     saveButton.IsEnabled = true;
                 }
