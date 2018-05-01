@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.Windows;
@@ -18,7 +14,6 @@ using System.Windows.Forms;
 
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Diagnostics;
-using System.Configuration;
 
 [assembly: ExtensionApplication(typeof(JPP.Core.JPPMain))]
 [assembly: CommandClass(typeof(JPP.Core.JPPMain))]
@@ -35,12 +30,12 @@ namespace JPP.Core
         /// <summary>
         /// PaletteSet containing the settings window
         /// </summary>
-        private static PaletteSet settingsWindow;
+        private static PaletteSet _settingsWindow;
 
         /// <summary>
         /// Ribon toggle button for displaying settings window
         /// </summary>
-        private static RibbonToggleButton settingsButton;
+        private static RibbonToggleButton _settingsButton;
 
         /// <summary>
         /// Keep a reference to handler to prevent GC
@@ -112,17 +107,17 @@ namespace JPP.Core
 
             //Create settings window
             //TODO: move common window creation code to utilities method
-            settingsWindow = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
-            settingsWindow.Size = new Size(600, 800);
-            settingsWindow.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
-            settingsWindow.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
+            _settingsWindow = new PaletteSet("JPP", new Guid("9dc86012-b4b2-49dd-81e2-ba3f84fdf7e3"));
+            _settingsWindow.Size = new Size(600, 800);
+            _settingsWindow.Style = (PaletteSetStyles)((int)PaletteSetStyles.ShowAutoHideButton + (int)PaletteSetStyles.ShowCloseButton);
+            _settingsWindow.DockEnabled = (DockSides)((int)DockSides.Left + (int)DockSides.Right);
                         
             ElementHost settingsWindowHost = new ElementHost();
             settingsWindowHost.AutoSize = true;
             settingsWindowHost.Dock = DockStyle.Fill;
             settingsWindowHost.Child = new SettingsUserControl();
-            settingsWindow.Add("Settings", settingsWindowHost);
-            settingsWindow.KeepFocus = false;
+            _settingsWindow.Add("Settings", settingsWindowHost);
+            _settingsWindow.KeepFocus = false;
 
             //Load click handler;
             ClickOverride = ClickOverride.Current;
@@ -170,9 +165,9 @@ namespace JPP.Core
             RibbonTab JPPTab = new RibbonTab();
 
             //Pull names from constant file as used in all subsequent DLL's
-            JPPTab.Name = Constants.JPP_Tab_Title;
-            JPPTab.Title = Constants.JPP_Tab_Title;
-            JPPTab.Id = Constants.JPP_Tab_ID;
+            JPPTab.Name = Constants.Jpp_Tab_Title;
+            JPPTab.Title = Constants.Jpp_Tab_Title;
+            JPPTab.Id = Constants.Jpp_Tab_Id;
 
             rc.Tabs.Add(JPPTab);
             return JPPTab;
@@ -199,16 +194,16 @@ namespace JPP.Core
             stack.Items.Add(new RibbonRowBreak());*/
 
             //Create the button used to toggle the settings on or off
-            settingsButton = new RibbonToggleButton();//Utilities.CreateButton("Settings", Properties.Resources.settings, RibbonItemSize.Standard, "");            
-            settingsButton.ShowText = true;
-            settingsButton.ShowImage = true;
-            settingsButton.Text = "Settings";
-            settingsButton.Name = "Display the settings window";
-            settingsButton.CheckStateChanged += settingsButton_CheckStateChanged;
-            settingsButton.Image = Core.Utilities.LoadImage(Properties.Resources.settings);
-            settingsButton.Size = RibbonItemSize.Standard;
-            settingsButton.Orientation = System.Windows.Controls.Orientation.Horizontal;
-            stack.Items.Add(settingsButton);
+            _settingsButton = new RibbonToggleButton();//Utilities.CreateButton("Settings", Properties.Resources.settings, RibbonItemSize.Standard, "");            
+            _settingsButton.ShowText = true;
+            _settingsButton.ShowImage = true;
+            _settingsButton.Text = "Settings";
+            _settingsButton.Name = "Display the settings window";
+            _settingsButton.CheckStateChanged += settingsButton_CheckStateChanged;
+            _settingsButton.Image = Core.Utilities.LoadImage(Properties.Resources.settings);
+            _settingsButton.Size = RibbonItemSize.Standard;
+            _settingsButton.Orientation = System.Windows.Controls.Orientation.Horizontal;
+            stack.Items.Add(_settingsButton);
             stack.Items.Add(new RibbonRowBreak());
 
             //Add the new tab section to the main tab
@@ -219,12 +214,12 @@ namespace JPP.Core
 
         private static void settingsButton_CheckStateChanged(object sender, EventArgs e)
         {
-            if(settingsButton.CheckState == true)
+            if(_settingsButton.CheckState == true)
             {
-                settingsWindow.Visible = true;
+                _settingsWindow.Visible = true;
             } else
             {
-                settingsWindow.Visible = false;
+                _settingsWindow.Visible = false;
             }
         }
         #endregion

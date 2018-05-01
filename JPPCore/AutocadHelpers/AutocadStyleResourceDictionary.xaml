@@ -68,44 +68,19 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="4"/>
                         </Grid.RowDefinitions>
-                        <Border CornerRadius="4"
-                  Grid.Row="1"
-                  Grid.RowSpan="3"
-                  Grid.Column="0"
-                  Grid.ColumnSpan="4"
-                  BorderThickness="{TemplateBinding BorderThickness}"
-                  BorderBrush="Transparent"
-                  Background="{TemplateBinding Background}"/>
-                        <!-- ContentPresenter for the header -->
-                        <Border x:Name="Header"
-                  Padding="6,0,6,0"
-                  Grid.Row="0"
-                  Grid.RowSpan="2"
-                  Grid.Column="1">
-                            <ContentPresenter ContentSource="Header" 
-                              RecognizesAccessKey="True" />
+                        <Border CornerRadius="4" Grid.Row="1" Grid.RowSpan="3" Grid.Column="0" Grid.ColumnSpan="4" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="Transparent" Background="{TemplateBinding Background}"/>
+                            <!-- ContentPresenter for the header -->
+                            <Border x:Name="Header" Padding="6,0,6,0" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"> <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" />
                         </Border>
                         <!-- Primary content for GroupBox -->
-                        <ContentPresenter Grid.Row="2"
-                            Grid.Column="1"
-                            Grid.ColumnSpan="2"
-                            Margin="{TemplateBinding Padding}"/>
-                        <Border CornerRadius="0"
-                  Grid.Row="1"
-                  Grid.RowSpan="3"
-                  Grid.ColumnSpan="4"
-                  BorderThickness="{TemplateBinding BorderThickness}"
-                  BorderBrush="{TemplateBinding BorderBrush}">
+                        <ContentPresenter Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="{TemplateBinding Padding}"/>
+                        <!-- ReSharper disable once Xaml.MissingGridIndex -->
+                        <Border CornerRadius="0" Grid.Row="1" Grid.RowSpan="3" Grid.ColumnSpan="4" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}">
                             <Border.OpacityMask>
-                                <MultiBinding Converter=
-                            "{StaticResource BorderGapMaskConverter}"
-                            ConverterParameter="6">
-                                    <Binding ElementName="Header"
-                         Path="ActualWidth"/>
-                                    <Binding RelativeSource="{RelativeSource Self}"
-                         Path="ActualWidth"/>
-                                    <Binding RelativeSource="{RelativeSource Self}"
-                         Path="ActualHeight"/>
+                                <MultiBinding Converter= "{StaticResource BorderGapMaskConverter}" ConverterParameter="6">
+                                    <Binding ElementName="Header" Path="ActualWidth"/>
+                                    <Binding RelativeSource="{RelativeSource Self}" Path="ActualWidth"/>
+                                    <Binding RelativeSource="{RelativeSource Self}" Path="ActualHeight"/>
                                 </MultiBinding>
                             </Border.OpacityMask>
                         </Border>

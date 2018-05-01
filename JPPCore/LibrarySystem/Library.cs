@@ -1,18 +1,13 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
-using System;
-using System.Collections.Generic;
+﻿using Autodesk.AutoCAD.DatabaseServices;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JPP.Core
 {
     public class Library<T> where T : ILibraryItem, new()
     {
         string root;
+
         public ObservableCollection<Branch> Tree { get; set; }
 
         public Library(string basePath)

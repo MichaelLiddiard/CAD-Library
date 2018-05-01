@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CivilStructures", "Structur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JPPCore-Tests", "JPPCore-Tests\JPPCore-Tests.csproj", "{CEF26888-DC95-47E2-A0BB-5D8B41FA496C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Civils-Tests", "Civils-Tests\Civils-Tests.csproj", "{3870F88B-18A1-4CB3-A429-0A7BA488BC62}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,14 @@ Global
 		{CEF26888-DC95-47E2-A0BB-5D8B41FA496C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CEF26888-DC95-47E2-A0BB-5D8B41FA496C}.Release|x64.ActiveCfg = Release|Any CPU
 		{CEF26888-DC95-47E2-A0BB-5D8B41FA496C}.Release|x64.Build.0 = Release|Any CPU
+		{3870F88B-18A1-4CB3-A429-0A7BA488BC62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3870F88B-18A1-4CB3-A429-0A7BA488BC62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3870F88B-18A1-4CB3-A429-0A7BA488BC62}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3870F88B-18A1-4CB3-A429-0A7BA488BC62}.Debug|x64.Build.0 = Debug|Any CPU
+		{3870F88B-18A1-4CB3-A429-0A7BA488BC62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3870F88B-18A1-4CB3-A429-0A7BA488BC62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3870F88B-18A1-4CB3-A429-0A7BA488BC62}.Release|x64.ActiveCfg = Release|Any CPU
+		{3870F88B-18A1-4CB3-A429-0A7BA488BC62}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

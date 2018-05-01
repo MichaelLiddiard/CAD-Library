@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.ApplicationServices;
 using System.Xml.Serialization;
+
+using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 
 namespace JPP.Core
 {
@@ -21,6 +18,10 @@ namespace JPP.Core
                 Point3d result;
                 using(Circle c = acTrans.GetObject(BaseObject, OpenMode.ForRead) as Circle)
                 {
+                    if (c == null)
+                    {
+                        throw new NullReferenceException();
+                    }
                     result = c.Center;
                 }
                 return result;

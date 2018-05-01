@@ -4,21 +4,13 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
 using Autodesk.Civil.ApplicationServices;
-using Autodesk.Civil.DatabaseServices;
-using Autodesk.Internal.Windows;
 using Autodesk.Windows;
 using JPP.Core;
 using JPPCommands;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.Integration;
-using System.Windows.Media;
 
 [assembly: ExtensionApplication(typeof(JPP.Civils.Main))]
 [assembly: CommandClass(typeof(JPP.Civils.Main))]
@@ -28,8 +20,8 @@ namespace JPP.Civils
     public class Main : IExtensionApplication
     {
         PaletteSet _ps;
-        PlotUserControl uc2;
-        PlotTypeUserControl uc3;
+        PlotUserControl _uc2;
+        PlotTypeUserControl _uc3;
 
         public static Library<PlotType> ptLibrary;
 
@@ -38,7 +30,7 @@ namespace JPP.Civils
         public static bool C3DActive;        
 
         /// <summary>
-        /// Implement the Autocad extension api to load the additional libraries we need
+        /// Implement the Autocad extension api to load the core elements of the civil api
         /// </summary>
         public void Initialize()
         {
@@ -47,13 +39,14 @@ namespace JPP.Civils
 
             //Add the menu options
             RibbonControl rc = Autodesk.Windows.ComponentManager.Ribbon;
-            RibbonTab JPPTab = rc.FindTab("JPPCORE_JPP_TAB");
-            if (JPPTab == null)
+            RibbonTab jppTab = rc.FindTab(Core.Constants.Jpp_Tab_Id);
+            if (jppTab == null)
             {
-                JPPTab = JPP.Core.JPPMain.CreateTab();
+                Logger.Log("No tabs has been created by core\n", Logger.Severity.Warning);
+                jppTab = JPP.Core.JPPMain.CreateTab();
             }
 
-            RibbonPanel Panel = new RibbonPanel();
+            RibbonPanel panel = new RibbonPanel();
             RibbonPanelSource source = new RibbonPanelSource();
             RibbonRowPanel drainagePipeStack = new RibbonRowPanel();
 
@@ -181,7 +174,7 @@ namespace JPP.Civils
 
             //Build the UI hierarchy
             source.Items.Add(drainagePipeStack);
-            Panel.Source = source;
+            panel.Source = source;
 
             utilitiesSource.Items.Add(plotStack);
             utilitiesSource.Items.Add(utilitiesStack);
@@ -191,8 +184,8 @@ namespace JPP.Civils
             fflSource.Items.Add(fflStack);
             fflPanel.Source = fflSource;
 
-            JPPTab.Panels.Add(Panel);
-            JPPTab.Panels.Add(utilitiesPanel);
+            jppTab.Panels.Add(panel);
+            jppTab.Panels.Add(utilitiesPanel);
             Logger.Log("UI created\n", Logger.Severity.Debug);
             //JPPTab.Panels.Add(fflPanel);
 
@@ -208,16 +201,16 @@ namespace JPP.Civils
             host1.Child = suc;
             _ps.Add("Settings", host1);*/
 
-            uc2 = new PlotUserControl();
+            _uc2 = new PlotUserControl();
             ElementHost host2 = new ElementHost();
             host2.AutoSize = true;
             host2.Dock = DockStyle.Fill;
-            host2.Child = uc2;
-            uc3 = new PlotTypeUserControl();
+            host2.Child = _uc2;
+            _uc3 = new PlotTypeUserControl();
             ElementHost host3 = new ElementHost();
             host3.AutoSize = true;
             host3.Dock = DockStyle.Fill;
-            host3.Child = uc3;
+            host3.Child = _uc3;
             _ps.Add("Plot Types", host3);
             _ps.Add("Plots", host2);
 
@@ -278,8 +271,8 @@ namespace JPP.Civils
         private void DocumentManager_DocumentActivationChanged(object sender, DocumentActivationChangedEventArgs e)
         {
             _ps.Visible = false;
-            uc2.DataContext = null;
-            uc3.DataContext = null;
+            _uc2.DataContext = null;
+            _uc3.DataContext = null;
         }
 
         private void PlotButton_CheckStateChanged(object sender, EventArgs e)
@@ -289,16 +282,16 @@ namespace JPP.Civils
             {
                 if (Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument != null)
                 {
-                    uc2.dataGrid.ItemsSource = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().Plots;
-                    uc3.plotTypeGrid.ItemsSource = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes;
+                    _uc2.dataGrid.ItemsSource = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().Plots;
+                    _uc3.plotTypeGrid.ItemsSource = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.GetDocumentStore<CivilDocumentStore>().PlotTypes;
                 }
                 _ps.Visible = true;
             }
             else
             {
                 _ps.Visible = false;
-                uc2.DataContext = null;
-                uc3.DataContext = null;
+                _uc2.DataContext = null;
+                _uc3.DataContext = null;
             }
         }
 

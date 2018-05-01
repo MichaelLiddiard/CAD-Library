@@ -1,13 +1,8 @@
-﻿using Autodesk.AutoCAD.Customization;
-using Autodesk.AutoCAD.Windows;
+﻿using Autodesk.AutoCAD.Windows;
 using Autodesk.Windows;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Forms.Integration;
 using RibbonToggleButton = Autodesk.Windows.RibbonToggleButton;
