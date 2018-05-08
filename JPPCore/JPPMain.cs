@@ -102,8 +102,9 @@ namespace JPP.Core
             //Load the additional DLL files, but only not if running in debug mode
             #if !DEBUG
             Update();
-            LoadModules();
             #endif
+            LoadModules();
+            
 
             //Create settings window
             //TODO: move common window creation code to utilities method
@@ -194,7 +195,7 @@ namespace JPP.Core
             stack.Items.Add(new RibbonRowBreak());*/
 
             //Create the button used to toggle the settings on or off
-            _settingsButton = new RibbonToggleButton();//Utilities.CreateButton("Settings", Properties.Resources.settings, RibbonItemSize.Standard, "");            
+            _settingsButton = new RibbonToggleButton();        
             _settingsButton.ShowText = true;
             _settingsButton.ShowImage = true;
             _settingsButton.Text = "Settings";
@@ -214,13 +215,7 @@ namespace JPP.Core
 
         private static void settingsButton_CheckStateChanged(object sender, EventArgs e)
         {
-            if(_settingsButton.CheckState == true)
-            {
-                _settingsWindow.Visible = true;
-            } else
-            {
-                _settingsWindow.Visible = false;
-            }
+            _settingsWindow.Visible = (_settingsButton.CheckState == true) ? true : false;
         }
         #endregion
 
@@ -228,10 +223,14 @@ namespace JPP.Core
         /// <summary>
         /// Find all assemblies in the subdirectory, and load them into memory
         /// </summary>
-        private static void LoadModules()
+        public static void LoadModules()
         {
             List<string> allAssemblies = new List<string>();
+#if DEBUG
+            string path = Assembly.GetExecutingAssembly().Location;
+#else
             string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\JPP Consulting\\JPP AutoCad Library";
+#endif
 
             //Check if authenticated, otherwise block the auto loading
             if (Authentication.Current.Authenticated())
@@ -355,9 +354,9 @@ namespace JPP.Core
             }
         }
 
-        #endregion
+#endregion
 
-        #region Command Methods
+#region Command Methods
 
         [CommandMethod("Finalise", CommandFlags.Session)]
         public static void Finalise()
@@ -381,10 +380,12 @@ namespace JPP.Core
             acDoc.Database.SaveAs(path, DwgVersion.Current);
             acDoc.CloseAndDiscard();
 
-            FileInfo fi = new FileInfo(path);
-            fi.IsReadOnly = true;
+            FileInfo fi = new FileInfo(path)
+            {
+                IsReadOnly = true
+            };
         }
 
-        #endregion
+#endregion
     }
 }
