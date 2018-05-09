@@ -7,6 +7,7 @@ using Autodesk.AutoCAD.Runtime;
 using JPP.Core;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 
@@ -627,7 +628,14 @@ namespace JPP.Civils
 
         public object Clone()
         {
-            PlotType clone = new PlotType();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                XmlSerializer xml = new XmlSerializer(typeof(PlotType));
+                xml.Serialize(ms, this);
+                return xml.Deserialize(ms);
+            }
+
+            /*PlotType clone = new PlotType();
             clone.BlockID = BlockID;
             clone.BackgroundBlockID = BackgroundBlockID;
             clone.BasepointID = BasepointID;
@@ -640,7 +648,7 @@ namespace JPP.Civils
             clone.BasePoint = BasePoint;
             clone.Segments = new List<WallSegment>(Segments.ToArray());
 
-            return clone;
+            return clone;*/
 
         }
     }
