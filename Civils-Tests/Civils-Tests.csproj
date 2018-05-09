@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="CivilDocumentStoreTest.cs" />
     <Compile Include="MainTest.cs" />
+    <Compile Include="PlotTypeTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
