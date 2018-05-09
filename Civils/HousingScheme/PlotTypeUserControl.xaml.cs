@@ -79,13 +79,14 @@ namespace JPP.Civils
             if(libraryTree.SelectedItem is Leaf)
             {
                 Leaf selected = libraryTree.SelectedItem as Leaf;
-                using (Database source = selected.GetDatabase())
+                Civils.Main.PtLibrary.LoadLeafEntity(selected);
+                /*using (Database source = selected.GetDatabase())
                 {
                     Database target = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.CurrentDocument.Database;
                     //PlotType.Transfer(selected.Name, target, source);
-                    PlotType sourceType = Civils.Main.PtLibrary.GetLeafEntity(selected);
-                    sourceType.SaveTo(selected.Name, target);
-                }
+                    //PlotType sourceType = Civils.Main.PtLibrary.GetLeafEntity(selected);
+                    //sourceType.SaveTo(selected.Name, target);                    
+                }*/
             }
             MessageBox.Show("Please select a valid item to load");
         }

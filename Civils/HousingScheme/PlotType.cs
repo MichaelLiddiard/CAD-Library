@@ -7,6 +7,7 @@ using Autodesk.AutoCAD.Runtime;
 using JPP.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Serialization;
 
 using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
@@ -15,7 +16,7 @@ using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 
 namespace JPP.Civils
 {
-    public class PlotType : ILibraryItem
+    public class PlotType : ILibraryItem, ICloneable
     {
         public static PlotType CurrentOpen;
         public delegate void CurrentOpenDelegate();
@@ -549,14 +550,98 @@ namespace JPP.Civils
             return found;
         }
 
-        public void LoadFrom(string Name, Database from)
+        public void Transfer(Database to, Database from)
         {
-            throw new NotImplementedException();
+            CivilDocumentStore destinationStore = to.GetDocumentStore<CivilDocumentStore>();
+            Transfer(to, from, destinationStore);
         }
 
-        public void SaveTo(string Name, Database to)
+        public ILibraryItem GetFrom(string Name, Database from)
         {
-            throw new NotImplementedException();
+            CivilDocumentStore sourceStore = from.GetDocumentStore<CivilDocumentStore>();
+            PlotType source = (from pt in sourceStore.PlotTypes where pt.PlotTypeName == Name select pt).First();
+            return source;
+        }
+
+        private void Transfer(Database to, Database from, CivilDocumentStore destinationStore)
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
+            {
+                ObjectIdCollection collection = new ObjectIdCollection();
+
+                //Generate list of objects to transfer
+                collection.Add(BackgroundBlockID);
+                collection.Add(BasepointID);
+                collection.Add(BlockID);
+
+                foreach (ObjectId accessPointLocation in AccessPointLocations.Collection)
+                {
+                    collection.Add(accessPointLocation);
+                }
+
+                foreach (WallSegment wallSegment in Segments)
+                {
+                    collection.Add(wallSegment.PerimeterLine);
+                }
+
+                IdMapping acMapping = new IdMapping();
+
+                from.DeepCloneObjects(collection, to.BlockTableId, acMapping, false);
+
+                PlotType destination = (PlotType) this.Clone();
+
+                destination.BackgroundBlockID = TranslateMapping(BackgroundBlockID, acMapping);
+                destination.BasepointID = TranslateMapping(BasepointID, acMapping);
+                destination.BlockID = TranslateMapping(BlockID, acMapping);
+
+                for (int i = 0; i < destination.AccessPointLocations.Count; i++)
+                {
+                    destination.AccessPointLocations[i] = TranslateMapping(AccessPointLocations[i], acMapping);
+                }
+
+                foreach (WallSegment wallSegment in destination.Segments)
+                {
+                    wallSegment.PerimeterLine = TranslateMapping(wallSegment.PerimeterLine, acMapping);
+                }
+
+                tr.Commit();
+                destinationStore.PlotTypes.Add(destination);
+            }
+        }
+
+        ObjectId TranslateMapping(ObjectId sourceId, IdMapping acMapping)
+        {
+            foreach (IdPair pair in acMapping)
+            {
+                if (pair.Key == sourceId)
+                {
+                    return pair.Value;
+                }
+            }
+
+            throw new ArgumentException("No cloned object found");
+        }
+
+        public object Clone()
+        {
+            PlotType clone = new PlotType();
+            clone.BlockID = BlockID;
+            clone.BackgroundBlockID = BackgroundBlockID;
+            clone.BasepointID = BasepointID;
+            clone.PlotTypeName = PlotTypeName;
+            clone.PerimeterLine = PerimeterLine;
+            
+            clone.AccessPointLocations = new PersistentObjectIdCollection();
+            clone.AccessPointLocations.Pointers = new List<long>(AccessPointLocations.Pointers.ToArray());
+            clone.AccessPoints = new List<AccessPoint>(AccessPoints.ToArray());
+            clone.BasePoint = BasePoint;
+            clone.Segments = new List<WallSegment>(Segments.ToArray());
+
+            return clone;
+
         }
     }
 

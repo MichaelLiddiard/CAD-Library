@@ -1,4 +1,5 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
 using System.Collections.ObjectModel;
 using System.IO;
 
@@ -48,17 +49,28 @@ namespace JPP.Core
             return result;
         }
         
-        public T GetLeafEntity(Leaf leaf)
+        public void LoadLeafEntity(Leaf leaf)
         {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            /*T t = new T();
+            t.Transfer();//LoadFrom(leaf.Name, leaf.GetDatabase());
+            return t;*/
+            Database source = leaf.GetDatabase();
+
             T t = new T();
-            t.LoadFrom(leaf.Name, leaf.GetDatabase());
-            return t;
+            t = (T)t.GetFrom(leaf.Name, source);
+            t.Transfer(acCurDb, source);
         }
 
         public void SaveLeafEntity(string Name, T leafEntity, Branch parent)
         {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
             Database target = new Database(true, false);
-            leafEntity.SaveTo(Name, target);
+            leafEntity.Transfer(target, acCurDb);
             target.SaveAs(parent.Path + Name + ".dwg", DwgVersion.Newest);
         }
     }        

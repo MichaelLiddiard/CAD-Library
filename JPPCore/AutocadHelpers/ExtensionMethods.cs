@@ -38,9 +38,8 @@ namespace JPP.Core
         /// Retrieve the document store to access embedded data in the specified document
         /// </summary>
         /// <typeparam name="T">Type of store to retrieve</typeparam>
-        /// <param name="doc">The document for which to retrieve embedded data</param>
         /// <returns>The requested document store. If none is found a new instance is created</returns>
-        public static T GetDocumentStore<T>(this Database db, string DocName) where T:DocumentStore
+        public static T GetDocumentStore<T>(this Database db) where T:DocumentStore
         {
             T ds = (T)Activator.CreateInstance(typeof(T));
             return ds;
