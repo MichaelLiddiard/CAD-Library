@@ -124,7 +124,7 @@ namespace JPP.Civils
             Editor acEditor = acDoc.Editor;
             Database acCurDb = acDoc.Database;
 
-            if (CurrentOpen != null)
+            if (CurrentOpen == null)
             {
                 PromptStringOptions pStrOpts = new PromptStringOptions("\nEnter plot type name: ")
                 {
@@ -172,6 +172,8 @@ namespace JPP.Civils
 
                             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
                             {
+                                Main.AddRegAppTableRecord();
+
                                 //Create all plot specific layers
                                 LayerTable acLayerTable = tr.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite) as LayerTable;
                                 Core.Utilities.CreateLayer(tr, acLayerTable, Constants.JPP_HS_PlotPerimiter, Constants.JPP_HS_PlotPerimiterColor);
@@ -255,7 +257,7 @@ namespace JPP.Civils
             Database acCurDb = acDoc.Database;
             Editor acEditor = acDoc.Editor;
 
-            if (CurrentOpen == null)
+            if (CurrentOpen != null)
             {
                 // All work will be done in the WCS so save the current UCS
                 // to restore later and set the UCS to WCS
@@ -590,7 +592,7 @@ namespace JPP.Civils
 
                 IdMapping acMapping = new IdMapping();
 
-                from.DeepCloneObjects(collection, to.BlockTableId, acMapping, false);
+                from.WblockCloneObjects(collection, to.BlockTableId, acMapping, DuplicateRecordCloning.Replace, false);
 
                 PlotType destination = (PlotType) this.Clone();
 
@@ -608,8 +610,10 @@ namespace JPP.Civils
                     wallSegment.PerimeterLine = TranslateMapping(wallSegment.PerimeterLine, acMapping);
                 }
 
-                tr.Commit();
                 destinationStore.PlotTypes.Add(destination);
+                destinationStore.Save();
+
+                tr.Commit();
             }
         }
 
@@ -632,6 +636,7 @@ namespace JPP.Civils
             {
                 XmlSerializer xml = new XmlSerializer(typeof(PlotType));
                 xml.Serialize(ms, this);
+                ms.Position = 0;
                 return xml.Deserialize(ms);
             }
 

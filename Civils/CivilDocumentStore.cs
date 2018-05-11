@@ -20,7 +20,7 @@ namespace JPP.Civils
         /// </summary>
         public ObservableCollection<PlotType> PlotTypes { get; set; }
 
-        protected override void Save()
+        public override void Save()
         {
             Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction; //Could this potentially throw an error??
@@ -41,7 +41,7 @@ namespace JPP.Civils
             base.Save();
         }
 
-        protected override void Load()
+        public override void Load()
         {
             Plots = LoadBinary<ObservableCollection<Plot>>(Constants.PlotID);
             PlotTypes = LoadBinary<ObservableCollection<PlotType>>(Constants.PlotTypeID);

@@ -68,10 +68,15 @@ namespace JPP.Core
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
+            using (DocumentLock dl = acDoc.LockDocument())
+            {
 
-            Database target = new Database(true, false);
-            leafEntity.Transfer(target, acCurDb);
-            target.SaveAs(parent.Path + Name + ".dwg", DwgVersion.Newest);
+                Database target = new Database(true, false);
+                leafEntity.Transfer(target, acCurDb);
+                target.SaveAs(parent.Path + "\\" + Name + ".dwg", DwgVersion.Newest);
+            }
+
+            Recurse(root);
         }
     }        
 }

@@ -99,9 +99,13 @@ namespace JPP.Civils
 
         private void plotTypeGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if(Civils.Main.PtLibrary.Tree.Count > 0)
+            if(Civils.Main.PtLibrary.Tree.Count > 0 && plotTypeGrid.SelectedItem != null)
             {
                 saveButton.IsEnabled = true;
+            }
+            else
+            {
+                saveButton.IsEnabled = false;
             }
         }
 
@@ -114,7 +118,7 @@ namespace JPP.Civils
             } else
             {
                 loadButton.IsEnabled = false;
-                if(Civils.Main.PtLibrary.Tree.Count > 0)
+                if(Civils.Main.PtLibrary.Tree.Count > 0 && plotTypeGrid.SelectedItem != null)
                 {
                     saveButton.IsEnabled = true;
                 }

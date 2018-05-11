@@ -290,7 +290,7 @@ namespace JPP.Civils
             throw new NotImplementedException();//JPPCommands.
         }
 
-        static void AddRegAppTableRecord()
+        public static void AddRegAppTableRecord()
         {
             try
             {

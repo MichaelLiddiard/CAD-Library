@@ -10,7 +10,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/JPPCore;component/AutocadStyleResourceDictionary.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/JPPCore;component/AutocadHelpers/AutocadStyleResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>

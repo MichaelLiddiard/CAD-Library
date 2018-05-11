@@ -16,7 +16,7 @@ namespace JPP.CivilStructures
     {
         public SiteFoundations SiteFoundations { get; set; }        
 
-        protected override void Save()
+        public override void Save()
         {
             Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction; //Could this potentially throw an error??
@@ -26,7 +26,7 @@ namespace JPP.CivilStructures
             base.Save();
         }
 
-        protected override void Load()
+        public override void Load()
         {
             Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction;

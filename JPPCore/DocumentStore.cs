@@ -35,7 +35,7 @@ namespace JPP.Core
         /// <summary>
         /// Save all fields in class
         /// </summary>
-        protected virtual void Save()
+        public virtual void Save()
         {
             //Doesnt have nay default fields to save
         }
@@ -44,7 +44,7 @@ namespace JPP.Core
         /// <summary>
         /// Load all fields in class
         /// </summary>
-        protected virtual void Load()
+        public virtual void Load()
         {
             //Doesnt have any default fields to load
         }
