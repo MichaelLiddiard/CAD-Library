@@ -56,6 +56,9 @@ namespace JPP.Civils.Drainage
         
         public void GeneratePlan(Point3d location)
         {
+            //Sort pipe connections for ease of drawing
+            var sortedPipes = from p in IncomingPipes orderby p.Angle ascending select p;
+
             DrainageNetwork.Current.Standard.VerifyManhole(this);
 
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
@@ -78,8 +81,29 @@ namespace JPP.Civils.Drainage
                 Core.Utilities.CreateLayer(tr, acLayerTable, Constants.JPP_D_PipeCentreline, Constants.JPP_D_PipeCentrelineColor);
                 Core.Utilities.CreateLayer(tr, acLayerTable, Constants.JPP_D_ManholeWall, Constants.JPP_D_ManholeWallColor);
 
-                foreach (PipeConnection pipeConnection in IncomingPipes)
+                //Outgoin line
+                Line outgoingLine = new Line(location, outgoingConnection.Location.Add(offset));
+                outgoingLine.Layer = Constants.JPP_D_PipeCentreline;
+
+                Line outgoingoffsetPlus = outgoingLine.GetOffsetCurves(outgoingConnection.Diameter / 2)[0] as Line;
+                outgoingoffsetPlus.Layer = Constants.JPP_D_PipeWalls;
+                Line outgoingoffsetMinus = outgoingLine.GetOffsetCurves(-outgoingConnection.Diameter / 2)[0] as Line;
+                outgoingoffsetMinus.Layer = Constants.JPP_D_PipeWalls;
+
+                acBlkTblRec.AppendEntity(outgoingLine);
+                tr.AddNewlyCreatedDBObject(outgoingLine, true);
+
+                acBlkTblRec.AppendEntity(outgoingoffsetMinus);
+                tr.AddNewlyCreatedDBObject(outgoingoffsetMinus, true);
+                acBlkTblRec.AppendEntity(outgoingoffsetPlus);
+                tr.AddNewlyCreatedDBObject(outgoingoffsetPlus, true);
+
+                Line lastLine = outgoingoffsetMinus;
+
+                for (int i = 0; i < sortedPipes.Count(); i++)
                 {
+                    PipeConnection pipeConnection = sortedPipes.ToArray()[i];       
+                    
                     Line newLine = new Line(location, pipeConnection.Location.Add(offset));
                     newLine.Layer = Constants.JPP_D_PipeCentreline;
 
@@ -88,6 +112,14 @@ namespace JPP.Civils.Drainage
                     Line offsetMinus = newLine.GetOffsetCurves(-pipeConnection.Diameter / 2)[0] as Line;
                     offsetMinus.Layer = Constants.JPP_D_PipeWalls;
 
+                    //Fillet
+                    Point3dCollection collection = new Point3dCollection();
+                    offsetPlus.IntersectWith(lastLine, Intersect.ExtendBoth, collection, IntPtr.Zero, IntPtr.Zero);
+
+                    Point3d Intersection = collection[0];
+                    lastLine.StartPoint = Intersection;
+                    offsetPlus.StartPoint = Intersection;
+
                     acBlkTblRec.AppendEntity(newLine);
                     tr.AddNewlyCreatedDBObject(newLine, true);
 
@@ -95,7 +127,18 @@ namespace JPP.Civils.Drainage
                     tr.AddNewlyCreatedDBObject(offsetMinus, true);
                     acBlkTblRec.AppendEntity(offsetPlus);
                     tr.AddNewlyCreatedDBObject(offsetPlus, true);
+
+                    lastLine = offsetMinus;
+
                 }
+
+                Point3dCollection lastCollection = new Point3dCollection();
+                outgoingoffsetPlus.IntersectWith(lastLine, Intersect.ExtendBoth, lastCollection, IntPtr.Zero, IntPtr.Zero);
+
+                Point3d lastIntersection = lastCollection[0];
+                lastLine.StartPoint = lastIntersection;
+                outgoingoffsetPlus.StartPoint = lastIntersection;
+
 
                 Circle innerManhole = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2));
                 innerManhole.Layer = Constants.JPP_D_ManholeWall;
@@ -142,6 +185,28 @@ namespace JPP.Civils.Drainage
             var temp3d = acDoc.Editor.GetPoint(pPtOpts).Value;
             current.IntersectionPoint = new Point3d(temp3d.X, temp3d.Y, 0);
 
+            current.outgoingConnection = new PipeConnection();
+            pPtOpts = new PromptPointOptions("");
+            pPtOpts.Message = "\nPlease click the outgoing pipe intersection point, or press escape if done: ";
+            var outgoingLocationResult = acDoc.Editor.GetPoint(pPtOpts);
+            if (outgoingLocationResult.Status != PromptStatus.OK)
+            {
+                throw new NotImplementedException();
+            }
+            temp3d = outgoingLocationResult.Value;
+            current.outgoingConnection.Location = new Point3d(temp3d.X, temp3d.Y, 0);
+
+            pStrOpts = new PromptStringOptions("\nEnter outgoing pipe diameter: ");
+            pStrOpts.AllowSpaces = false;
+            var outgoingDiameterResult = acDoc.Editor.GetString(pStrOpts);
+            if (outgoingDiameterResult.Status != PromptStatus.OK)
+            {
+                throw new NotImplementedException();
+            }
+            current.outgoingConnection.Diameter = int.Parse(outgoingDiameterResult.StringResult);
+
+            Vector3d outgoing = current.IntersectionPoint.GetVectorTo(current.outgoingConnection.Location);
+
             bool processing = true;
             while (processing)
             {
@@ -167,31 +232,14 @@ namespace JPP.Civils.Drainage
                 }
                 pc.Diameter = int.Parse(diameterResult.StringResult);
 
+                Vector3d line = current.IntersectionPoint.GetVectorTo(pc.Location);
+                pc.Angle = line.GetAngleTo(outgoing);
+
                 current.IncomingPipes.Add(pc);
             }
 
-            current.outgoingConnection = new PipeConnection();
             pPtOpts = new PromptPointOptions("");
-            pPtOpts.Message = "\nPlease click the outgoing pipe intersection point: ";
-            var outgoingLocationResult = acDoc.Editor.GetPoint(pPtOpts);
-            if (outgoingLocationResult.Status != PromptStatus.OK)
-            {
-                throw new NotImplementedException();
-            }
-            temp3d = outgoingLocationResult.Value;
-            current.outgoingConnection.Location = new Point3d(temp3d.X, temp3d.Y, 0);
-
-            pStrOpts = new PromptStringOptions("\nEnter outgoing pipe diameter: ");
-            pStrOpts.AllowSpaces = false;
-            var outgoingDiameterResult = acDoc.Editor.GetString(pStrOpts);
-            if (outgoingDiameterResult.Status != PromptStatus.OK)
-            {
-                throw new NotImplementedException();
-            }
-            current.outgoingConnection.Diameter = int.Parse(outgoingDiameterResult.StringResult);
-
-            pPtOpts = new PromptPointOptions("");
-            pPtOpts.Message = "\nPlease click the outgoing pipe intersection point: ";
+            pPtOpts.Message = "\nPlease click the location to insert plan detail: ";
             var planLocationResult = acDoc.Editor.GetPoint(pPtOpts);
             if (planLocationResult.Status != PromptStatus.OK)
             {
@@ -214,5 +262,6 @@ namespace JPP.Civils.Drainage
     {
         public int Diameter { get; set; }
         public Point3d Location { get; set; }
+        public double Angle { get; set; }
     }
 }
