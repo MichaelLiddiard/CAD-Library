@@ -57,11 +57,14 @@ namespace JPP.Core
             /*T t = new T();
             t.Transfer();//LoadFrom(leaf.Name, leaf.GetDatabase());
             return t;*/
-            Database source = leaf.GetDatabase();
+            using (DocumentLock dl = acDoc.LockDocument())
+            {
+                Database source = leaf.GetDatabase();
 
-            T t = new T();
-            t = (T)t.GetFrom(leaf.Name, source);
-            t.Transfer(acCurDb, source);
+                T t = new T();
+                t = (T) t.GetFrom(leaf.Name, source);
+                t.Transfer(acCurDb, source);
+            }
         }
 
         public void SaveLeafEntity(string Name, T leafEntity, Branch parent)

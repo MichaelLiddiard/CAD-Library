@@ -14,11 +14,18 @@ namespace JPP.CivilStructures
     /// </summary>
     class CivilStructureDocumentStore : DocumentStore
     {
-        public SiteFoundations SiteFoundations { get; set; }        
+        public SiteFoundations SiteFoundations { get; set; }
+
+        public CivilStructureDocumentStore(Document doc) : base(doc)
+        {
+        }
+
+        public CivilStructureDocumentStore(Database db) : base(db)
+        {
+        }
 
         public override void Save()
         {
-            Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction; //Could this potentially throw an error??
 
             SaveBinary(CSConstants.FoundationID, SiteFoundations);            
@@ -28,7 +35,6 @@ namespace JPP.CivilStructures
 
         public override void Load()
         {
-            Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
             DBDictionary nod = (DBDictionary)tr.GetObject(acCurDb.NamedObjectsDictionaryId, OpenMode.ForWrite);
 
@@ -43,6 +49,5 @@ namespace JPP.CivilStructures
 
             base.Load();
         }
-
     }
 }

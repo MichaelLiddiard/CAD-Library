@@ -32,13 +32,13 @@ namespace JPP.Civils
         // ReSharper disable once MemberCanBePrivate.Global as needed to be serialized
         public long PerimeterLinePtr;
 
+        [XmlIgnore] public Database acCurDb;
+
         [XmlIgnore]
         public ObjectId PerimeterLine
         {
             get
             {
-                Document acDoc = Application.DocumentManager.MdiActiveDocument;
-                Database acCurDb = acDoc.Database;
                 return acCurDb.GetObjectId(false, new Handle(PerimeterLinePtr), 0);
             }
             set
@@ -54,8 +54,6 @@ namespace JPP.Civils
         {
             get
             {
-                Document acDoc = Application.DocumentManager.MdiActiveDocument;
-                Database acCurDb = acDoc.Database;
                 return acCurDb.GetObjectId(false, new Handle(BackgroundBlockIDPtr), 0);
             }
             set
@@ -71,8 +69,6 @@ namespace JPP.Civils
         {
             get
             {
-                Document acDoc = Application.DocumentManager.MdiActiveDocument;
-                Database acCurDb = acDoc.Database;
                 return acCurDb.GetObjectId(false, new Handle(BlockIDPtr), 0);
             }
             set
@@ -88,8 +84,6 @@ namespace JPP.Civils
         {
             get
             {
-                Document acDoc = Application.DocumentManager.MdiActiveDocument;
-                Database acCurDb = acDoc.Database;
                 return acCurDb.GetObjectId(false, new Handle(BasepointPtr), 0);
             }
             set
@@ -576,11 +570,11 @@ namespace JPP.Civils
                 ObjectIdCollection collection = new ObjectIdCollection();
 
                 //Generate list of objects to transfer
-                collection.Add(BackgroundBlockID);
-                collection.Add(BasepointID);
+                /*collection.Add(BackgroundBlockID);
+                collection.Add(BasepointID);*/
                 collection.Add(BlockID);
 
-                foreach (ObjectId accessPointLocation in AccessPointLocations.Collection)
+                /*foreach (ObjectId accessPointLocation in AccessPointLocations.Collection)
                 {
                     collection.Add(accessPointLocation);
                 }
@@ -588,11 +582,11 @@ namespace JPP.Civils
                 foreach (WallSegment wallSegment in Segments)
                 {
                     collection.Add(wallSegment.PerimeterLine);
-                }
+                }*/
 
                 IdMapping acMapping = new IdMapping();
 
-                from.WblockCloneObjects(collection, to.BlockTableId, acMapping, DuplicateRecordCloning.Replace, false);
+                to.WblockCloneObjects(collection, to.BlockTableId, acMapping, DuplicateRecordCloning.Ignore, false);
 
                 PlotType destination = (PlotType) this.Clone();
 
@@ -627,7 +621,9 @@ namespace JPP.Civils
                 }
             }
 
-            throw new ArgumentException("No cloned object found");
+            //throw new ArgumentException("No cloned object found");
+            Logger.Log("No cloned object found", Logger.Severity.Error);
+            return ObjectId.Null;
         }
 
         public object Clone()

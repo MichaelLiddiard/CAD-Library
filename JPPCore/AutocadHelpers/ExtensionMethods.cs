@@ -27,7 +27,7 @@ namespace JPP.Core
                 return (T)Stores[doc.Name + typeof(T)];
             } else
             {
-                T ds = (T)Activator.CreateInstance(typeof(T));
+                T ds = (T)Activator.CreateInstance(typeof(T), doc);
                 Stores.Add(doc.Name + typeof(T), ds);
                 doc.BeginDocumentClose += Doc_BeginDocumentClose;
                 return ds;
@@ -41,7 +41,17 @@ namespace JPP.Core
         /// <returns>The requested document store. If none is found a new instance is created</returns>
         public static T GetDocumentStore<T>(this Database db) where T:DocumentStore
         {
-            T ds = (T)Activator.CreateInstance(typeof(T));
+            //Check if resident in the cache
+            //var document = Application.DocumentManager.GetDocument(db); This function doesnt work for side loaded db
+            foreach (Document  document in Application.DocumentManager)
+            {
+                if (document.Database.Filename == db.Filename)
+                {
+                    return document.GetDocumentStore<T>();
+                }
+            }
+
+            T ds = (T)Activator.CreateInstance(typeof(T), db);
             return ds;
         }
 

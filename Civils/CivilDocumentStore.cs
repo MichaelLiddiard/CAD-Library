@@ -1,6 +1,7 @@
 ﻿using Autodesk.AutoCAD.DatabaseServices;
 using JPP.Core;
 using System.Collections.ObjectModel;
+using Autodesk.AutoCAD.ApplicationServices;
 using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 
 namespace JPP.Civils
@@ -20,9 +21,16 @@ namespace JPP.Civils
         /// </summary>
         public ObservableCollection<PlotType> PlotTypes { get; set; }
 
+        public CivilDocumentStore(Document doc) : base(doc)
+        {
+        }
+
+        public CivilDocumentStore(Database db) : base(db)
+        {
+        }
+
         public override void Save()
         {
-            Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction; //Could this potentially throw an error??
 
             SaveBinary(Constants.PlotID, Plots);
@@ -51,6 +59,11 @@ namespace JPP.Civils
                 PlotTypes = new ObservableCollection<PlotType>();
             }
 
+            foreach (PlotType pt in PlotTypes)
+            {
+                pt.acCurDb = this.acCurDb;
+            }
+
             foreach(Plot p in Plots)
             {
                 p.Update();
@@ -60,5 +73,6 @@ namespace JPP.Civils
             base.Load();
         }
 
+        
     }
 }
