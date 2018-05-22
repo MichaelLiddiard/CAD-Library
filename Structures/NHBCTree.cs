@@ -308,7 +308,7 @@ namespace JPP.CivilStructures
             return dh * Height;
         }
 
-        public override void ActiveObject_Modified(object sender, EventArgs e)
+        protected override void ActiveObject_Modified(object sender, EventArgs e)
         {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             acDoc.SendStringToExecute("CS_GenerateRings ", false, false, false);

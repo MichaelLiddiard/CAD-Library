@@ -1,0 +1,5 @@
+﻿<assembly name="JPPCore">
+  <member name="T:Autodesk.AutoCAD.Runtime.CommandMethodAttribute">
+    <attribute ctor="M:JetBrains.Annotations.MeansImplicitUseAttribute.#ctor" />
+  </member>
+</assembly>

@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -27,7 +27,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -113,22 +113,23 @@
   <ItemGroup>
     <Compile Include="Authentication.cs" />
     <Compile Include="AuthToken.cs" />
-    <Compile Include="Branch.cs" />
-    <Compile Include="CircleObject.cs" />
+    <Compile Include="LibrarySystem\Branch.cs" />
+    <Compile Include="AutocadHelpers\CircleObject.cs" />
     <Compile Include="ClickHandler\ClickOverride.cs" />
     <Compile Include="ClickHandler\ClickOverrideEditorExtension.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DocumentStore.cs" />
-    <Compile Include="DrawingObject.cs" />
-    <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="AutocadHelpers\DrawingObject.cs" />
+    <Compile Include="AutocadHelpers\ExtensionMethods.cs" />
     <Compile Include="ClickHandler\IClickOverrideInstance.cs" />
-    <Compile Include="IDrawingObject.cs" />
-    <Compile Include="ILibraryItem.cs" />
+    <Compile Include="AutocadHelpers\IDrawingObject.cs" />
+    <Compile Include="LibrarySystem\ILibraryItem.cs" />
     <Compile Include="JPPMain.cs" />
-    <Compile Include="Leaf.cs" />
-    <Compile Include="Library.cs" />
+    <Compile Include="LibrarySystem\Leaf.cs" />
+    <Compile Include="LibrarySystem\Library.cs" />
     <Compile Include="Logger.cs" />
-    <Compile Include="PersistentObjectIdCollection.cs" />
+    <Compile Include="AutocadHelpers\PersistentObjectIdCollection.cs" />
+    <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -146,7 +147,7 @@
     <Compile Include="SettingsUserControl.xaml.cs">
       <DependentUpon>SettingsUserControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UIPanelToggle.cs" />
+    <Compile Include="AutocadHelpers\UIPanelToggle.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -165,6 +166,10 @@
     <None Include="Resources\Locked.png" />
     <None Include="Resources\settings.png" />
     <None Include="Resources\package.png" />
+    <Content Include="JPPCore.ExternalAnnotations.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="StructuralBlocks.dwg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -173,11 +178,11 @@
     <None Include="Resources\UnLocked.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="AutocadStyleResourceDictionary.xaml">
+    <Resource Include="AutocadHelpers\AutocadStyleResourceDictionary.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Resource>
-    <Resource Include="AutocadWindowStyleResourceDictionary.xaml">
+    <Resource Include="AutocadHelpers\AutocadWindowStyleResourceDictionary.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Resource>

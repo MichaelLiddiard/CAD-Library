@@ -4,8 +4,6 @@ using Autodesk.AutoCAD.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JPP.Core
 {
@@ -29,7 +27,7 @@ namespace JPP.Core
                 return (T)Stores[doc.Name + typeof(T)];
             } else
             {
-                T ds = (T)Activator.CreateInstance(typeof(T));
+                T ds = (T)Activator.CreateInstance(typeof(T), doc);
                 Stores.Add(doc.Name + typeof(T), ds);
                 doc.BeginDocumentClose += Doc_BeginDocumentClose;
                 return ds;
@@ -40,11 +38,20 @@ namespace JPP.Core
         /// Retrieve the document store to access embedded data in the specified document
         /// </summary>
         /// <typeparam name="T">Type of store to retrieve</typeparam>
-        /// <param name="doc">The document for which to retrieve embedded data</param>
         /// <returns>The requested document store. If none is found a new instance is created</returns>
-        public static T GetDocumentStore<T>(this Database db, string DocName) where T:DocumentStore
+        public static T GetDocumentStore<T>(this Database db) where T:DocumentStore
         {
-            T ds = (T)Activator.CreateInstance(typeof(T));
+            //Check if resident in the cache
+            //var document = Application.DocumentManager.GetDocument(db); This function doesnt work for side loaded db
+            foreach (Document  document in Application.DocumentManager)
+            {
+                if (document.Database.Filename == db.Filename)
+                {
+                    return document.GetDocumentStore<T>();
+                }
+            }
+
+            T ds = (T)Activator.CreateInstance(typeof(T), db);
             return ds;
         }
 

@@ -1,18 +1,14 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JPP.Core
 {
     public class Library<T> where T : ILibraryItem, new()
     {
         string root;
+
         public ObservableCollection<Branch> Tree { get; set; }
 
         public Library(string basePath)
@@ -53,18 +49,37 @@ namespace JPP.Core
             return result;
         }
         
-        public T GetLeafEntity(Leaf leaf)
+        public void LoadLeafEntity(Leaf leaf)
         {
-            T t = new T();
-            t.LoadFrom(leaf.Name, leaf.GetDatabase());
-            return t;
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            /*T t = new T();
+            t.Transfer();//LoadFrom(leaf.Name, leaf.GetDatabase());
+            return t;*/
+            using (DocumentLock dl = acDoc.LockDocument())
+            {
+                Database source = leaf.GetDatabase();
+
+                T t = new T();
+                t = (T) t.GetFrom(leaf.Name, source);
+                t.Transfer(acCurDb, source);
+            }
         }
 
         public void SaveLeafEntity(string Name, T leafEntity, Branch parent)
         {
-            Database target = new Database(true, false);
-            leafEntity.SaveTo(Name, target);
-            target.SaveAs(parent.Path + Name + ".dwg", DwgVersion.Newest);
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+            using (DocumentLock dl = acDoc.LockDocument())
+            {
+
+                Database target = new Database(true, false);
+                leafEntity.Transfer(target, acCurDb);
+                target.SaveAs(parent.Path + "\\" + Name + ".dwg", DwgVersion.Newest);
+            }
+
+            Recurse(root);
         }
     }        
 }

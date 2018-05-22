@@ -1,11 +1,8 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace JPP.Core
 {
@@ -15,6 +12,7 @@ namespace JPP.Core
 
         private ObjectIdCollection collection;
 
+        [XmlIgnore]
         public ObjectIdCollection Collection
         {  get
             {
@@ -24,6 +22,26 @@ namespace JPP.Core
                 }
 
                 return collection;
+            }
+        }
+
+        [XmlIgnore]
+        public int Count
+        {
+            get { return Pointers.Count; }
+        }
+
+        [XmlIgnore]
+        public ObjectId this[int i]
+        {
+            get
+            {
+                return Collection[i];
+            }
+            set
+            {
+                Pointers[i] = value.Handle.Value;
+                BuildCollection();
             }
         }
 

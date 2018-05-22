@@ -1,14 +1,8 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace JPP.Core
@@ -17,21 +11,32 @@ namespace JPP.Core
     /// <summary>
     /// Class for storing of document level data
     /// </summary>
-    public class DocumentStore
+    public class DocumentStore : IDisposable
     {
         #region Constructor and Fields
+
+        protected Document acDoc;
+        protected Database acCurDb;
+
         /// <summary>
         /// Create a new document store
         /// </summary>
-        public DocumentStore()
+        public DocumentStore(Document doc)
         {
             //Get a reference to the active document
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
+            acDoc = doc;
+            acCurDb = acDoc.Database;
 
             //Attach to current doc to allow for automatically persisting the database
             acDoc.BeginDocumentClose += AcDoc_BeginDocumentClose;
             acDoc.Database.BeginSave += Database_BeginSave;
+
+            LoadWrapper();
+        }
+
+        public DocumentStore(Database db)
+        {
+            acCurDb = db;
 
             LoadWrapper();
         }
@@ -41,7 +46,7 @@ namespace JPP.Core
         /// <summary>
         /// Save all fields in class
         /// </summary>
-        protected virtual void Save()
+        public virtual void Save()
         {
             //Doesnt have nay default fields to save
         }
@@ -50,7 +55,7 @@ namespace JPP.Core
         /// <summary>
         /// Load all fields in class
         /// </summary>
-        protected virtual void Load()
+        public virtual void Load()
         {
             //Doesnt have any default fields to load
         }
@@ -60,11 +65,9 @@ namespace JPP.Core
         /// </summary>
         private void SaveWrapper()
         {
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
             try
             {
-                using (DocumentLock dl = acDoc.LockDocument())
+                using (DocumentLock dl = acDoc?.LockDocument())
                 {
                     using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
                     {
@@ -84,11 +87,9 @@ namespace JPP.Core
         /// </summary>
         private void LoadWrapper()
         {
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
             try
             {
-                using (DocumentLock dl = acDoc.LockDocument())
+                using (DocumentLock dl = acDoc?.LockDocument())
                 {
                     using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
                     {
@@ -118,7 +119,7 @@ namespace JPP.Core
         #region Binary Methods
         protected void SaveBinary(string key, object binaryObject)
         {
-            Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+            //Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
 
             // Find the NOD in the database
@@ -154,7 +155,7 @@ namespace JPP.Core
 
         protected T LoadBinary<T>(string Key)
         {
-            Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
+            //Database acCurDb = Application.DocumentManager.MdiActiveDocument.Database;
             Transaction tr = acCurDb.TransactionManager.TopTransaction;
 
             // Find the NOD in the database
@@ -190,6 +191,11 @@ namespace JPP.Core
             {
                 return default(T);
             }
+        }
+
+        public void Dispose()
+        {
+            Save();
         }
         #endregion
     }
