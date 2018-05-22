@@ -22,6 +22,17 @@ namespace JPP.Civils
         public const string JPP_HS_PlotBasepoint = "JPP_Civil_PlotBasepoint";
         public const short JPP_HS_PlotBasepointColor = 3;
 
+        //Manhole layers
+        public const string JPP_D_PipeCentreline = "JPP_Civil_Drainage_PipeCentreline";
+        public const short JPP_D_PipeCentrelineColor = 1;
+
+        public const string JPP_D_PipeWalls = "JPP_Civil_Drainage_PipeWall";
+        public const short JPP_D_PipeWallColor = 1;
+
+        public const string JPP_D_ManholeWall = "JPP_Civil_Drainage_ManholeWall";
+        public const short JPP_D_ManholeWallColor = 1;
+
+
         #region Civil Document Store
         /// <summary>
         /// Object dictionary ID for site wide data

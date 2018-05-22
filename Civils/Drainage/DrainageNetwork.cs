@@ -1,16 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JPP.Civils.Drainage;
 
 namespace JPP.Civils
 {
     class DrainageNetwork
     {
+        public static DrainageNetwork Current
+        {
+            get
+            {
+                if (_Current == null)
+                {
+                    _Current = new DrainageNetwork();
+                }
+
+                return _Current;
+            }
+        }
+
+        static DrainageNetwork _Current;
+
         public List<DrainageNode> InputNodes;
         public DrainageNode Outfall;
         public int[,] Costs;
+
+        public IDrainageStandard Standard;
+
+        public DrainageNetwork()
+        {
+            Standard = new UnitedUtilities();
+        }
 
         private bool Search(Node current)
         {

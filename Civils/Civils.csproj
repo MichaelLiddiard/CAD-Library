@@ -122,6 +122,10 @@
     <Compile Include="Drainage\DrainageControl.xaml.cs">
       <DependentUpon>DrainageControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Drainage\IDrainageStandard.cs" />
+    <Compile Include="Drainage\Manhole.cs" />
+    <Compile Include="Drainage\SewersForAdoption7th.cs" />
+    <Compile Include="Drainage\UnitedUtilities.cs" />
     <Compile Include="HousingScheme\FoundationControl.xaml.cs">
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>
