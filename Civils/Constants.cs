@@ -24,13 +24,13 @@ namespace JPP.Civils
 
         //Manhole layers
         public const string JPP_D_PipeCentreline = "JPP_Civil_Drainage_PipeCentreline";
-        public const short JPP_D_PipeCentrelineColor = 1;
+        public const short JPP_D_PipeCentrelineColor = 7;
 
         public const string JPP_D_PipeWalls = "JPP_Civil_Drainage_PipeWall";
-        public const short JPP_D_PipeWallColor = 1;
+        public const short JPP_D_PipeWallColor = 30;
 
         public const string JPP_D_ManholeWall = "JPP_Civil_Drainage_ManholeWall";
-        public const short JPP_D_ManholeWallColor = 1;
+        public const short JPP_D_ManholeWallColor = 5;
 
 
         #region Civil Document Store

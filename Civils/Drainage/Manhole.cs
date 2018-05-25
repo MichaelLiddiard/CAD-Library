@@ -9,6 +9,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using JPP.Core;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly:CommandClass(typeof(JPP.Civils.Drainage.Manhole))]
@@ -68,6 +69,12 @@ namespace JPP.Civils.Drainage
             {
                 Vector3d offset = location.GetAsVector().Subtract(IntersectionPoint.GetAsVector());
 
+                //Calculate alternatce connection point
+                Circle slopeCircle = new Circle(location, Vector3d.ZAxis, 450);
+                Vector3d slopeIntersect = location.GetVectorTo(outgoingConnection.Location.Add(offset));
+                slopeIntersect = slopeIntersect * 450 / slopeIntersect.Length;
+                Point2d slopePoint2D = new Point2d(location.Add(slopeIntersect).X, location.Add(slopeIntersect).Y);
+
                 // Open the Block table for read
                 BlockTable acBlkTbl;
                 acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -82,12 +89,14 @@ namespace JPP.Civils.Drainage
                 Core.Utilities.CreateLayer(tr, acLayerTable, Constants.JPP_D_ManholeWall, Constants.JPP_D_ManholeWallColor);
 
                 //Outgoin line
-                Line outgoingLine = new Line(location, outgoingConnection.Location.Add(offset));
+                Polyline outgoingLine = new Polyline();
+                outgoingLine.AddVertexAt(0, new Point2d(location.X, location.Y), 0, 0, 0);
+                outgoingLine.AddVertexAt(1, new Point2d(outgoingConnection.Location.Add(offset).X, outgoingConnection.Location.Add(offset).Y), 0, 0, 0);
                 outgoingLine.Layer = Constants.JPP_D_PipeCentreline;
 
-                Line outgoingoffsetPlus = outgoingLine.GetOffsetCurves(outgoingConnection.Diameter / 2)[0] as Line;
+                Polyline outgoingoffsetPlus = outgoingLine.GetOffsetCurves(outgoingConnection.Diameter / 2)[0] as Polyline;
                 outgoingoffsetPlus.Layer = Constants.JPP_D_PipeWalls;
-                Line outgoingoffsetMinus = outgoingLine.GetOffsetCurves(-outgoingConnection.Diameter / 2)[0] as Line;
+                Polyline outgoingoffsetMinus = outgoingLine.GetOffsetCurves(-outgoingConnection.Diameter / 2)[0] as Polyline;
                 outgoingoffsetMinus.Layer = Constants.JPP_D_PipeWalls;
 
                 acBlkTblRec.AppendEntity(outgoingLine);
@@ -98,27 +107,43 @@ namespace JPP.Civils.Drainage
                 acBlkTblRec.AppendEntity(outgoingoffsetPlus);
                 tr.AddNewlyCreatedDBObject(outgoingoffsetPlus, true);
 
-                Line lastLine = outgoingoffsetMinus;
+                Polyline lastLine = outgoingoffsetPlus;
 
                 for (int i = 0; i < sortedPipes.Count(); i++)
                 {
                     PipeConnection pipeConnection = sortedPipes.ToArray()[i];       
                     
-                    Line newLine = new Line(location, pipeConnection.Location.Add(offset));
+                    Polyline newLine = new Polyline();//location, pipeConnection.Location.Add(offset)
+                    newLine.AddVertexAt(0, new Point2d(location.X, location.Y), 0, 0, 0);
+                    newLine.AddVertexAt(1, new Point2d(pipeConnection.Location.Add(offset).X, pipeConnection.Location.Add(offset).Y), 0, 0, 0);
                     newLine.Layer = Constants.JPP_D_PipeCentreline;
 
-                    Line offsetPlus = newLine.GetOffsetCurves(pipeConnection.Diameter / 2)[0] as Line;
+                    //Check that angle is ok
+                    if (pipeConnection.Angle < 135 || pipeConnection.Angle > 225)
+                    {
+                        //Angle exceeds 45° so change
+                        Point3dCollection  slopeIntersectCollection = new Point3dCollection();
+                        newLine.IntersectWith(slopeCircle, Intersect.ExtendArgument, slopeIntersectCollection, IntPtr.Zero, IntPtr.Zero);
+                        Point3d circleIntersectPoint = slopeIntersectCollection[0];
+                        newLine.AddVertexAt(1, new Point2d(circleIntersectPoint.X, circleIntersectPoint.Y), 0,0,0 );
+
+                        newLine.SetPointAt(0, slopePoint2D);
+                    }
+
+                    Polyline offsetPlus = newLine.GetOffsetCurves(pipeConnection.Diameter / 2)[0] as Polyline;
                     offsetPlus.Layer = Constants.JPP_D_PipeWalls;
-                    Line offsetMinus = newLine.GetOffsetCurves(-pipeConnection.Diameter / 2)[0] as Line;
+                    Polyline offsetMinus = newLine.GetOffsetCurves(-pipeConnection.Diameter / 2)[0] as Polyline;
                     offsetMinus.Layer = Constants.JPP_D_PipeWalls;
 
                     //Fillet
                     Point3dCollection collection = new Point3dCollection();
-                    offsetPlus.IntersectWith(lastLine, Intersect.ExtendBoth, collection, IntPtr.Zero, IntPtr.Zero);
+                    offsetMinus.IntersectWith(lastLine, Intersect.ExtendBoth, collection, IntPtr.Zero, IntPtr.Zero);
 
                     Point3d Intersection = collection[0];
-                    lastLine.StartPoint = Intersection;
-                    offsetPlus.StartPoint = Intersection;
+                    lastLine.SetPointAt(0, new Point2d(Intersection.X, Intersection.Y));
+                    offsetMinus.SetPointAt(0, new Point2d(Intersection.X, Intersection.Y));
+
+                    Arc a = lastLine.Fillet(offsetMinus, 50);
 
                     acBlkTblRec.AppendEntity(newLine);
                     tr.AddNewlyCreatedDBObject(newLine, true);
@@ -127,17 +152,22 @@ namespace JPP.Civils.Drainage
                     tr.AddNewlyCreatedDBObject(offsetMinus, true);
                     acBlkTblRec.AppendEntity(offsetPlus);
                     tr.AddNewlyCreatedDBObject(offsetPlus, true);
+                    acBlkTblRec.AppendEntity(a);
+                    tr.AddNewlyCreatedDBObject(a, true);
 
-                    lastLine = offsetMinus;
+                    lastLine = offsetPlus;
 
                 }
 
                 Point3dCollection lastCollection = new Point3dCollection();
-                outgoingoffsetPlus.IntersectWith(lastLine, Intersect.ExtendBoth, lastCollection, IntPtr.Zero, IntPtr.Zero);
+                outgoingoffsetMinus.IntersectWith(lastLine, Intersect.ExtendBoth, lastCollection, IntPtr.Zero, IntPtr.Zero);
 
-                Point3d lastIntersection = lastCollection[0];
-                lastLine.StartPoint = lastIntersection;
-                outgoingoffsetPlus.StartPoint = lastIntersection;
+                if (lastCollection.Count > 0)
+                {
+                    Point3d lastIntersection = lastCollection[0]; //No intersection throwing error???
+                    lastLine.SetPointAt(0, new Point2d(lastIntersection.X, lastIntersection.Y));
+                    outgoingoffsetMinus.SetPointAt(0, new Point2d(lastIntersection.X, lastIntersection.Y));
+                }
 
 
                 Circle innerManhole = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2));
@@ -187,7 +217,7 @@ namespace JPP.Civils.Drainage
 
             current.outgoingConnection = new PipeConnection();
             pPtOpts = new PromptPointOptions("");
-            pPtOpts.Message = "\nPlease click the outgoing pipe intersection point, or press escape if done: ";
+            pPtOpts.Message = "\nPlease click the outgoing pipe intersection point: ";
             var outgoingLocationResult = acDoc.Editor.GetPoint(pPtOpts);
             if (outgoingLocationResult.Status != PromptStatus.OK)
             {
@@ -212,7 +242,7 @@ namespace JPP.Civils.Drainage
             {
                 PipeConnection pc = new PipeConnection();
                 pPtOpts = new PromptPointOptions("");
-                pPtOpts.Message = "\nPlease click the pipe intersection point: ";
+                pPtOpts.Message = "\nPlease click the pipe intersection point, or press escape if done: ";
                 var locationResult = acDoc.Editor.GetPoint(pPtOpts);
                 if (locationResult.Status != PromptStatus.OK)
                 {
@@ -233,7 +263,7 @@ namespace JPP.Civils.Drainage
                 pc.Diameter = int.Parse(diameterResult.StringResult);
 
                 Vector3d line = current.IntersectionPoint.GetVectorTo(pc.Location);
-                pc.Angle = line.GetAngleTo(outgoing);
+                pc.Angle = line.GetAngleTo(outgoing, Vector3d.ZAxis) * 180 / Math.PI;
 
                 current.IncomingPipes.Add(pc);
             }
