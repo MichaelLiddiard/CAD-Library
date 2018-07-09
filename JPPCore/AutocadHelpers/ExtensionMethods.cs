@@ -139,5 +139,26 @@ namespace JPP.Core
 
             return new Arc(intersectionPoint, radius, startAngle, endAngle);
         }
+
+        public static void AlignTo(this DBText dBText, Curve curve)
+        {
+            Vector3d line = curve.StartPoint.GetVectorTo(curve.EndPoint);
+            double angle = line.GetAngleTo(Vector3d.YAxis, Vector3d.ZAxis) * 180 / Math.PI;            
+
+            //Apparently the bloody alignment and postion points get swapped under different alignment modes. 
+            //http://adndevblog.typepad.com/autocad/2012/12/specifying-text-alignment.html
+
+            if (angle < 180)
+            {
+                dBText.Rotation = (90 - angle) * Math.PI / 180;
+                dBText.HorizontalMode = TextHorizontalMode.TextRight;                
+                dBText.AlignmentPoint = curve.EndPoint;                
+            }
+            else
+            {
+                dBText.Rotation = (90 - angle + 180) * Math.PI / 180;//90 - (angle - 180);                
+                dBText.HorizontalMode = TextHorizontalMode.TextLeft;                
+            }            
+        }
     }
 }

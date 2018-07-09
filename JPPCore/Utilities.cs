@@ -4,6 +4,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.Windows;
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -263,15 +264,34 @@ namespace JPP.Core
             return newButton;
         }
 
-        public static void CreateLayer(Transaction tr, LayerTable acLayerTable, string LayerName, short ColorIndex)
+        public static void CreateLayer(string LayerName, short ColorIndex)
         {
+            CreateLayer(LayerName, ColorIndex, "Continuous");
+        }
+
+        public static void CreateLayer(string LayerName, short ColorIndex, string Linetype)
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;            
+
+            Transaction tr = acDoc.TransactionManager.TopTransaction;
+            LayerTable acLayerTable = tr.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite) as LayerTable;
+            LinetypeTable acLineTable = tr.GetObject(acCurDb.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
+
             if (!acLayerTable.Has(LayerName))
             {
-                LayerTableRecord acLayerTableRecLevels = new LayerTableRecord();
-                acLayerTableRecLevels.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByAci, ColorIndex);
-                acLayerTableRecLevels.Name = LayerName;
-                acLayerTable.Add(acLayerTableRecLevels);
-                tr.AddNewlyCreatedDBObject(acLayerTableRecLevels, true);
+                if (acLineTable.Has(Linetype))
+                {
+                    LayerTableRecord newLayer = new LayerTableRecord();
+                    newLayer.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByAci, ColorIndex);
+                    newLayer.LinetypeObjectId = acLineTable[Linetype];
+                    newLayer.Name = LayerName;
+                    acLayerTable.Add(newLayer);
+                    tr.AddNewlyCreatedDBObject(newLayer, true);
+                } else
+                {
+                    throw new ArgumentOutOfRangeException("Linetype", "Linetype not found");
+                }
             }
         }
     }

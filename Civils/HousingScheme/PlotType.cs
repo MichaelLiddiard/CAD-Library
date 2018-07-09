@@ -135,7 +135,7 @@ namespace JPP.Civils
                     {
                         //Create all plot specific layers
                         LayerTable acLayerTable = tr.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite) as LayerTable;
-                        Core.Utilities.CreateLayer(tr, acLayerTable, Constants.JPP_HS_PlotPerimiter, Constants.JPP_HS_PlotPerimiterColor);
+                        Core.Utilities.CreateLayer(Constants.JPP_HS_PlotPerimiter, Constants.JPP_HS_PlotPerimiterColor);
 
                         //Create the background block
                         BlockTable bt = (BlockTable)tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead);
@@ -170,7 +170,7 @@ namespace JPP.Civils
 
                                 //Create all plot specific layers
                                 LayerTable acLayerTable = tr.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite) as LayerTable;
-                                Core.Utilities.CreateLayer(tr, acLayerTable, Constants.JPP_HS_PlotPerimiter, Constants.JPP_HS_PlotPerimiterColor);
+                                Core.Utilities.CreateLayer(Constants.JPP_HS_PlotPerimiter, Constants.JPP_HS_PlotPerimiterColor);
 
                                 //Create the background block
                                 BlockTable bt = (BlockTable)tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead);
