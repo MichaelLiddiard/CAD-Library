@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace JPP.Civils.Drainage
         public int Diameter { get; set; }
         public float InvertLevel { get; set; }
         public float CoverLevel { get; set; }
+        public string Name { get; set; }
 
         public Point3d IntersectionPoint { get; set; }
         public List<PipeConnection> IncomingPipes { get; set; }
@@ -70,22 +72,29 @@ namespace JPP.Civils.Drainage
                 return wallThicnkess[Diameter];
             }
         }
-        
+
         public Manhole()
         {
             IncomingPipes = new List<PipeConnection>();
         }
-        
+
         public void GeneratePlan(Point3d location)
         {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
             //Sort pipe connections for ease of drawing
             var sortedPipes = from p in IncomingPipes orderby p.Angle ascending select p;
 
-            DrainageNetwork.Current.Standard.VerifyManhole(this);
-
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-
-            Database acCurDb = acDoc.Database;
+            try
+            {
+                DrainageNetwork.Current.Standard.VerifyManhole(this);
+            }
+            catch (ArgumentException e)
+            {
+                acDoc.Editor.WriteMessage("Manhole {0} failed verification. {1}\n", this.Name, e.Message);
+            }
+                                   
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
                 Vector3d offset = location.GetAsVector().Subtract(IntersectionPoint.GetAsVector());
@@ -103,7 +112,7 @@ namespace JPP.Civils.Drainage
                 // Open the Block table record Model space for write
                 BlockTableRecord acBlkTblRec;
                 acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                                
+
                 Core.Utilities.CreateLayer(Constants.JPP_D_PipeWalls, Constants.JPP_D_PipeWallColor);
                 Core.Utilities.CreateLayer(Constants.JPP_D_PipeCentreline, Constants.JPP_D_PipeCentrelineColor, Constants.JPP_D_PipeCentrelineType);
                 Core.Utilities.CreateLayer(Constants.JPP_D_ManholeWall, Constants.JPP_D_ManholeWallColor);
@@ -133,8 +142,8 @@ namespace JPP.Civils.Drainage
 
                 for (int i = 0; i < sortedPipes.Count(); i++)
                 {
-                    PipeConnection pipeConnection = sortedPipes.ToArray()[i];       
-                    
+                    PipeConnection pipeConnection = sortedPipes.ToArray()[i];
+
                     //Create centreline
                     Polyline newLine = new Polyline();//location, pipeConnection.Location.Add(offset)
                     newLine.AddVertexAt(0, new Point2d(location.X, location.Y), 0, 0, 0);
@@ -150,7 +159,7 @@ namespace JPP.Civils.Drainage
                     tr.AddNewlyCreatedDBObject(label, true);
 
                     label.Height = 40;
-                    label.AlignTo(newLine);                                        
+                    label.AlignTo(newLine);
 
                     //Pipe walls
                     Polyline outeroffsetPlus = newLine.GetOffsetCurves(pipeConnection.Diameter / 2 + 20f)[0] as Polyline;
@@ -198,9 +207,13 @@ namespace JPP.Civils.Drainage
                     Point3dCollection collection = new Point3dCollection();
                     offsetMinus.IntersectWith(lastLine, Intersect.ExtendBoth, collection, IntPtr.Zero, IntPtr.Zero);
 
-                    Point3d Intersection = collection[0];
-                    lastLine.SetPointAt(0, new Point2d(Intersection.X, Intersection.Y));
-                    offsetMinus.SetPointAt(0, new Point2d(Intersection.X, Intersection.Y));
+                    //Check that the lines do intersect, may not if small pipe to large when parallel
+                    if (collection.Count > 0)
+                    {
+                        Point3d Intersection = collection[0];
+                        lastLine.SetPointAt(0, new Point2d(Intersection.X, Intersection.Y));
+                        offsetMinus.SetPointAt(0, new Point2d(Intersection.X, Intersection.Y));
+                    }
 
                     //Arc a = lastLine.Fillet(offsetMinus, 50);
 
@@ -253,7 +266,7 @@ namespace JPP.Civils.Drainage
                 tr.AddNewlyCreatedDBObject(outerSurround, true);
 
                 //Calculate best location for steps
-                /*double maxAngle = 0;
+                double maxAngle = 0;
                 double previousAngle = 0;
 
                 int segment = 0;                               
@@ -284,10 +297,10 @@ namespace JPP.Civils.Drainage
 
                 // Rotate the polyline 45 degrees, around the Z-axis of the current UCS
                 // using a base point of (4,4.25,0)
-                stepCenterLine.TransformBy(Matrix3d.Rotation(stepCenter * Math.PI / 180, curUCS.Zaxis, stepCenterLine.StartPoint));
+                stepCenterLine.TransformBy(Matrix3d.Rotation(stepCenter * Math.PI / 180, -curUCS.Zaxis, stepCenterLine.StartPoint));
 
                 acBlkTblRec.AppendEntity(stepCenterLine);
-                tr.AddNewlyCreatedDBObject(stepCenterLine, true);*/
+                tr.AddNewlyCreatedDBObject(stepCenterLine, true);
 
                 //stepCenterLine.TransformBy
 
@@ -404,29 +417,113 @@ namespace JPP.Civils.Drainage
             //Prompt for input file
             OpenFileDialog ofd = new OpenFileDialog("Select .csv file cotaining manhole schedule", null, "csv", "CSVFileToLink", OpenFileDialog.OpenFileDialogFlags.DoNotTransferRemoteFiles);
             System.Windows.Forms.DialogResult dr = ofd.ShowDialog();
-            if (dr != System.Windows.Forms.DialogResult.OK)
-            {
-                 ofd.Filename;
-            }
-                
+
+            Matrix3d curUCSMatrix = Application.DocumentManager.MdiActiveDocument.Editor.CurrentUserCoordinateSystem;
+            CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
 
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
-
             Database acCurDb = acDoc.Database;
+
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
-                foreach (Manhole m in manholes)
+                // Open the Block table for read
+                BlockTable acBlkTbl;
+                acBlkTbl = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+                // Open the Block table record Model space for write
+                BlockTableRecord acBlkTblRec;
+                acBlkTblRec = tr.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                if (dr == System.Windows.Forms.DialogResult.OK)
+            {
+                using (StreamReader sr = File.OpenText(ofd.Filename))
                 {
-                    m.GeneratePlan(location);
-                    location = new Point3d(location.X + 10000, location.Y, 0);
+                    string line;
+                    sr.ReadLine(); //discard headers
+                    while (true)
+                    {
+                        line = sr.ReadLine();
+
+                        if (line == null)
+                            break;
+
+                        string[] columns = line.Split(',');
+                        Manhole m = new Manhole();
+
+                        m.Name = columns[0];
+                        m.Diameter = int.Parse(columns[1]);
+
+                        Polyline outLine = new Polyline();
+                        outLine.AddVertexAt(0, new Point2d(), 0, 0, 0);
+                        outLine.AddVertexAt(1, new Point2d(0, -2000), 0, 0, 0);
+                            /*acBlkTblRec.AppendEntity(outLine);
+                            tr.AddNewlyCreatedDBObject(outLine, true);*/
+
+                            m.outgoingConnection = new PipeConnection()
+                        {
+                            Code = columns[4],
+                            Diameter = int.Parse(columns[6]),
+                            Location = outLine.EndPoint
+                        };
+
+                        int c = 8;
+                        while (c < columns.Count())
+                        {
+                            Polyline baseLine = new Polyline();
+                            baseLine.AddVertexAt(0, new Point2d(), 0, 0, 0);
+                            baseLine.AddVertexAt(1, new Point2d(0, -2000), 0, 0, 0);
+
+                            if (columns[c] == "")
+                                break; //If column is empty break loop
+
+                            PipeConnection incoming = new PipeConnection
+                            {
+                                Code = columns[c],
+                                Angle = double.Parse(columns[c + 2]),
+                                Diameter = int.Parse(columns[c + 3])
+                            };
+
+                            baseLine.TransformBy(Matrix3d.Rotation(incoming.Angle * Math.PI / 180, -curUCS.Zaxis, baseLine.StartPoint));
+                                /*acBlkTblRec.AppendEntity(baseLine);
+                                tr.AddNewlyCreatedDBObject(baseLine, true);*/
+                            incoming.Location = baseLine.EndPoint;
+
+                            m.IncomingPipes.Add(incoming);
+
+                            c += 5;
+                        }
+
+                        if (m.Diameter < 1200)
+                        {
+                            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("Manhole {0} ignored as non-adoptable due to diameter.\n", m.Name);
+                        }
+                        else
+                        {
+                            manholes.Add(m);
+                        }
+                    }
+
+                }
+
+                
+                
+                    foreach (Manhole m in manholes)
+                    {
+                        m.GeneratePlan(location);
+                        location = new Point3d(location.X + 5000, location.Y, 0);
+                    }
+
+                    tr.Commit();
                 }
             }
         }
+    }
 
     class PipeConnection
     {
         public int Diameter { get; set; }
         public Point3d Location { get; set; }
         public double Angle { get; set; }
+        public string Code { get; set; }
     }
 }
