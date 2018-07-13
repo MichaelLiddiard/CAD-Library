@@ -24,6 +24,12 @@ namespace JPP.Civils.Drainage
         public float InvertLevel { get; set; }
         public float CoverLevel { get; set; }
         public string Name { get; set; }
+        public string Type { get; set; }
+        public bool SafetyChain { get; set; }
+        public bool SafetyRail { get; set; }
+
+        public int MinimumMinorBenching { get; set; }
+        public int MinimumMajorBenching { get; set; }
 
         public Point3d IntersectionPoint { get; set; }
         public List<PipeConnection> IncomingPipes { get; set; }
@@ -50,6 +56,14 @@ namespace JPP.Civils.Drainage
                 }
 
                 return largest;
+            }
+        }
+
+        public float DepthToSoffitLevel
+        {
+            get
+            {
+                return CoverLevel - (InvertLevel + LargestInternalPipeDiameter/1000);
             }
         }
 
@@ -86,14 +100,9 @@ namespace JPP.Civils.Drainage
             //Sort pipe connections for ease of drawing
             var sortedPipes = from p in IncomingPipes orderby p.Angle ascending select p;
 
-            try
-            {
-                DrainageNetwork.Current.Standard.VerifyManhole(this);
-            }
-            catch (ArgumentException e)
-            {
-                acDoc.Editor.WriteMessage("Manhole {0} failed verification. {1}\n", this.Name, e.Message);
-            }
+
+            DrainageNetwork.Current.Standard.VerifyManhole(this);
+
                                    
             using (Transaction tr = acCurDb.TransactionManager.StartTransaction())
             {
@@ -117,6 +126,8 @@ namespace JPP.Civils.Drainage
                 Core.Utilities.CreateLayer(Constants.JPP_D_PipeCentreline, Constants.JPP_D_PipeCentrelineColor, Constants.JPP_D_PipeCentrelineType);
                 Core.Utilities.CreateLayer(Constants.JPP_D_ManholeWall, Constants.JPP_D_ManholeWallColor);
 
+                Circle pipeIntrusion = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2) - 150f);
+
                 //Outgoin line
                 Polyline outgoingLine = new Polyline();
                 outgoingLine.AddVertexAt(0, new Point2d(location.X, location.Y), 0, 0, 0);
@@ -128,6 +139,38 @@ namespace JPP.Civils.Drainage
                 Polyline outgoingoffsetMinus = outgoingLine.GetOffsetCurves(-outgoingConnection.Diameter / 2)[0] as Polyline;
                 outgoingoffsetMinus.Layer = Constants.JPP_D_PipeWalls;
 
+                //Add descriptive text
+                MText outlabel = new MText();
+                outlabel.Location = new Point3d(outgoingConnection.Location.Add(offset).X, outgoingConnection.Location.Add(offset).Y, 0);
+                outlabel.Contents = outgoingConnection.Code + "\\P" + outgoingConnection.Diameter + "%%C";
+
+
+                acBlkTblRec.AppendEntity(outlabel);
+                tr.AddNewlyCreatedDBObject(outlabel, true);
+
+                outlabel.TextHeight = 40;
+                outlabel.AlignTo(outgoingLine);
+
+                //Pipe walls
+                Polyline outouteroffsetPlus = outgoingLine.GetOffsetCurves(outgoingConnection.Diameter / 2 + 20f)[0] as Polyline;
+                outouteroffsetPlus.Layer = Constants.JPP_D_PipeWalls;
+                Point3dCollection intersection = new Point3dCollection();
+                outouteroffsetPlus.IntersectWith(pipeIntrusion, Intersect.ExtendArgument, intersection, IntPtr.Zero, IntPtr.Zero);
+                outouteroffsetPlus.AddVertexAt(0, new Point2d(intersection[0].X, intersection[0].Y), 0, 0, 0);
+                outouteroffsetPlus.RemoveVertexAt(1);
+
+                Polyline outouteroffsetMinus = outgoingLine.GetOffsetCurves(-outgoingConnection.Diameter / 2 - 20f)[0] as Polyline;
+                outouteroffsetMinus.Layer = Constants.JPP_D_PipeWalls;
+                intersection = new Point3dCollection();
+                outouteroffsetMinus.IntersectWith(pipeIntrusion, Intersect.ExtendArgument, intersection, IntPtr.Zero, IntPtr.Zero);
+                outouteroffsetMinus.AddVertexAt(0, new Point2d(intersection[0].X, intersection[0].Y), 0, 0, 0);
+                outouteroffsetMinus.RemoveVertexAt(1);
+
+                Polyline outcloseWall = new Polyline();
+                outcloseWall.AddVertexAt(0, new Point2d(outouteroffsetMinus.StartPoint.X, outouteroffsetMinus.StartPoint.Y), 0, 0, 0);
+                outcloseWall.AddVertexAt(0, new Point2d(outouteroffsetPlus.StartPoint.X, outouteroffsetPlus.StartPoint.Y), 0, 0, 0);
+                outcloseWall.Layer = Constants.JPP_D_PipeWalls;
+
                 acBlkTblRec.AppendEntity(outgoingLine);
                 tr.AddNewlyCreatedDBObject(outgoingLine, true);
 
@@ -135,10 +178,14 @@ namespace JPP.Civils.Drainage
                 tr.AddNewlyCreatedDBObject(outgoingoffsetMinus, true);
                 acBlkTblRec.AppendEntity(outgoingoffsetPlus);
                 tr.AddNewlyCreatedDBObject(outgoingoffsetPlus, true);
+                acBlkTblRec.AppendEntity(outouteroffsetMinus);
+                tr.AddNewlyCreatedDBObject(outouteroffsetMinus, true);
+                acBlkTblRec.AppendEntity(outouteroffsetPlus);
+                tr.AddNewlyCreatedDBObject(outouteroffsetPlus, true);
+                acBlkTblRec.AppendEntity(outcloseWall);
+                tr.AddNewlyCreatedDBObject(outcloseWall, true);
 
-                Polyline lastLine = outgoingoffsetPlus;
-
-                Circle pipeIntrusion = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2) - 150f);
+                Polyline lastLine = outgoingoffsetPlus;                               
 
                 for (int i = 0; i < sortedPipes.Count(); i++)
                 {
@@ -151,20 +198,21 @@ namespace JPP.Civils.Drainage
                     newLine.Layer = Constants.JPP_D_PipeCentreline;
 
                     //Add descriptive text
-                    DBText label = new DBText();
-                    label.Position = new Point3d(pipeConnection.Location.Add(offset).X, pipeConnection.Location.Add(offset).Y, 0);
-                    label.TextString = "Pipe Label";
+                    MText label = new MText();                    
+                    label.Location = new Point3d(pipeConnection.Location.Add(offset).X, pipeConnection.Location.Add(offset).Y, 0);
+                    label.Contents = pipeConnection.Code + "\\P" + pipeConnection.Diameter + "%%C";
+
 
                     acBlkTblRec.AppendEntity(label);
                     tr.AddNewlyCreatedDBObject(label, true);
 
-                    label.Height = 40;
+                    label.TextHeight = 40;
                     label.AlignTo(newLine);
 
                     //Pipe walls
                     Polyline outeroffsetPlus = newLine.GetOffsetCurves(pipeConnection.Diameter / 2 + 20f)[0] as Polyline;
                     outeroffsetPlus.Layer = Constants.JPP_D_PipeWalls;
-                    Point3dCollection intersection = new Point3dCollection();
+                    intersection = new Point3dCollection();
                     outeroffsetPlus.IntersectWith(pipeIntrusion, Intersect.ExtendArgument, intersection, IntPtr.Zero, IntPtr.Zero);
                     outeroffsetPlus.AddVertexAt(0, new Point2d(intersection[0].X, intersection[0].Y), 0, 0, 0);
                     outeroffsetPlus.RemoveVertexAt(1);
@@ -253,19 +301,9 @@ namespace JPP.Civils.Drainage
                 Circle innerManhole = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2));
                 innerManhole.Layer = Constants.JPP_D_ManholeWall;
                 acBlkTblRec.AppendEntity(innerManhole);
-                tr.AddNewlyCreatedDBObject(innerManhole, true);
+                tr.AddNewlyCreatedDBObject(innerManhole, true);                               
 
-                Circle outerManhole = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2) + WallThickness);
-                outerManhole.Layer = Constants.JPP_D_ManholeWall;
-                acBlkTblRec.AppendEntity(outerManhole);
-                tr.AddNewlyCreatedDBObject(outerManhole, true);
-
-                Circle outerSurround = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2) + WallThickness + 100f);
-                outerSurround.Layer = Constants.JPP_D_ManholeWall;
-                acBlkTblRec.AppendEntity(outerSurround);
-                tr.AddNewlyCreatedDBObject(outerSurround, true);
-
-                //Calculate best location for steps
+                //Calculate best location for steps and check minimum benching
                 double maxAngle = 0;
                 double previousAngle = 0;
 
@@ -288,12 +326,59 @@ namespace JPP.Civils.Drainage
                 PipeConnection edgeSegment = sortedPipes.ToArray()[segment];
                 double stepCenter = edgeSegment.Angle - maxAngle / 2;
 
+                //check the last segment is not better
+                PipeConnection endSegment = sortedPipes.ToArray().Last();
+                double lastAngle = 360 - endSegment.Angle;
+                if(lastAngle > maxAngle)
+                {
+                    stepCenter = 360 - lastAngle / 2;
+                }
+
                 Polyline stepCenterLine = new Polyline();
                 stepCenterLine.AddVertexAt(0, new Point2d(outgoingLine.StartPoint.X, outgoingLine.StartPoint.Y), 0, 0, 0);
                 stepCenterLine.AddVertexAt(1, new Point2d(outgoingLine.EndPoint.X, outgoingLine.EndPoint.Y), 0, 0, 0);
 
                 Matrix3d curUCSMatrix = acDoc.Editor.CurrentUserCoordinateSystem;
                 CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
+
+                //Calculate both intersection points
+                (Vector3d majorBenching, Vector3d minorBenching) = CalculateBenching(stepCenterLine, innerManhole);
+
+                //ODO: Make sure this works and allow for pipe widths not centrelines
+                if (minorBenching.Length < MinimumMinorBenching)
+                {
+                    Vector3d adjustment = minorBenching * (MinimumMinorBenching/minorBenching.Length);
+                    innerManhole.Center = innerManhole.Center.Add(adjustment);
+                    (majorBenching, minorBenching) = CalculateBenching(stepCenterLine, innerManhole);
+                }
+
+                if(majorBenching.Length < MinimumMajorBenching)
+                {
+                    if (minorBenching.Length > MinimumMinorBenching)
+                    {
+                        Vector3d adjustment = minorBenching * (MinimumMinorBenching / minorBenching.Length);
+                        innerManhole.Center = innerManhole.Center.Add(adjustment);
+                        (majorBenching, minorBenching) = CalculateBenching(stepCenterLine, innerManhole);
+
+                        if (majorBenching.Length < MinimumMajorBenching)
+                        {
+                            throw new ArgumentException("Major benching does not meet minimum distances");
+                        }
+                    }
+
+                    throw new ArgumentException("Major benching does not meet minimum distances");
+                }
+
+                //Create rings now offset is fixed
+                Circle outerManhole = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2) + WallThickness);
+                outerManhole.Layer = Constants.JPP_D_ManholeWall;
+                acBlkTblRec.AppendEntity(outerManhole);
+                tr.AddNewlyCreatedDBObject(outerManhole, true);
+
+                Circle outerSurround = new Circle(location, Vector3d.ZAxis, (double)(Diameter / 2) + WallThickness + 100f);
+                outerSurround.Layer = Constants.JPP_D_ManholeWall;
+                acBlkTblRec.AppendEntity(outerSurround);
+                tr.AddNewlyCreatedDBObject(outerSurround, true);
 
                 // Rotate the polyline 45 degrees, around the Z-axis of the current UCS
                 // using a base point of (4,4.25,0)
@@ -304,10 +389,66 @@ namespace JPP.Civils.Drainage
 
                 //stepCenterLine.TransformBy
 
-                //Finalise
+                //Add safety features
+                if(SafetyChain)
+                {
+                    throw new NotImplementedException();
+                }
+                if(SafetyRail)
+                {
+                    throw new NotImplementedException();
+                }
 
+                //Generate Table
+                Table tb = new Table();
+                tb.SetSize(15, 2);                
+                tb.SetRowHeight(60);
+                tb.Columns[0].Width = 1200;
+                tb.Columns[1].Width = 400;
+                tb.Position = new Point3d(location.X + 1700, location.Y + 450, 0);
+
+                tb.SetTableRow("MANHOLE", this.Name.ToUpper(), 0);
+                tb.SetTableRow("MANHOLE DIAMETER", this.Diameter.ToString(), 1);
+                tb.SetTableRow("COVER LEVEL", this.CoverLevel.ToString(), 2);
+                tb.SetTableRow("INVERT LEVEL", this.InvertLevel.ToString(), 3);
+                tb.SetTableRow("MANHOLE TYPE", "", 4);
+                tb.SetTableRow("DEPTH TO SOFFIT", this.DepthToSoffitLevel.ToString(), 5);
+                tb.SetTableRow("DEPTH TO CUT OUT RECESS", "N/A", 6);
+                tb.SetTableRow("COVER SIZE", "", 7);
+                tb.SetTableRow("COVER SPEC", "TBC", 8);
+                tb.SetTableRow("COVER DEPTH", "", 9);
+                tb.SetTableRow("LADDER OR DOUBLE STEPS", "", 10);
+                tb.SetTableRow("SAFETY CHAIN", this.SafetyChain.ToString().ToUpper(),11);
+                tb.SetTableRow("SAFETY RAIL", this.SafetyRail.ToString().ToUpper(), 12);
+                tb.SetTableRow("AMPS PLATFORM", "N/A", 13);                //TODO: Add proper amps check
+                tb.SetTableRow("HOLE SIZE IN COVER SLAB", "", 14);
+
+                tb.GenerateLayout();
+
+                acBlkTblRec.AppendEntity(tb);
+                tr.AddNewlyCreatedDBObject(tb, true);
+
+                //Finalise
                 tr.Commit();
             }
+        }   
+        
+        public (Vector3d major, Vector3d minor) CalculateBenching(Polyline centerLine, Circle manhole)
+        {
+            Point3dCollection intersection = new Point3dCollection();
+            centerLine.IntersectWith(manhole, Intersect.ExtendThis, intersection, IntPtr.Zero, IntPtr.Zero);
+            List<Vector3d> benchingLenghts = new List<Vector3d>();
+            foreach (Point3d p in intersection)
+            {
+                benchingLenghts.Add(p.GetVectorTo(manhole.Center));
+            }
+
+            Vector3d minorBenching, majorBenching;
+
+            minorBenching = benchingLenghts.OrderBy(o => o.Length).First();
+            majorBenching = benchingLenghts.OrderBy(o => o.Length).Last();
+
+            return (majorBenching, minorBenching);
         }
 
         [CommandMethod("C_D_AddPlan")]
@@ -415,7 +556,7 @@ namespace JPP.Civils.Drainage
             List<Manhole> manholes = new List<Manhole>();
 
             //Prompt for input file
-            OpenFileDialog ofd = new OpenFileDialog("Select .csv file cotaining manhole schedule", null, "csv", "CSVFileToLink", OpenFileDialog.OpenFileDialogFlags.DoNotTransferRemoteFiles);
+            OpenFileDialog ofd = new OpenFileDialog("Select .csv file containing manhole schedule", null, "csv", "CSVFileToLink", OpenFileDialog.OpenFileDialogFlags.DoNotTransferRemoteFiles);
             System.Windows.Forms.DialogResult dr = ofd.ShowDialog();
 
             Matrix3d curUCSMatrix = Application.DocumentManager.MdiActiveDocument.Editor.CurrentUserCoordinateSystem;
@@ -436,84 +577,130 @@ namespace JPP.Civils.Drainage
 
                 if (dr == System.Windows.Forms.DialogResult.OK)
             {
-                using (StreamReader sr = File.OpenText(ofd.Filename))
-                {
-                    string line;
-                    sr.ReadLine(); //discard headers
-                    while (true)
+                    OpenFileDialog ofd2 = new OpenFileDialog("Select .csv file containing pipe schedule", null, "csv", "CSVPipeFileToLink", OpenFileDialog.OpenFileDialogFlags.DoNotTransferRemoteFiles);
+                    System.Windows.Forms.DialogResult dr2 = ofd2.ShowDialog();
+
+                    if (dr2 == System.Windows.Forms.DialogResult.OK)
                     {
-                        line = sr.ReadLine();
+                        Dictionary<string, float> InvertLevels = new Dictionary<string, float>();
+                        Dictionary<string, float> CoverLevels = new Dictionary<string, float>();
 
-                        if (line == null)
-                            break;
-
-                        string[] columns = line.Split(',');
-                        Manhole m = new Manhole();
-
-                        m.Name = columns[0];
-                        m.Diameter = int.Parse(columns[1]);
-
-                        Polyline outLine = new Polyline();
-                        outLine.AddVertexAt(0, new Point2d(), 0, 0, 0);
-                        outLine.AddVertexAt(1, new Point2d(0, -2000), 0, 0, 0);
-                            /*acBlkTblRec.AppendEntity(outLine);
-                            tr.AddNewlyCreatedDBObject(outLine, true);*/
-
-                            m.outgoingConnection = new PipeConnection()
+                        using (StreamReader sr = File.OpenText(ofd2.Filename))
                         {
-                            Code = columns[4],
-                            Diameter = int.Parse(columns[6]),
-                            Location = outLine.EndPoint
-                        };
+                            string line;
+                            sr.ReadLine(); //discard headers
 
-                        int c = 8;
-                        while (c < columns.Count())
-                        {
-                            Polyline baseLine = new Polyline();
-                            baseLine.AddVertexAt(0, new Point2d(), 0, 0, 0);
-                            baseLine.AddVertexAt(1, new Point2d(0, -2000), 0, 0, 0);
-
-                            if (columns[c] == "")
-                                break; //If column is empty break loop
-
-                            PipeConnection incoming = new PipeConnection
+                            while (true)
                             {
-                                Code = columns[c],
-                                Angle = double.Parse(columns[c + 2]),
-                                Diameter = int.Parse(columns[c + 3])
-                            };
+                                line = sr.ReadLine();
 
-                            baseLine.TransformBy(Matrix3d.Rotation(incoming.Angle * Math.PI / 180, -curUCS.Zaxis, baseLine.StartPoint));
-                                /*acBlkTblRec.AppendEntity(baseLine);
-                                tr.AddNewlyCreatedDBObject(baseLine, true);*/
-                            incoming.Location = baseLine.EndPoint;
+                                if (line == null)
+                                    break;
 
-                            m.IncomingPipes.Add(incoming);
+                                string[] columns = line.Split(',');
 
-                            c += 5;
+                                string id = columns[1];
+                                InvertLevels.Add(id, float.Parse(columns[8]));
+                                CoverLevels.Add(id, float.Parse(columns[10]));
+                            }
                         }
 
-                        if (m.Diameter < 1200)
+                            using (StreamReader sr = File.OpenText(ofd.Filename))
                         {
-                            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("Manhole {0} ignored as non-adoptable due to diameter.\n", m.Name);
+                            string line;
+                            sr.ReadLine(); //discard headers
+                            while (true)
+                            {
+                                line = sr.ReadLine();
+
+                                if (line == null)
+                                    break;
+
+                                string[] columns = line.Split(',');
+                                Manhole m = new Manhole();
+
+                                m.Name = columns[0];
+
+                                if(InvertLevels.ContainsKey(m.Name))
+                                {
+                                    m.InvertLevel = InvertLevels[m.Name];
+                                }
+                                if (CoverLevels.ContainsKey(m.Name))
+                                {
+                                    m.CoverLevel = CoverLevels[m.Name];
+                                }
+
+                                m.Diameter = int.Parse(columns[1]);
+
+                                Polyline outLine = new Polyline();
+                                outLine.AddVertexAt(0, new Point2d(), 0, 0, 0);
+                                outLine.AddVertexAt(1, new Point2d(0, -1500), 0, 0, 0);
+                                /*acBlkTblRec.AppendEntity(outLine);
+                                tr.AddNewlyCreatedDBObject(outLine, true);*/
+
+                                m.outgoingConnection = new PipeConnection()
+                                {
+                                    Code = columns[4],
+                                    Diameter = int.Parse(columns[6]),
+                                    Location = outLine.EndPoint
+                                };
+
+                                int c = 8;
+                                while (c < columns.Count())
+                                {
+                                    Polyline baseLine = new Polyline();
+                                    baseLine.AddVertexAt(0, new Point2d(), 0, 0, 0);
+                                    baseLine.AddVertexAt(1, new Point2d(0, -1500), 0, 0, 0);
+
+                                    if (columns[c] == "")
+                                        break; //If column is empty break loop
+
+                                    PipeConnection incoming = new PipeConnection
+                                    {
+                                        Code = columns[c],
+                                        Angle = double.Parse(columns[c + 2]),
+                                        Diameter = int.Parse(columns[c + 3])
+                                    };
+
+                                    baseLine.TransformBy(Matrix3d.Rotation(incoming.Angle * Math.PI / 180, -curUCS.Zaxis, baseLine.StartPoint));
+                                    /*acBlkTblRec.AppendEntity(baseLine);
+                                    tr.AddNewlyCreatedDBObject(baseLine, true);*/
+                                    incoming.Location = baseLine.EndPoint;
+
+                                    m.IncomingPipes.Add(incoming);
+
+                                    c += 5;
+                                }
+
+                                if (m.Diameter < 1200)
+                                {
+                                    Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("Manhole {0} ignored as non-adoptable due to diameter.\n", m.Name);
+                                }
+                                else
+                                {
+                                    manholes.Add(m);
+                                }
+                            }
+
                         }
-                        else
+
+
+
+                        foreach (Manhole m in manholes)
                         {
-                            manholes.Add(m);
+                            try
+                            {
+                                m.GeneratePlan(location);
+                            }
+                            catch (ArgumentException e)
+                            {
+                                acDoc.Editor.WriteMessage("Manhole {0} failed verification. {1}\n", m.Name, e.Message);
+                            }                            
+                            location = new Point3d(location.X + 5000, location.Y, 0);
                         }
+
+                        tr.Commit();
                     }
-
-                }
-
-                
-                
-                    foreach (Manhole m in manholes)
-                    {
-                        m.GeneratePlan(location);
-                        location = new Point3d(location.X + 5000, location.Y, 0);
-                    }
-
-                    tr.Commit();
                 }
             }
         }

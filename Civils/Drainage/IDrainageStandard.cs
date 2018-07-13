@@ -9,5 +9,7 @@ namespace JPP.Civils.Drainage
     interface IDrainageStandard
     {
         void VerifyManhole(Manhole manhole);
+
+        void SetManholeType(Manhole manhole);
     }
 }

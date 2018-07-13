@@ -29,7 +29,13 @@ namespace JPP.Civils.Drainage
             {
                 throw new ArgumentException("Manhole does not meet minimum dimensions size for pipes - increase to " + minimumDiameter);
             }
-            
+
+            SetManholeType(manhole);
+        }
+
+        public virtual void SetManholeType(Manhole manhole)
+        {
+
         }
     }
 }

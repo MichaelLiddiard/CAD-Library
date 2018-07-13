@@ -140,7 +140,7 @@ namespace JPP.Core
             return new Arc(intersectionPoint, radius, startAngle, endAngle);
         }
 
-        public static void AlignTo(this DBText dBText, Curve curve)
+        public static void AlignTo(this MText dBText, Curve curve)
         {
             Vector3d line = curve.StartPoint.GetVectorTo(curve.EndPoint);
             double angle = line.GetAngleTo(Vector3d.YAxis, Vector3d.ZAxis) * 180 / Math.PI;            
@@ -151,14 +151,27 @@ namespace JPP.Core
             if (angle < 180)
             {
                 dBText.Rotation = (90 - angle) * Math.PI / 180;
-                dBText.HorizontalMode = TextHorizontalMode.TextRight;                
-                dBText.AlignmentPoint = curve.EndPoint;                
+                dBText.Attachment = AttachmentPoint.MiddleRight;
+                //dBText.HorizontalMode = TextHorizontalMode.TextRight;                
+                //dBText.AlignmentPoint = curve.EndPoint;                
             }
             else
             {
                 dBText.Rotation = (90 - angle + 180) * Math.PI / 180;//90 - (angle - 180);                
-                dBText.HorizontalMode = TextHorizontalMode.TextLeft;                
+                //dBText.HorizontalMode = TextHorizontalMode.TextLeft;                
+                dBText.Attachment = AttachmentPoint.MiddleLeft;
             }            
+        }
+
+        public static void SetTableRow(this Table tb, string Header, string Contents, int row)
+        {
+            tb.Cells[row, 0].TextHeight = 40;
+            tb.Cells[row, 0].TextString = Header;
+            tb.Cells[row, 0].Alignment = CellAlignment.MiddleCenter;
+
+            tb.Cells[row, 1].TextHeight = 40;
+            tb.Cells[row, 1].TextString = Contents;
+            tb.Cells[row, 1].Alignment = CellAlignment.MiddleCenter;
         }
     }
 }
