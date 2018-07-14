@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace JPP.Civils
 {
-    class DrainageNode
+    class DrainageNode : Node
     {
-        public float X;
-        public float Y;
-        public float Z;
+        
 
     }
 }

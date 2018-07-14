@@ -122,6 +122,7 @@
     <Compile Include="Drainage\DrainageControl.xaml.cs">
       <DependentUpon>DrainageControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Drainage\SparseGridArray.cs" />
     <Compile Include="HousingScheme\FoundationControl.xaml.cs">
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>

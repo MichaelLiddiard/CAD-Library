@@ -1,8 +1,17 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.BoundaryRepresentation;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+
+[assembly: CommandClass(typeof(JPP.Civils.DrainageNetwork))]
 
 namespace JPP.Civils
 {
@@ -10,60 +19,325 @@ namespace JPP.Civils
     {
         public List<DrainageNode> InputNodes;
         public DrainageNode Outfall;
-        public int[,] Costs;
+        public SparseGridArray<byte> Costs;
 
-        private bool Search(Node current)
+        private Curve boundary;
+
+        public DrainageNetwork()
         {
-            //List<Node> nextNodes = GetAdjacentWalkableNodes(current);
-            //nextNodes.Sort(())
-
-            return true;
+            InputNodes = new List<DrainageNode>();
+            Costs = new SparseGridArray<byte>();
         }
 
-        /*private List<Node> GetAdjacentWalkableNodes(Node fromNode)
+        public void Generate(float terminationDelta)
         {
-            /*List<Node> walkableNodes = new List<Node>();
-            IEnumerable<Point> nextLocations = GetAdjacentLocations(fromNode);
+            //Validate input data
+            if (boundary == null)
+                throw new ArgumentException("Boundary has not been set.");
 
-            foreach (var location in nextLocations)
+            //Do one calculation step
+            float delta = float.PositiveInfinity;
+            float lastCost = float.PositiveInfinity;
+
+            int loopCount = 0;
+
+            while(delta > terminationDelta)
             {
-                int x = location.X;
-                int y = location.Y;
-
-                // Stay within the grid's boundaries
-                if (x < 0 || x >= this.width || y < 0 || y >= this.height)
-                    continue;
-
-                Node node = this.nodes[x, y];
-                // Ignore non-walkable nodes
-                if (!node.IsWalkable)
-                    continue;
-
-                // Ignore already-closed nodes
-                if (node.State == NodeState.Closed)
-                    continue;
-
-                // Already-open nodes are only added to the list if their G-value is lower going via this route.
-                if (node.State == NodeState.Open)
+                //Hardcode an exit for non-collapsing solution
+                if(loopCount > 1000)
                 {
-                    float traversalCost = Node.GetTraversalCost(node.Location, node.ParentNode.Location);
-                    float gTemp = fromNode.G + traversalCost;
-                    if (gTemp < node.G)
+                    break;
+                }
+
+                float cost = CalculationStage();
+                delta = lastCost - cost;
+                lastCost = cost;
+                loopCount++;
+            }
+
+            //Review results
+
+            //Final Code if done
+        }
+
+        private float CalculationStage()
+        {
+            //Iterate over each Start point and generate path
+            float totalCost = 0;
+            object costLocker = new object();
+            /*foreach(DrainageNode n in InputNodes)
+            {
+                float path = Search(n); //totalCost += Search(n);
+                lock (costLocker)
+                {
+                    totalCost += path;
+                }
+            }*/
+            Parallel.ForEach(InputNodes, n =>
+            {
+                float path = Search(n); //totalCost += Search(n);
+                lock (costLocker)
+                {
+                    totalCost += path;
+                }
+            });
+
+            //Update screen with paths
+            foreach(DrainageNode n in InputNodes)
+            {
+                DrawPath(n);
+            }
+
+            return totalCost;
+        }
+
+        private void DrawPath(Node n)
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+            Transaction trans = acCurDb.TransactionManager.TopTransaction;
+
+            Polyline pline = new Polyline();
+            pline.AddVertexAt(0, new Point2d(n.X, n.Y), 0, 0, 0);
+            pline.AddVertexAt(1, new Point2d(n.Child.X, n.Child.Y), 0, 0, 0);
+
+            DrawPath(n.Child);
+        }
+
+        public void SetBoundary(Curve c)
+        {
+            if (!c.Closed)
+            {
+                throw new ArgumentException("Curve is not closed and does not form a boundary");
+            }
+            boundary = c;
+        }
+
+        public void SetCost(Hatch h, byte Cost)
+        {
+
+        }
+
+        private float Search(DrainageNode startNode)
+        {
+            List<Node> openNodes = new List<Node>();
+            List<Node> closedNodes = new List<Node>();
+            openNodes.Add(startNode);
+            Node currentNode = null;
+            while (openNodes.Count > 0)
+            {
+                Node lastNode = currentNode;
+
+                openNodes = openNodes.OrderBy(o => o.F).ToList();
+
+                currentNode = openNodes[0];
+                openNodes.RemoveAt(0);
+
+                lastNode.Child = currentNode;
+
+                //Check to see if we are at the target point
+                //TODO: Is this right? Use F score???
+                if(currentNode.Equals(Outfall))
+                {
+                    break;
+                }
+
+                List<Node> adjacents = GetAdjacentWalkableNodes(currentNode);
+                //Estimate code from current node to next
+                //TODO: Reverse for speed??
+                //Check against open nodes
+                foreach(Node n in adjacents)
+                {
+                    bool found = false;
+                    
+                    for (int i = 0; i < openNodes.Count; i++)
                     {
-                        node.ParentNode = fromNode;
-                        walkableNodes.Add(node);
+                        if(n.Equals(openNodes[i]))
+                        {
+                            found = true;
+                            if(openNodes[i].G > n.G)
+                            {
+                                openNodes[i] = n;
+                            }
+                        }
+                    }
+
+                    if(!found)
+                    {
+                        openNodes.Add(n);
                     }
                 }
-                else
+
+                //Check against closed nodes
+                foreach (Node n in adjacents)
                 {
-                    // If it's untested, set the parent and flag it as 'Open' for consideration
-                    node.ParentNode = fromNode;
-                    node.State = NodeState.Open;
-                    walkableNodes.Add(node);
+                    for (int i = 0; i < closedNodes.Count; i++)
+                    {
+                        if (n.Equals(closedNodes[i]))
+                        {
+                            if (closedNodes[i].G > n.G)
+                            {
+                                closedNodes.RemoveAt(i);
+                                openNodes.Add(n);
+                            }
+                        }
+                    }
                 }
+
+                closedNodes.Add(currentNode);
+            }
+            currentNode.Child = Outfall;
+            return Outfall.F;
+        }               
+
+        private List<Node> GetAdjacentWalkableNodes(Node fromNode)
+        {
+            List<Node> walkableNodes = new List<Node>();                       
+
+            walkableNodes.Add(new Node()
+            {
+                X = fromNode.X - 1,
+                Y = fromNode.Y - 1
+            });
+            walkableNodes.Add(new Node()
+            {
+                X = fromNode.X,
+                Y = fromNode.Y - 1
+            });
+            walkableNodes.Add(new Node()
+            {
+                X = fromNode.X + 1,
+                Y = fromNode.Y - 1
+            });
+            walkableNodes.Add(new Node()
+            {
+                X = fromNode.X - 1,
+                Y = fromNode.Y
+            });
+            walkableNodes.Add(new Node()
+            {
+                X = fromNode.X + 1,
+                Y = fromNode.Y
+            });
+            walkableNodes.Add(new Node()
+            {
+                X = fromNode.X - 1,
+                Y = fromNode.Y + 1
+            });
+            walkableNodes.Add(new Node()
+            {
+                X = fromNode.X,
+                Y = fromNode.Y + 1
+            });
+            walkableNodes.Add(new Node()
+            {
+                X = fromNode.X + 1,
+                Y = fromNode.Y + 1
+            });
+
+            //Get cost
+            List<int> blocked = new List<int>();
+            for(int i = 0; i < 8; i++)
+            {
+                int cost = GetCost(walkableNodes[i]);
+                if (cost < 0 || NodeWithinBounds(walkableNodes[i]))
+                {
+                    blocked.Add(i);
+                }
+                walkableNodes[i].G = fromNode.G + cost;
+                walkableNodes[i].H = (float)Math.Sqrt(Math.Pow(Outfall.X - walkableNodes[i].X, 2) + Math.Pow(Outfall.Y - walkableNodes[i].Y, 2));
+            }
+
+            var sortedBlocked = blocked.OrderBy(o => o).ToArray();
+
+            //TODO: Verify this works
+            for (int i = 0; i < sortedBlocked.Count(); i++)
+            {
+                walkableNodes.RemoveAt(sortedBlocked[i] - i);
             }
 
             return walkableNodes;
-        }*/
+        }
+
+        private int GetCost(Node n)
+        {
+            return (int)Costs[n.X, n.Y];            
+        }
+
+        private bool NodeWithinBounds(Node n)
+        {
+            Point3d testPoint = new Point3d(n.X, n.Y, 0);
+            DBObjectCollection bounds = new DBObjectCollection();
+            bounds.Add(boundary);
+            var region = Region.CreateFromCurves(bounds)[0];
+            Brep brep = new Brep(region as Entity);
+            PointContainment containment;
+            brep.GetPointContainment(testPoint, out containment);
+
+            if(containment == PointContainment.Inside)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        [CommandMethod("C_D_GenerateNetwork")]
+        public static void GenerateNetowrkCommand()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+
+            DrainageNetwork dn = new DrainageNetwork();
+
+            PromptSelectionResult acSSPrompt = acDoc.Editor.GetSelection();
+
+            using (Transaction trans = acCurDb.TransactionManager.StartTransaction())
+            {
+                // If the prompt status is OK, objects were selected
+                if (acSSPrompt.Status == PromptStatus.OK)
+                {
+                    SelectionSet acSSet = acSSPrompt.Value;
+
+                    // Step through the objects in the selection set
+                    foreach (SelectedObject acSSObj in acSSet)
+                    {
+                        DBObject ent = trans.GetObject(acSSObj.ObjectId, OpenMode.ForRead);
+                        if (ent is Curve)
+                        {
+                            dn.SetBoundary(ent as Curve);
+                        }
+                    }
+                }
+
+                PromptPointResult pPtRes;
+                PromptPointOptions pPtOpts = new PromptPointOptions("");
+
+                // Prompt for the start point
+                pPtOpts.Message = "\nEnter the drainage entry point: ";
+                pPtRes = acDoc.Editor.GetPoint(pPtOpts);
+                Point3d ptStart = pPtRes.Value;
+
+                pPtOpts.Message = "\nEnter the drainage outfall point: ";
+                pPtRes = acDoc.Editor.GetPoint(pPtOpts);
+                Point3d ptEnd = pPtRes.Value;
+
+                dn.InputNodes.Add(new DrainageNode()
+                {
+                    X = (int)Math.Round(ptStart.X),
+                    Y = (int)Math.Round(ptStart.Y)
+                });
+
+                dn.Outfall =new DrainageNode()
+                {
+                    X = (int)Math.Round(ptStart.X),
+                    Y = (int)Math.Round(ptStart.Y)
+                };
+
+                //dn.InputNodes.Add()
+                dn.Generate(50);
+
+                trans.Commit();
+            }
+        }
     }
 }
