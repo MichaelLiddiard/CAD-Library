@@ -21,6 +21,8 @@ namespace JPP.Civils
         public DrainageNode Outfall;
         public SparseGridArray<byte> Costs;
 
+        public bool DebugGraphics = true;
+
         private Curve boundary;
 
         public DrainageNetwork()
@@ -44,7 +46,7 @@ namespace JPP.Civils
             while(delta > terminationDelta)
             {
                 //Hardcode an exit for non-collapsing solution
-                if(loopCount > 1000)
+                if(loopCount > 1)
                 {
                     break;
                 }
@@ -93,15 +95,54 @@ namespace JPP.Civils
 
         private void DrawPath(Node n)
         {
+            if (n.Child != null)
+            {
+                Document acDoc = Application.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                Transaction trans = acCurDb.TransactionManager.TopTransaction;
+
+                Polyline pline = new Polyline();
+                pline.AddVertexAt(0, new Point2d(n.X, n.Y), 0, 0, 0);
+                pline.AddVertexAt(1, new Point2d(n.Child.X, n.Child.Y), 0, 0, 0);
+
+                // Open the Block table for read
+                BlockTable acBlkTbl = trans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;               
+                // Open the Block table record Model space for write
+                BlockTableRecord acBlkTblRec = trans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                acBlkTblRec.AppendEntity(pline);
+                trans.AddNewlyCreatedDBObject(pline, true);
+
+                DrawPath(n.Child);
+            }
+        }
+
+        private void DrawNode(Node n)
+        {
             Document acDoc = Application.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
-            Transaction trans = acCurDb.TransactionManager.TopTransaction;
+            using (Transaction trans = acCurDb.TransactionManager.StartTransaction())
+            {
 
-            Polyline pline = new Polyline();
-            pline.AddVertexAt(0, new Point2d(n.X, n.Y), 0, 0, 0);
-            pline.AddVertexAt(1, new Point2d(n.Child.X, n.Child.Y), 0, 0, 0);
+                Circle c = new Circle();
+                c.Diameter = 0.5f;
+                c.Center = new Point3d(n.X, n.Y, 0);
 
-            DrawPath(n.Child);
+                // Open the Block table for read
+                BlockTable acBlkTbl = trans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+                // Open the Block table record Model space for write
+                BlockTableRecord acBlkTblRec = trans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+                acBlkTblRec.AppendEntity(c);
+                trans.AddNewlyCreatedDBObject(c, true);
+
+                trans.Commit();
+            }
+
+            acDoc.TransactionManager.EnableGraphicsFlush(true);
+            acDoc.TransactionManager.QueueForGraphicsFlush();
+            Autodesk.AutoCAD.Internal.Utils.FlushGraphics();
+
         }
 
         public void SetBoundary(Curve c)
@@ -132,8 +173,11 @@ namespace JPP.Civils
 
                 currentNode = openNodes[0];
                 openNodes.RemoveAt(0);
+                if (DebugGraphics)
+                    DrawNode(currentNode);                
 
-                lastNode.Child = currentNode;
+                if(lastNode != null)
+                    lastNode.Child = currentNode;
 
                 //Check to see if we are at the target point
                 //TODO: Is this right? Use F score???
@@ -162,15 +206,7 @@ namespace JPP.Civils
                         }
                     }
 
-                    if(!found)
-                    {
-                        openNodes.Add(n);
-                    }
-                }
-
-                //Check against closed nodes
-                foreach (Node n in adjacents)
-                {
+                    //Check against closed nodes
                     for (int i = 0; i < closedNodes.Count; i++)
                     {
                         if (n.Equals(closedNodes[i]))
@@ -180,9 +216,16 @@ namespace JPP.Civils
                                 closedNodes.RemoveAt(i);
                                 openNodes.Add(n);
                             }
+
+                            found = true;
                         }
                     }
-                }
+
+                    if (!found)
+                    {
+                        openNodes.Add(n);
+                    }
+                }            
 
                 closedNodes.Add(currentNode);
             }
@@ -239,8 +282,8 @@ namespace JPP.Civils
             List<int> blocked = new List<int>();
             for(int i = 0; i < 8; i++)
             {
-                int cost = GetCost(walkableNodes[i]);
-                if (cost < 0 || NodeWithinBounds(walkableNodes[i]))
+                int cost = GetCost(fromNode, walkableNodes[i]);
+                if (cost < 0 || !NodeWithinBounds(walkableNodes[i]))
                 {
                     blocked.Add(i);
                 }
@@ -259,14 +302,23 @@ namespace JPP.Civils
             return walkableNodes;
         }
 
-        private int GetCost(Node n)
+        private int GetCost(Node from, Node to)
         {
-            return (int)Costs[n.X, n.Y];            
+            double modifier = 1;
+            //Check diagonal
+            if(from.X != to.X && from.Y != to.Y)
+            {
+                modifier = Math.Sqrt(2);
+            }
+
+            return (int)Math.Round(Costs[to.X, to.Y] * modifier);            
         }
 
         private bool NodeWithinBounds(Node n)
         {
-            Point3d testPoint = new Point3d(n.X, n.Y, 0);
+            //The blow throws errors, trying intersection method instead
+            Point2d testPoint = new Point2d(n.X, n.Y);
+            /*Point3d testPoint = new Point3d(n.X, n.Y, 0);
             DBObjectCollection bounds = new DBObjectCollection();
             bounds.Add(boundary);
             var region = Region.CreateFromCurves(bounds)[0];
@@ -274,11 +326,23 @@ namespace JPP.Civils
             PointContainment containment;
             brep.GetPointContainment(testPoint, out containment);
 
-            if(containment == PointContainment.Inside)
+            if(containment == PointContainment.Outside)
             {
-                return true;
+                return false;
             }
-            return false;
+            return true;*/
+
+            Polyline testline = new Polyline();
+            testline.AddVertexAt(0, testPoint, 0, 0, 0);
+            testline.AddVertexAt(1, new Point2d(0, 0), 0, 0, 0);
+
+            Point3dCollection intersections = new Point3dCollection();
+            testline.IntersectWith(boundary, Intersect.OnBothOperands, intersections, IntPtr.Zero, IntPtr.Zero);
+            if (intersections.Count % 2 == 0)
+            {
+                return false;
+            }
+            return true;
         }
 
         [CommandMethod("C_D_GenerateNetwork")]
@@ -311,26 +375,32 @@ namespace JPP.Civils
 
                 PromptPointResult pPtRes;
                 PromptPointOptions pPtOpts = new PromptPointOptions("");
+                                
+                while (true)
+                {
+                    // Prompt for the start point
+                    pPtOpts.Message = "\nEnter the drainage entry point: ";
+                    pPtRes = acDoc.Editor.GetPoint(pPtOpts);
 
-                // Prompt for the start point
-                pPtOpts.Message = "\nEnter the drainage entry point: ";
-                pPtRes = acDoc.Editor.GetPoint(pPtOpts);
-                Point3d ptStart = pPtRes.Value;
+                    if (pPtRes.Status != PromptStatus.OK)                        
+                        break;
+
+                    Point3d ptStart = pPtRes.Value;
+                    dn.InputNodes.Add(new DrainageNode()
+                    {
+                        X = (int)Math.Round(ptStart.X),
+                        Y = (int)Math.Round(ptStart.Y)
+                    });
+                }
 
                 pPtOpts.Message = "\nEnter the drainage outfall point: ";
                 pPtRes = acDoc.Editor.GetPoint(pPtOpts);
-                Point3d ptEnd = pPtRes.Value;
-
-                dn.InputNodes.Add(new DrainageNode()
-                {
-                    X = (int)Math.Round(ptStart.X),
-                    Y = (int)Math.Round(ptStart.Y)
-                });
+                Point3d ptEnd = pPtRes.Value;                
 
                 dn.Outfall =new DrainageNode()
                 {
-                    X = (int)Math.Round(ptStart.X),
-                    Y = (int)Math.Round(ptStart.Y)
+                    X = (int)Math.Round(ptEnd.X),
+                    Y = (int)Math.Round(ptEnd.Y)
                 };
 
                 //dn.InputNodes.Add()
