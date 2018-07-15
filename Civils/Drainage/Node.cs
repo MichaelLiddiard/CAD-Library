@@ -20,6 +20,6 @@ namespace JPP.Civils
             return (X == other.X && Y == other.Y);
         }
 
-        public Node Child;
+        public Node Parent;
     }
 }

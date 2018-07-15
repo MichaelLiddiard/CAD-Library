@@ -46,7 +46,7 @@ namespace JPP.Civils
             while(delta > terminationDelta)
             {
                 //Hardcode an exit for non-collapsing solution
-                if(loopCount > 1)
+                if(loopCount > 10)
                 {
                     break;
                 }
@@ -75,17 +75,20 @@ namespace JPP.Civils
                     totalCost += path;
                 }
             }*/
+            List<Node> paths = new List<Node>();
             Parallel.ForEach(InputNodes, n =>
             {
-                float path = Search(n); //totalCost += Search(n);
+                Node end = Search(n); //totalCost += Search(n);
+                float path = end.F;
                 lock (costLocker)
                 {
+                    paths.Add(end);
                     totalCost += path;
                 }
             });
 
             //Update screen with paths
-            foreach(DrainageNode n in InputNodes)
+            foreach(Node n in paths)
             {
                 DrawPath(n);
             }
@@ -95,7 +98,7 @@ namespace JPP.Civils
 
         private void DrawPath(Node n)
         {
-            if (n.Child != null)
+            if (n.Parent != null)
             {
                 Document acDoc = Application.DocumentManager.MdiActiveDocument;
                 Database acCurDb = acDoc.Database;
@@ -103,7 +106,7 @@ namespace JPP.Civils
 
                 Polyline pline = new Polyline();
                 pline.AddVertexAt(0, new Point2d(n.X, n.Y), 0, 0, 0);
-                pline.AddVertexAt(1, new Point2d(n.Child.X, n.Child.Y), 0, 0, 0);
+                pline.AddVertexAt(1, new Point2d(n.Parent.X, n.Parent.Y), 0, 0, 0);
 
                 // Open the Block table for read
                 BlockTable acBlkTbl = trans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;               
@@ -113,7 +116,7 @@ namespace JPP.Civils
                 acBlkTblRec.AppendEntity(pline);
                 trans.AddNewlyCreatedDBObject(pline, true);
 
-                DrawPath(n.Child);
+                DrawPath(n.Parent);
             }
         }
 
@@ -159,7 +162,7 @@ namespace JPP.Civils
 
         }
 
-        private float Search(DrainageNode startNode)
+        private Node Search(DrainageNode startNode)
         {
             List<Node> openNodes = new List<Node>();
             List<Node> closedNodes = new List<Node>();
@@ -176,8 +179,8 @@ namespace JPP.Civils
                 if (DebugGraphics)
                     DrawNode(currentNode);                
 
-                if(lastNode != null)
-                    lastNode.Child = currentNode;
+                /*if(lastNode != null)
+                    currentNode.Parent = lastNode;*/
 
                 //Check to see if we are at the target point
                 //TODO: Is this right? Use F score???
@@ -211,6 +214,7 @@ namespace JPP.Civils
                     {
                         if (n.Equals(closedNodes[i]))
                         {
+                            //weve found a shorter route
                             if (closedNodes[i].G > n.G)
                             {
                                 closedNodes.RemoveAt(i);
@@ -229,8 +233,8 @@ namespace JPP.Civils
 
                 closedNodes.Add(currentNode);
             }
-            currentNode.Child = Outfall;
-            return Outfall.F;
+            Outfall.Parent = currentNode;
+            return Outfall;
         }               
 
         private List<Node> GetAdjacentWalkableNodes(Node fromNode)
@@ -287,6 +291,7 @@ namespace JPP.Civils
                 {
                     blocked.Add(i);
                 }
+                walkableNodes[i].Parent = fromNode;
                 walkableNodes[i].G = fromNode.G + cost;
                 walkableNodes[i].H = (float)Math.Sqrt(Math.Pow(Outfall.X - walkableNodes[i].X, 2) + Math.Pow(Outfall.Y - walkableNodes[i].Y, 2));
             }
@@ -304,14 +309,19 @@ namespace JPP.Civils
 
         private int GetCost(Node from, Node to)
         {
-            double modifier = 1;
+            int costModifier = (int)Costs[to.X, to.Y];
+            if (costModifier == 0)
+                costModifier = 1;
+
+            double length = 1d;
+
             //Check diagonal
             if(from.X != to.X && from.Y != to.Y)
             {
-                modifier = Math.Sqrt(2);
+                length = Math.Sqrt(2);
             }
 
-            return (int)Math.Round(Costs[to.X, to.Y] * modifier);            
+            return (int) Math.Ceiling(length * costModifier);            
         }
 
         private bool NodeWithinBounds(Node n)
