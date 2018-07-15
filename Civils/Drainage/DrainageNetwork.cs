@@ -21,7 +21,8 @@ namespace JPP.Civils
         public DrainageNode Outfall;
         public SparseGridArray<byte> Costs;
 
-        public bool DebugGraphics = true;
+        public bool Verbose = true;
+        public bool DebugGraphics = false;
 
         private Curve boundary;
 
@@ -48,6 +49,7 @@ namespace JPP.Civils
                 //Hardcode an exit for non-collapsing solution
                 if(loopCount > 10)
                 {
+                    Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("No convergent solution found, aborting\n");
                     break;
                 }
 
@@ -164,12 +166,28 @@ namespace JPP.Civils
 
         private Node Search(DrainageNode startNode)
         {
+            int verboseCount = 0;
+
+            Node outfallCopy = new Node();
+            outfallCopy.X = Outfall.X;
+            outfallCopy.Y = Outfall.Y;
             List<Node> openNodes = new List<Node>();
             List<Node> closedNodes = new List<Node>();
             openNodes.Add(startNode);
             Node currentNode = null;
             while (openNodes.Count > 0)
             {
+                if(Verbose)
+                {
+                    if(verboseCount > 250)
+                    {
+                        Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("{0} nodes have been closed, with {1} currently open. Heuristic distance is {2}\n", closedNodes.Count, openNodes.Count, currentNode.F);
+                        System.Windows.Forms.Application.DoEvents();
+                        verboseCount = 0;
+                    }
+                    verboseCount++;
+                }
+
                 Node lastNode = currentNode;
 
                 openNodes = openNodes.OrderBy(o => o.F).ToList();
@@ -184,7 +202,7 @@ namespace JPP.Civils
 
                 //Check to see if we are at the target point
                 //TODO: Is this right? Use F score???
-                if(currentNode.Equals(Outfall))
+                if(currentNode.Equals(outfallCopy))
                 {
                     break;
                 }
@@ -233,8 +251,8 @@ namespace JPP.Civils
 
                 closedNodes.Add(currentNode);
             }
-            Outfall.Parent = currentNode;
-            return Outfall;
+            outfallCopy.Parent = currentNode;
+            return outfallCopy;
         }               
 
         private List<Node> GetAdjacentWalkableNodes(Node fromNode)
