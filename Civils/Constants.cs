@@ -37,6 +37,11 @@ namespace JPP.Civils
         /// Object dictionary ID for plot types
         /// </summary>
         public const string PlotTypeID = "JPP_Civil_Plot_Types";
+
+        /// <summary>
+        /// Object dictionary ID for road layouts
+        /// </summary>
+        public const string RoadId = "JPP_Civil_Roads";
         #endregion
     }
 }

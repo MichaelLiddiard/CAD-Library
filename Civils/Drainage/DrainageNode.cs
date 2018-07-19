@@ -8,7 +8,7 @@ namespace JPP.Civils
 {
     class DrainageNode : Node
     {
-        
+        public List<DrainageNode> Connections;
 
     }
 }

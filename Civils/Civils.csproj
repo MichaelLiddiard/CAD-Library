@@ -117,12 +117,15 @@
   <ItemGroup>
     <Compile Include="CivilDocumentStore.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Drainage\AdoptedDrainage.cs" />
     <Compile Include="Drainage\DrainageNetwork.cs" />
     <Compile Include="Drainage\DrainageNode.cs" />
     <Compile Include="Drainage\DrainageControl.xaml.cs">
       <DependentUpon>DrainageControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Drainage\GridArray.cs" />
     <Compile Include="Drainage\SparseGridArray.cs" />
+    <Compile Include="Highways\Road.cs" />
     <Compile Include="HousingScheme\FoundationControl.xaml.cs">
       <DependentUpon>FoundationControl.xaml</DependentUpon>
     </Compile>

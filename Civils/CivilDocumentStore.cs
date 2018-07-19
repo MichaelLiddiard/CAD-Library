@@ -3,6 +3,7 @@ using JPP.Core;
 using System.Collections.ObjectModel;
 using Autodesk.AutoCAD.ApplicationServices;
 using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
+using JPP.Civils.Highways;
 
 namespace JPP.Civils
 {
@@ -21,6 +22,9 @@ namespace JPP.Civils
         /// </summary>
         public ObservableCollection<PlotType> PlotTypes { get; set; }
 
+        public ObservableCollection<Road> Roads { get; set; }
+
+
         public CivilDocumentStore(Document doc) : base(doc)
         {
         }
@@ -35,6 +39,7 @@ namespace JPP.Civils
 
             SaveBinary(Constants.PlotID, Plots);
             SaveBinary(Constants.PlotTypeID, PlotTypes);
+            SaveBinary(Constants.RoadId, Roads);
 
             using (Xrecord siteXRecord = new Xrecord())
             {
@@ -53,10 +58,16 @@ namespace JPP.Civils
         {
             Plots = LoadBinary<ObservableCollection<Plot>>(Constants.PlotID);
             PlotTypes = LoadBinary<ObservableCollection<PlotType>>(Constants.PlotTypeID);
+            Roads = LoadBinary<ObservableCollection<Road>>(Constants.RoadId);
             if (Plots == null)
             {
                 Plots = new ObservableCollection<Plot>();
                 PlotTypes = new ObservableCollection<PlotType>();
+            }
+
+            if(Roads == null)
+            {
+                Roads = new ObservableCollection<Road>();
             }
 
             foreach (PlotType pt in PlotTypes)
